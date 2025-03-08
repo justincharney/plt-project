@@ -37,9 +37,9 @@ let create_float_lit str suffix =
 
 type token =
   (* Keywords *)
-  | FUNC | PACKAGE | TYPE | STRUCT | RETURN | BREAK | IF | ELSE
+  | FUNC | PACKAGE | IMPORT | TYPE | STRUCT | RETURN | BREAK | IF | ELSE
   | CONTINUE | FOR | CONST | VAR | MAKE | WHILE | DO | SWITCH | CASE | DEFAULT
-  | TRUE | FALSE
+  | TRUE | FALSE | FINAL | MUT | LATE | PRIVATE | GET | POST | DELETE | ERROR
 
   (* Identifiers *)
   | IDENT of string
@@ -67,11 +67,11 @@ type token =
   | PLUS_ASSIGN | MINUS_ASSIGN | TIMES_ASSIGN | DIV_ASSIGN | MOD_ASSIGN
   | EXP_ASSIGN | LSHIFT_ASSIGN | RSHIFT_ASSIGN | BITAND_ASSIGN | BITXOR_ASSIGN | BITOR_ASSIGN
   (* Equivalence *)
-  | EQ | NEQ | LT | LE | GT | GE | PHYS_EQ | PHYS_NEQ
+  | EQ | NEQ | LT | LE | GT | GE
   (* Logical *)
   | AND | OR | NOT
   (* Unary *)
-  | INC | DEC
+  | INC | DEC | TILDE
   (* Ambiguous - BITAND/ADDR_OF or DEREF/TIMES *)
   | AMPERSAND | ASTERISK
 
@@ -122,6 +122,7 @@ rule token = parse
     (* Keywords *)
     | "func"                { FUNC }
     | "package"             { PACKAGE }
+    | "import"              { IMPORT }
     | "type"                { TYPE }
     | "struct"              { STRUCT }
     | "return"              { RETURN }
@@ -140,6 +141,14 @@ rule token = parse
     | "default"             { DEFAULT }
     | "true"                { TRUE }
     | "false"               { FALSE }
+    | "final"               { FINAL }
+    | "mut"                 { MUT }
+    | "late"                { LATE }
+    | "private"             { Private }
+    | "get"                 { GET }
+    | "post"                { POST }
+    | "delete"              { DELETE }
+    | "error"               { ERROR }
 
     (* Integer literals *)
     | uint8_lit             { create_int_lit (Lexing.lexeme lexbuf) "u8" }
@@ -197,8 +206,6 @@ rule token = parse
     | "<="                  { LE }
     | ">"                   { GT }
     | ">="                  { GE }
-    | "==="                 { PHYS_EQ }
-    | "!=="                 { PHYS_NEQ }
 
     (* Logical *)
     | "&&"                  { AND }
@@ -212,6 +219,7 @@ rule token = parse
     (* Unary *)
     | "++"                  { INC }
     | "--"                  { DEC }
+    | "~"                   { TILDE }
 
     (* Separators *)
     | "("                   { LPAREN }
