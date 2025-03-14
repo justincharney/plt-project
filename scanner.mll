@@ -13,6 +13,7 @@ type token =
   | FUNC | PACKAGE | IMPORT | TYPE | STRUCT | RETURN | BREAK | IF | ELSE
   | CONTINUE | FOR | CONST | VAR | MAKE | WHILE | DO | SWITCH | CASE | DEFAULT
   | TRUE | FALSE | FINAL | MUT | LATE | PRIVATE | GET | POST | DELETE | ERROR
+  | NULL
 
   (* Identifiers *)
   | IDENT of string
@@ -21,22 +22,23 @@ type token =
   | INT_LIT of int
   | FLOAT_LIT of float
   | STRING_LIT of string (* string literal *)
+  | CHAR_LIT of char
 
   (* Operators *)
   (* Arithmetic *)
-  | PLUS | MINUS | DIV | MOD | EXP
+  | PLUS | MINUS | DIV | MOD
   (* Bitwise *)
   | LSHIFT | RSHIFT | BITXOR | BITOR | BITNOT
   (* Assignment *)
   | ASSIGN | DECL_ASSIGN (* = vs := *)
   | PLUS_ASSIGN | MINUS_ASSIGN | TIMES_ASSIGN | DIV_ASSIGN | MOD_ASSIGN
-  | EXP_ASSIGN | LSHIFT_ASSIGN | RSHIFT_ASSIGN | BITAND_ASSIGN | BITXOR_ASSIGN | BITOR_ASSIGN
+  | LSHIFT_ASSIGN | RSHIFT_ASSIGN | BITAND_ASSIGN | BITXOR_ASSIGN | BITOR_ASSIGN
   (* Equivalence *)
   | EQ | NEQ | LT | LE | GT | GE
   (* Logical *)
   | AND | OR | NOT
   (* Unary *)
-  | INC | DEC | TILDE
+  | INC | DEC
   (* Ambiguous - BITAND/ADDR_OF or DEREF/TIMES *)
   | AMPERSAND | ASTERISK
 
@@ -64,6 +66,8 @@ let float_lit = (digit* '.' digit+) | (digit+ '.' digit*)
 
 (* Match nicely formatted strings. No multi-line *)
 let string_lit = '"' ([^ '"' '\\' '\n'])* '"'
+
+let char_lit = '\'' ([^ '"' '\\' '\n']) '\''
 
 rule token = parse
     (* Whitespace *)
@@ -99,11 +103,12 @@ rule token = parse
     | "final"               { FINAL }
     | "mut"                 { MUT }
     | "late"                { LATE }
-    | "private"             { Private }
+    | "private"             { PRIVATE }
     | "get"                 { GET }
     | "post"                { POST }
     | "delete"              { DELETE }
     | "error"               { ERROR }
+    | "null"                { NULL }
 
     (* Literals *)
     | int_lit               { INT_LIT (int_of_string (Lexing.lexeme lexbuf)) }
@@ -111,13 +116,14 @@ rule token = parse
     | string_lit            { let s = Lexing.lexeme lexbuf in
                                 (* Remove the quotes *)
                                 STRING_LIT (String.sub s 1 (String.length s - 2))}
+    | char_lit              { let c = Lexing.lexeme lexbuf in
+                                CHAR_LIT}
 
     (* Arithmetic *)
     | "+"                   { PLUS }
     | "-"                   { MINUS }
     | "/"                   { DIV }
     | "%"                   { MOD }
-    | "**"                  { EXP }
 
     (* Bitwise *)
     | "<<"                  { LSHIFT }
@@ -132,7 +138,6 @@ rule token = parse
     | "+="                  { PLUS_ASSIGN }
     | "-="                  { MINUS_ASSIGN }
     | "*="                  { TIMES_ASSIGN }
-    | "**="                 { EXP_ASSIGN }
     | "/="                  { DIV_ASSIGN }
     | "%="                  { MOD_ASSIGN }
     | "<<="                 { LSHIFT_ASSIGN }
@@ -161,7 +166,6 @@ rule token = parse
     (* Unary *)
     | "++"                  { INC }
     | "--"                  { DEC }
-    | "~"                   { TILDE }
 
     (* Separators *)
     | "("                   { LPAREN }
