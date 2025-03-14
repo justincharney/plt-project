@@ -52,22 +52,18 @@ type token =
 
 
 (* Regular expressions for token components *)
-let digit = ['0'-'9']
-let alpha = ['a'-'z' 'A'-'Z']
+let digit      = ['0'-'9']
+let alpha      = ['a'-'z' 'A'-'Z']
 let whitespace = [' ' '\t']
-let newline = '\n' | '\r' | "\r\n"
+let newline    = '\n' | '\r' | "\r\n"
 let identifier = alpha (alpha | digit | '_')*
 
-(* Integer literals *)
+(* Literals *)
 let int_lit = digit+
-
-(* Float literals *)
-let float_lit = (digit* '.' digit+) | (digit+ '.' digit*)
-
-(* Match nicely formatted strings. No multi-line *)
-let string_lit = '"' ([^ '"' '\\' '\n'])* '"'
-
-let char_lit = '\'' ([^ '"' '\\' '\n']) '\''
+let float_lit = (digit* '.' digit+) | (digit+ '.' digit*) 
+(* Boolean literal? Also, define string_lit as 0 or more char_lit? *)
+let string_lit = '"' ([^ '"' '\\' '\n'])* '"' (* Match nicely formatted strings. No multi-line *)
+let char_lit = '\'' ([^ '"' '\\' '\n']) '\'' (* Match nicely formatted strings. No multi-line *)
 
 rule token = parse
     (* Whitespace *)
@@ -79,36 +75,51 @@ rule token = parse
     | "/*"                  { comment lexbuf }
 
     (* Keywords *)
+    (* Functions and Packages *)
     | "func"                { FUNC }
     | "package"             { PACKAGE }
     | "import"              { IMPORT }
+
+    (* Types and Structs *)
     | "type"                { TYPE }
     | "struct"              { STRUCT }
+
+    (* Control Flow *)
     | "return"              { RETURN }
     | "break"               { BREAK }
     | "if"                  { IF }
     | "else"                { ELSE }
     | "continue"            { CONTINUE }
     | "for"                 { FOR }
-    | "const"               { CONST }
-    | "var"                 { VAR }
-    | "make"                { MAKE }
-    | "while"               { WHILE }
     | "do"                  { DO }
+    | "while"               { WHILE }
     | "switch"              { SWITCH }
     | "case"                { CASE }
     | "default"             { DEFAULT }
+
+    (* Constants and Variables *)
+    | "const"               { CONST }
+    | "var"                 { VAR }
+    | "make"                { MAKE }
+
+    (* Boolean Literals *)
     | "true"                { TRUE }
     | "false"               { FALSE }
+    
+    (* Data Types *)
+    | "error"               { ERROR }
+    | "null"                { NULL }
+
+    (* Modifiers *)
     | "final"               { FINAL }
     | "mut"                 { MUT }
     | "late"                { LATE }
     | "private"             { PRIVATE }
+
+    (* HTTP Functions*)
     | "get"                 { GET }
     | "post"                { POST }
     | "delete"              { DELETE }
-    | "error"               { ERROR }
-    | "null"                { NULL }
 
     (* Literals *)
     | int_lit               { INT_LIT (int_of_string (Lexing.lexeme lexbuf)) }
