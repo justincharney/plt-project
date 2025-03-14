@@ -6,33 +6,6 @@
 open Printf
 open Lexing
 
-(* Helper to create integer literal with correct type suffix *)
-let create_int_lit str suffix =
-    let num_str = String.sub str 0 (String.length str - String.length suffix) in
-    try
-        match suffix with
-        | "u8" -> UINT8_LIT (int_of_string num_str)
-        | "u16" -> UINT16_LIT (int_of_string num_str)
-        | "u32" -> UINT32_LIT (int_of_string num_str)
-        | "u64" -> UINT64_LIT (Int64.of_string num_str)
-        | "i8" -> INT8_LIT (int_of_string num_str)
-        | "i16" -> INT16_LIT (int_of_string num_str)
-        | "i32" -> INT32_LIT (int_of_string num_str)
-        | "i64" -> INT64_LIT (Int64.of_string num_str)
-        | _ -> INT_LIT (int_of_string num_str)
-    with Failure _ ->
-        error (sprintf "Invalid integer literal: %s" str)
-
-let create_float_lit str suffix =
-    let num_str = String.sub str 0 (String.length str - String.length suffix) in
-    try
-        match suffix with
-        | "f32" -> FLOAT32_LIT (float_of_string num_str)
-        | "f4" | "f64" -> FLOAT64_LIT (float_of_string num_str)
-        | _ -> FLOAT32_LIT (float_of_string num_str) (* Default to FLOAT32_LIT if no suffix *)
-    with Failure _ ->
-        error (sprintf "Invalid float literal: %s" str)
-
 }
 
 type token =
@@ -45,16 +18,8 @@ type token =
   | IDENT of string
 
   (* Literals *)
-  | UINT8_LIT of int    (* uint8 literal *)
-  | UINT16_LIT of int   (* uint16 literal *)
-  | UINT32_LIT of int   (* uint32 literal *)
-  | UINT64_LIT of int64 (* uint64 literal *)
-  | INT8_LIT of int     (* int8 literal *)
-  | INT16_LIT of int    (* int16 literal *)
-  | INT32_LIT of int    (* int32 literal *)
-  | INT64_LIT of int64  (* int64 literal *)
-  | FLOAT32_LIT of float (* float32 literal *)
-  | FLOAT64_LIT of float (* float64 literal *)
+  | INT_LIT of int
+  | FLOAT_LIT of float
   | STRING_LIT of string (* string literal *)
 
   (* Operators *)
@@ -93,19 +58,9 @@ let identifier = alpha (alpha | digit | '_')*
 
 (* Integer literals *)
 let int_lit = digit+
-let uint8_lit = int_lit "u8"
-let uint16_lit = int_lit "u16"
-let uint32_lit = int_lit "u32"
-let uint64_lit = int_lit "u64"
-let int8_lit = int_lit "i8"
-let int16_lit = int_lit "i16"
-let int32_lit = int_lit "i32"
-let int64_lit = int_lit "i64"
 
 (* Float literals *)
 let float_lit = (digit* '.' digit+) | (digit+ '.' digit*)
-let float32_lit = float_lit "f32"
-let float64_lit = float_lit ("f4" | "f64")
 
 (* Match nicely formatted strings. No multi-line *)
 let string_lit = '"' ([^ '"' '\\' '\n'])* '"'
@@ -150,22 +105,9 @@ rule token = parse
     | "delete"              { DELETE }
     | "error"               { ERROR }
 
-    (* Integer literals *)
-    | uint8_lit             { create_int_lit (Lexing.lexeme lexbuf) "u8" }
-    | uint16_lit            { create_int_lit (Lexing.lexeme lexbuf) "u16" }
-    | uint32_lit            { create_int_lit (Lexing.lexeme lexbuf) "u32" }
-    | uint64_lit            { create_int_lit (Lexing.lexeme lexbuf) "u64" }
-    | int8_lit              { create_int_lit (Lexing.lexeme lexbuf) "i8" }
-    | int16_lit             { create_int_lit (Lexing.lexeme lexbuf) "i16" }
-    | int32_lit             { create_int_lit (Lexing.lexeme lexbuf) "i32" }
-    | int64_lit             { create_int_lit (Lexing.lexeme lexbuf) "i64" }
-    | int_lit               { INT32_LIT (int_of_string (Lexing.lexeme lexbuf)) }
-
-    (* Float literals *)
-    | float32_lit           { create_float_lit (Lexing.lexeme lexbuf) "f32" }
-    | float64_lit           { create_float_lit (Lexing.lexeme lexbuf) "f64" }
-    | float_lit             { FLOAT32_LIT (float_of_string (Lexing.lexeme lexbuf)) }
-
+    (* Literals *)
+    | int_lit               { INT_LIT (int_of_string (Lexing.lexeme lexbuf)) }
+    | float_lit             { FLOAT_LIT (float_of_string (Lexing.lexeme lexbuf)) }
     | string_lit            { let s = Lexing.lexeme lexbuf in
                                 (* Remove the quotes *)
                                 STRING_LIT (String.sub s 1 (String.length s - 2))}
