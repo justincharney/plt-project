@@ -11,9 +11,16 @@ open Lexing
 type token =
   (* Keywords *)
   | FUNC | PACKAGE | IMPORT | TYPE | STRUCT | RETURN | BREAK | IF | ELSE
-  | CONTINUE | FOR | CONST | VAR | MAKE | WHILE | DO | SWITCH | CASE | DEFAULT
+  | CONTINUE | FOR | CONST | VAR | MAKE | WHILE
   | TRUE | FALSE | FINAL | MUT | LATE | PRIVATE | GET | POST | DELETE | ERROR
   | NULL
+
+  (* Built-in type keywords *)
+  | BOOL
+  | STRING
+  | U8 | U16 | U32 | U64
+  | I8 | I16 | I32 | I64
+  | F16 | F32
 
   (* Identifiers *)
   | IDENT of string
@@ -21,6 +28,7 @@ type token =
   (* Literals *)
   | INT_LIT of int
   | FLOAT_LIT of float
+  | BOOL_LIT of bool
   | STRING_LIT of string (* string literal *)
   | CHAR_LIT of char
 
@@ -48,7 +56,6 @@ type token =
 
   (* Special tokens *)
   | EOF     (* End of file *)
-  | EOL     (* End of line, if needed *)
 
 
 (* Regular expressions for token components *)
@@ -59,11 +66,11 @@ let newline    = '\n' | '\r' | "\r\n"
 let identifier = alpha (alpha | digit | '_')*
 
 (* Literals *)
-let int_lit = digit+
-let float_lit = (digit* '.' digit+) | (digit+ '.' digit*) 
+let int_lit = ['-']? digit+
+let float_lit = ['-']? ((digit* '.' digit+) | (digit+ '.' digit*))
 (* Boolean literal? Also, define string_lit as 0 or more char_lit? *)
 let string_lit = '"' ([^ '"' '\\' '\n'])* '"' (* Match nicely formatted strings. No multi-line *)
-let char_lit = '\'' ([^ '"' '\\' '\n']) '\'' (* Match nicely formatted strings. No multi-line *)
+let char_lit = '\'' ([^ '\'' '\\' '\n']) '\'' (* Match nicely formatted strings. No multi-line *)
 
 rule token = parse
     (* Whitespace *)
@@ -91,11 +98,7 @@ rule token = parse
     | "else"                { ELSE }
     | "continue"            { CONTINUE }
     | "for"                 { FOR }
-    | "do"                  { DO }
     | "while"               { WHILE }
-    | "switch"              { SWITCH }
-    | "case"                { CASE }
-    | "default"             { DEFAULT }
 
     (* Constants and Variables *)
     | "const"               { CONST }
@@ -103,9 +106,9 @@ rule token = parse
     | "make"                { MAKE }
 
     (* Boolean Literals *)
-    | "true"                { TRUE }
-    | "false"               { FALSE }
-    
+    | "true"                { BOOL_LIT(true) }
+    | "false"               { BOOL_LIT(false) }
+
     (* Data Types *)
     | "error"               { ERROR }
     | "null"                { NULL }
@@ -117,9 +120,23 @@ rule token = parse
     | "private"             { PRIVATE }
 
     (* HTTP Functions*)
-    | "get"                 { GET }
-    | "post"                { POST }
-    | "delete"              { DELETE }
+    | "GET"                 { GET }
+    | "POST"                { POST }
+    | "DELETE"              { DELETE }
+
+    (* Built-in types *)
+    | "bool"               { BOOL }
+    | "string"             { STRING }
+    | "u8"                 { U8 }
+    | "u16"                { U16 }
+    | "u32"                { U32 }
+    | "u64"                { U64 }
+    | "i8"                 { I8 }
+    | "i16"                { I16 }
+    | "i32"                { I32 }
+    | "i64"                { I64 }
+    | "f16"                { F16 }
+    | "f32"                { F32 }
 
     (* Literals *)
     | int_lit               { INT_LIT (int_of_string (Lexing.lexeme lexbuf)) }
@@ -128,7 +145,7 @@ rule token = parse
                                 (* Remove the quotes *)
                                 STRING_LIT (String.sub s 1 (String.length s - 2))}
     | char_lit              { let c = Lexing.lexeme lexbuf in
-                                CHAR_LIT}
+                                CHAR_LIT (String.get c 1)}
 
     (* Arithmetic *)
     | "+"                   { PLUS }
@@ -194,7 +211,7 @@ rule token = parse
     (* Ocamllex checks rules in order, so this is after keywords *)
     | identifier            { IDENT (Lexing.lexeme lexbuf) }
     | eof                   { EOF }
-    | _                     { error (sprintf "Unrecognized token: %s" (Lexing.lexeme lexbuf)) }
+    | _                     { raise (Failure (Printf.sprintf "Unrecognized token: %s" (Lexing.lexeme lexbuf))) }
 
 and comment = parse
     | "*/"      { token lexbuf }
