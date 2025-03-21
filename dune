@@ -1,3 +1,12 @@
+; process scanner.mll with ocamllex
+(ocamllex scanner)
+
+; define the scanner as a library
+(library
+(name scanner)
+(modules scanner))
+
 (executable
  (name hello)
+ (modules hello)
  (libraries ))

@@ -3,11 +3,8 @@
 {
 
 (* Any OCaml functions defined here will be subsequently available in the remainder of the lexer definition. *)
-open Printf
-open Lexing
 
-}
-
+(* Token type definition exposed to other modules *)
 type token =
   (* Keywords *)
   | FUNC | PACKAGE | IMPORT | TYPE | STRUCT | RETURN | BREAK | IF | ELSE
@@ -57,6 +54,7 @@ type token =
   (* Special tokens *)
   | EOF     (* End of file *)
 
+}
 
 (* Regular expressions for token components *)
 let digit      = ['0'-'9']

@@ -6,6 +6,7 @@
 - `hello.ml`: Sample "Hello World" program
 - `dune`: Dune build configuration
 - `dune-project`: Dune project settings
+-  `tests/`: Directory containing test files
 - `Dockerfile`: Docker configuration
 - `docker-compose.yml`: Docker Compose configuration
 
@@ -70,3 +71,53 @@ utop
 # When finished, stop the container
 docker-compose down
 ```
+
+### Building and Testing the Project
+
+This project uses Dune for building and running tests.
+
+#### Building the Project
+
+To build the project:
+
+```bash
+# If you're using a persistent container
+docker-compose exec ocaml dune build
+
+# Or for a one-off command
+docker-compose run --rm ocaml dune build
+```
+
+#### Running Tests
+
+There are several ways to run the tests:
+
+1. Run all tests:
+   ```bash
+   docker-compose exec ocaml dune runtest
+   ```
+
+2. Run a specific test executable:
+   ```bash
+   docker-compose exec ocaml dune exec tests/test_scanner.exe
+   ```
+
+3. Rebuild and run tests in one command:
+   ```bash
+   docker-compose exec ocaml dune build @runtest --auto-promote
+   ```
+
+4. For interactive testing during development:
+   ```bash
+   # Enter the Docker container
+   docker-compose exec ocaml bash
+
+   # Build the project
+   dune build
+
+   # Run specific tests
+   dune exec tests/test_scanner.exe
+
+   # Or run all tests
+   dune runtest
+   ```
