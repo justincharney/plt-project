@@ -1,74 +1,19 @@
-(* Ocamllex scanner *)
-
-{
-
-(* Any OCaml functions defined here will be subsequently available in the remainder of the lexer definition. *)
-
-(* Token type definition exposed to other modules *)
-type token =
-  (* Keywords *)
-  | FUNC | PACKAGE | IMPORT | TYPE | STRUCT | RETURN | BREAK | IF | ELSE
-  | CONTINUE | FOR | CONST | VAR | MAKE | WHILE
-  | TRUE | FALSE | FINAL | MUT | LATE | PRIVATE | GET | POST | DELETE | ERROR
-  | NULL
-
-  (* Built-in type keywords *)
-  | BOOL
-  | STRING
-  | U8 | U16 | U32 | U64
-  | I8 | I16 | I32 | I64
-  | F16 | F32
-
-  (* Identifiers *)
-  | IDENT of string
-
-  (* Literals *)
-  | INT_LIT of int
-  | FLOAT_LIT of float
-  | BOOL_LIT of bool
-  | STRING_LIT of string (* string literal *)
-  | CHAR_LIT of char
-
-  (* Operators *)
-  (* Arithmetic *)
-  | PLUS | MINUS | DIV | MOD
-  (* Bitwise *)
-  | LSHIFT | RSHIFT | BITXOR | BITOR | BITNOT
-  (* Assignment *)
-  | ASSIGN | DECL_ASSIGN (* = vs := *)
-  | PLUS_ASSIGN | MINUS_ASSIGN | TIMES_ASSIGN | DIV_ASSIGN | MOD_ASSIGN
-  | LSHIFT_ASSIGN | RSHIFT_ASSIGN | BITAND_ASSIGN | BITXOR_ASSIGN | BITOR_ASSIGN
-  (* Equivalence *)
-  | EQ | NEQ | LT | LE | GT | GE
-  (* Logical *)
-  | AND | OR | NOT
-  (* Unary *)
-  | INC | DEC
-  (* Ambiguous - BITAND/ADDR_OF or DEREF/TIMES *)
-  | AMPERSAND | ASTERISK
-
-  (* Separators *)
-  | LPAREN | RPAREN | LBRACE | RBRACE | LBRACKET | RBRACKET
-  | SEMICOLON | COLON | COMMA | DOT | QUESTION
-
-  (* Special tokens *)
-  | EOF     (* End of file *)
-
-}
+(* OCamllex scanner for P.A.T. *)
 
 (* Regular expressions for token components *)
 let digit      = ['0'-'9']
 let alpha      = ['a'-'z' 'A'-'Z']
 let whitespace = [' ' '\t']
-let newline    = '\n' | '\r' | "\r\n"
+let newline    = ['\n' '\r' "\r\n"]
 let identifier = alpha (alpha | digit | '_')*
 
 (* Literals *)
 let int_lit = ['-']? digit+
 let float_lit = ['-']? ((digit* '.' digit+) | (digit+ '.' digit*))
+
 (* Boolean literal? Also, define string_lit as 0 or more char_lit? *)
 let string_lit = '"' ([^ '"' '\\' '\n'])* '"' (* Match nicely formatted strings. No multi-line *)
-let char_lit = '\'' ([^ '\'' '\\' '\n']) '\'' (* Match nicely formatted strings. No multi-line *)
+let char_lit = '\'' ([^ '\'' '\\' '\n']) '\'' (* Match nicely formatted chars. No multi-line *)
 
 rule token = parse
     (* Whitespace *)
@@ -139,16 +84,16 @@ rule token = parse
     (* Literals *)
     | int_lit               { INT_LIT (int_of_string (Lexing.lexeme lexbuf)) }
     | float_lit             { FLOAT_LIT (float_of_string (Lexing.lexeme lexbuf)) }
-    | string_lit            { let s = Lexing.lexeme lexbuf in
-                                (* Remove the quotes *)
-                                STRING_LIT (String.sub s 1 (String.length s - 2))}
-    | char_lit              { let c = Lexing.lexeme lexbuf in
-                                CHAR_LIT (String.get c 1)}
+    
+    (* Remove quotes from str and char *)
+    | string_lit            { let s = Lexing.lexeme lexbuf in STRING_LIT (String.sub s 1 (String.length s - 2))}
+    | char_lit              { let c = Lexing.lexeme lexbuf in CHAR_LIT (String.get c 1)}
 
     (* Arithmetic *)
     | "+"                   { PLUS }
     | "-"                   { MINUS }
     | "/"                   { DIV }
+    | "*"                   { TIMES }
     | "%"                   { MOD }
 
     (* Bitwise *)
@@ -209,9 +154,8 @@ rule token = parse
     (* Ocamllex checks rules in order, so this is after keywords *)
     | identifier            { IDENT (Lexing.lexeme lexbuf) }
     | eof                   { EOF }
-    | _                     { raise (Failure (Printf.sprintf "Unrecognized token: %s" (Lexing.lexeme lexbuf))) }
+    | _                     { raise (Failure (Printf.sprintf "unrecognized token: %s" (Lexing.lexeme lexbuf))) }
 
 and comment = parse
     | "*/"      { token lexbuf }
-    | newline   { comment lexbuf }
     | _         { comment lexbuf }
