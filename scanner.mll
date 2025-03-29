@@ -93,7 +93,7 @@ rule token = parse
     | "+"                   { PLUS }
     | "-"                   { MINUS }
     | "/"                   { DIV }
-    | "*"                   { TIMES }
+    | "*"                   { TIMES } (* new *)
     | "%"                   { MOD }
 
     (* Bitwise *)
@@ -102,6 +102,7 @@ rule token = parse
     | "^"                   { BITXOR }
     | "|"                   { BITOR }
     | "~"                   { BITNOT }
+    | "&"                   { BITAND } (* new *)
 
     (* Assignment *)
     | "="                   { ASSIGN }
@@ -130,7 +131,7 @@ rule token = parse
     | "||"                  { OR }
     | "!"                   { NOT }
 
-    (* Ambiguous - parser needs to disambiguate *)
+    (* Ambiguous - Parser needs to disambiguate *)
     | "&"                   { AMPERSAND }
     | "*"                   { ASTERISK }
 
@@ -149,7 +150,7 @@ rule token = parse
     | ":"                   { COLON }
     | ","                   { COMMA }
     | "."                   { DOT }
-    | "?"                   { QUESTION }
+    | "?"                   { QUESTION } (* ternary? *)
 
     (* Ocamllex checks rules in order, so this is after keywords *)
     | identifier            { IDENT (Lexing.lexeme lexbuf) }
