@@ -19,8 +19,9 @@ type expr =
   | StringLit of string
   | Assign of string * expr
   | Binop of expr * biop * expr
-  | Seq of expr * expr
-  | Id of string
+  | Unaop of unop * expr
+  | Sequence of expr * expr
+  | Identifier of string
 
 (* statement in lang *)
 type stmt =

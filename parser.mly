@@ -74,7 +74,13 @@ expr:
 | expr GE        expr         { Binop($1, Ge, $3) }
 | expr AND       expr         { Binop($1, And, $3) }
 | expr OR        expr         { Binop($1, Or, $3) }
-| expr SEMICOLON expr         { Seq ($1, $3)} (* sequencing *)
-| IDENT ASSIGN expr           { Assign ($1, $3)} (* assignment *)
-| IDENT                       { Var($1) } (* variable id *)
-| LITERAL                     { Lit($1) }
+| expr SEMICOLON expr         { Sequence($1, $3)} (* sequencing *)
+| IDENT ASSIGN expr           { Assign($1, $3)} (* assignment *)
+| INT_LIT                     { IntLit($1) }
+| BOOL_LIT                    { BoolLit($1) }
+| CHAR_LIT                    { CharLit($1) }
+| FLOAT_LIT                   { FloatLit($1) }
+| STRING_LIT                  { StringLit($1) }
+| IDENT                       { Identifier($1) }
+
+(* NOT DONE *)
