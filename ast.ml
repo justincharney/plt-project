@@ -17,16 +17,19 @@ type expr =
   | CharLit of char
   | FloatLit of float
   | StringLit of string
-  | Assign of string * expr
   | Binop of expr * biop * expr
   | Unaop of unop * expr
-  | Sequence of expr * expr
   | Identifier of string
 
-(* statement in lang *)
+
+(* statement in lang, only decl or expr *)
 type stmt =
-  | If of expr * stmt * stmt
+  | Block of seq
+  | Expr of expr
+  | If of expr * stmt * stmt (* Handle empty else case *)
   | While of expr * stmt
+  | For of expr * stmt
+
 
 (* old code *)
 type primitive_type =

@@ -1,0 +1,1282 @@
+   0  $accept : %entry% $end
+
+   1  program : expr EOF
+
+   2  expr : expr PLUS expr
+   3       | expr MINUS expr
+   4       | expr TIMES expr
+   5       | expr DIV expr
+   6       | expr MOD expr
+   7       | expr LSHIFT expr
+   8       | expr RSHIFT expr
+   9       | expr BITXOR expr
+  10       | expr BITOR expr
+  11       | expr BITAND expr
+  12       | expr EQ expr
+  13       | expr NEQ expr
+  14       | expr LT expr
+  15       | expr LE expr
+  16       | expr GT expr
+  17       | expr GE expr
+  18       | expr AND expr
+  19       | expr OR expr
+  20       | expr SEMICOLON expr
+  21       | IDENT ASSIGN expr
+  22       | INT_LIT
+  23       | BOOL_LIT
+  24       | CHAR_LIT
+  25       | FLOAT_LIT
+  26       | STRING_LIT
+  27       | IDENT
+
+  28  %entry% : '\001' program
+
+state 0
+	$accept : . %entry% $end  (0)
+
+	'\001'  shift 1
+	.  error
+
+	%entry%  goto 2
+
+
+state 1
+	%entry% : '\001' . program  (28)
+
+	INT_LIT  shift 3
+	BOOL_LIT  shift 4
+	CHAR_LIT  shift 5
+	FLOAT_LIT  shift 6
+	STRING_LIT  shift 7
+	IDENT  shift 8
+	.  error
+
+	program  goto 9
+	expr  goto 10
+
+
+state 2
+	$accept : %entry% . $end  (0)
+
+	$end  accept
+
+
+state 3
+	expr : INT_LIT .  (22)
+
+	.  reduce 22
+
+
+state 4
+	expr : BOOL_LIT .  (23)
+
+	.  reduce 23
+
+
+state 5
+	expr : CHAR_LIT .  (24)
+
+	.  reduce 24
+
+
+state 6
+	expr : FLOAT_LIT .  (25)
+
+	.  reduce 25
+
+
+state 7
+	expr : STRING_LIT .  (26)
+
+	.  reduce 26
+
+
+state 8
+	expr : IDENT . ASSIGN expr  (21)
+	expr : IDENT .  (27)
+
+	ASSIGN  shift 11
+	PLUS  reduce 27
+	MINUS  reduce 27
+	DIV  reduce 27
+	TIMES  reduce 27
+	MOD  reduce 27
+	LSHIFT  reduce 27
+	RSHIFT  reduce 27
+	BITXOR  reduce 27
+	BITOR  reduce 27
+	EQ  reduce 27
+	NEQ  reduce 27
+	LT  reduce 27
+	LE  reduce 27
+	GT  reduce 27
+	GE  reduce 27
+	AND  reduce 27
+	OR  reduce 27
+	SEMICOLON  reduce 27
+	EOF  reduce 27
+	BITAND  reduce 27
+
+
+state 9
+	%entry% : '\001' program .  (28)
+
+	.  reduce 28
+
+
+state 10
+	program : expr . EOF  (1)
+	expr : expr . PLUS expr  (2)
+	expr : expr . MINUS expr  (3)
+	expr : expr . TIMES expr  (4)
+	expr : expr . DIV expr  (5)
+	expr : expr . MOD expr  (6)
+	expr : expr . LSHIFT expr  (7)
+	expr : expr . RSHIFT expr  (8)
+	expr : expr . BITXOR expr  (9)
+	expr : expr . BITOR expr  (10)
+	expr : expr . BITAND expr  (11)
+	expr : expr . EQ expr  (12)
+	expr : expr . NEQ expr  (13)
+	expr : expr . LT expr  (14)
+	expr : expr . LE expr  (15)
+	expr : expr . GT expr  (16)
+	expr : expr . GE expr  (17)
+	expr : expr . AND expr  (18)
+	expr : expr . OR expr  (19)
+	expr : expr . SEMICOLON expr  (20)
+
+	PLUS  shift 12
+	MINUS  shift 13
+	DIV  shift 14
+	TIMES  shift 15
+	MOD  shift 16
+	LSHIFT  shift 17
+	RSHIFT  shift 18
+	BITXOR  shift 19
+	BITOR  shift 20
+	EQ  shift 21
+	NEQ  shift 22
+	LT  shift 23
+	LE  shift 24
+	GT  shift 25
+	GE  shift 26
+	AND  shift 27
+	OR  shift 28
+	SEMICOLON  shift 29
+	EOF  shift 30
+	BITAND  shift 31
+	.  error
+
+
+state 11
+	expr : IDENT ASSIGN . expr  (21)
+
+	INT_LIT  shift 3
+	BOOL_LIT  shift 4
+	CHAR_LIT  shift 5
+	FLOAT_LIT  shift 6
+	STRING_LIT  shift 7
+	IDENT  shift 8
+	.  error
+
+	expr  goto 32
+
+
+state 12
+	expr : expr PLUS . expr  (2)
+
+	INT_LIT  shift 3
+	BOOL_LIT  shift 4
+	CHAR_LIT  shift 5
+	FLOAT_LIT  shift 6
+	STRING_LIT  shift 7
+	IDENT  shift 8
+	.  error
+
+	expr  goto 33
+
+
+state 13
+	expr : expr MINUS . expr  (3)
+
+	INT_LIT  shift 3
+	BOOL_LIT  shift 4
+	CHAR_LIT  shift 5
+	FLOAT_LIT  shift 6
+	STRING_LIT  shift 7
+	IDENT  shift 8
+	.  error
+
+	expr  goto 34
+
+
+state 14
+	expr : expr DIV . expr  (5)
+
+	INT_LIT  shift 3
+	BOOL_LIT  shift 4
+	CHAR_LIT  shift 5
+	FLOAT_LIT  shift 6
+	STRING_LIT  shift 7
+	IDENT  shift 8
+	.  error
+
+	expr  goto 35
+
+
+state 15
+	expr : expr TIMES . expr  (4)
+
+	INT_LIT  shift 3
+	BOOL_LIT  shift 4
+	CHAR_LIT  shift 5
+	FLOAT_LIT  shift 6
+	STRING_LIT  shift 7
+	IDENT  shift 8
+	.  error
+
+	expr  goto 36
+
+
+state 16
+	expr : expr MOD . expr  (6)
+
+	INT_LIT  shift 3
+	BOOL_LIT  shift 4
+	CHAR_LIT  shift 5
+	FLOAT_LIT  shift 6
+	STRING_LIT  shift 7
+	IDENT  shift 8
+	.  error
+
+	expr  goto 37
+
+
+state 17
+	expr : expr LSHIFT . expr  (7)
+
+	INT_LIT  shift 3
+	BOOL_LIT  shift 4
+	CHAR_LIT  shift 5
+	FLOAT_LIT  shift 6
+	STRING_LIT  shift 7
+	IDENT  shift 8
+	.  error
+
+	expr  goto 38
+
+
+state 18
+	expr : expr RSHIFT . expr  (8)
+
+	INT_LIT  shift 3
+	BOOL_LIT  shift 4
+	CHAR_LIT  shift 5
+	FLOAT_LIT  shift 6
+	STRING_LIT  shift 7
+	IDENT  shift 8
+	.  error
+
+	expr  goto 39
+
+
+state 19
+	expr : expr BITXOR . expr  (9)
+
+	INT_LIT  shift 3
+	BOOL_LIT  shift 4
+	CHAR_LIT  shift 5
+	FLOAT_LIT  shift 6
+	STRING_LIT  shift 7
+	IDENT  shift 8
+	.  error
+
+	expr  goto 40
+
+
+state 20
+	expr : expr BITOR . expr  (10)
+
+	INT_LIT  shift 3
+	BOOL_LIT  shift 4
+	CHAR_LIT  shift 5
+	FLOAT_LIT  shift 6
+	STRING_LIT  shift 7
+	IDENT  shift 8
+	.  error
+
+	expr  goto 41
+
+
+state 21
+	expr : expr EQ . expr  (12)
+
+	INT_LIT  shift 3
+	BOOL_LIT  shift 4
+	CHAR_LIT  shift 5
+	FLOAT_LIT  shift 6
+	STRING_LIT  shift 7
+	IDENT  shift 8
+	.  error
+
+	expr  goto 42
+
+
+state 22
+	expr : expr NEQ . expr  (13)
+
+	INT_LIT  shift 3
+	BOOL_LIT  shift 4
+	CHAR_LIT  shift 5
+	FLOAT_LIT  shift 6
+	STRING_LIT  shift 7
+	IDENT  shift 8
+	.  error
+
+	expr  goto 43
+
+
+state 23
+	expr : expr LT . expr  (14)
+
+	INT_LIT  shift 3
+	BOOL_LIT  shift 4
+	CHAR_LIT  shift 5
+	FLOAT_LIT  shift 6
+	STRING_LIT  shift 7
+	IDENT  shift 8
+	.  error
+
+	expr  goto 44
+
+
+state 24
+	expr : expr LE . expr  (15)
+
+	INT_LIT  shift 3
+	BOOL_LIT  shift 4
+	CHAR_LIT  shift 5
+	FLOAT_LIT  shift 6
+	STRING_LIT  shift 7
+	IDENT  shift 8
+	.  error
+
+	expr  goto 45
+
+
+state 25
+	expr : expr GT . expr  (16)
+
+	INT_LIT  shift 3
+	BOOL_LIT  shift 4
+	CHAR_LIT  shift 5
+	FLOAT_LIT  shift 6
+	STRING_LIT  shift 7
+	IDENT  shift 8
+	.  error
+
+	expr  goto 46
+
+
+state 26
+	expr : expr GE . expr  (17)
+
+	INT_LIT  shift 3
+	BOOL_LIT  shift 4
+	CHAR_LIT  shift 5
+	FLOAT_LIT  shift 6
+	STRING_LIT  shift 7
+	IDENT  shift 8
+	.  error
+
+	expr  goto 47
+
+
+state 27
+	expr : expr AND . expr  (18)
+
+	INT_LIT  shift 3
+	BOOL_LIT  shift 4
+	CHAR_LIT  shift 5
+	FLOAT_LIT  shift 6
+	STRING_LIT  shift 7
+	IDENT  shift 8
+	.  error
+
+	expr  goto 48
+
+
+state 28
+	expr : expr OR . expr  (19)
+
+	INT_LIT  shift 3
+	BOOL_LIT  shift 4
+	CHAR_LIT  shift 5
+	FLOAT_LIT  shift 6
+	STRING_LIT  shift 7
+	IDENT  shift 8
+	.  error
+
+	expr  goto 49
+
+
+state 29
+	expr : expr SEMICOLON . expr  (20)
+
+	INT_LIT  shift 3
+	BOOL_LIT  shift 4
+	CHAR_LIT  shift 5
+	FLOAT_LIT  shift 6
+	STRING_LIT  shift 7
+	IDENT  shift 8
+	.  error
+
+	expr  goto 50
+
+
+state 30
+	program : expr EOF .  (1)
+
+	.  reduce 1
+
+
+state 31
+	expr : expr BITAND . expr  (11)
+
+	INT_LIT  shift 3
+	BOOL_LIT  shift 4
+	CHAR_LIT  shift 5
+	FLOAT_LIT  shift 6
+	STRING_LIT  shift 7
+	IDENT  shift 8
+	.  error
+
+	expr  goto 51
+
+
+state 32
+	expr : expr . PLUS expr  (2)
+	expr : expr . MINUS expr  (3)
+	expr : expr . TIMES expr  (4)
+	expr : expr . DIV expr  (5)
+	expr : expr . MOD expr  (6)
+	expr : expr . LSHIFT expr  (7)
+	expr : expr . RSHIFT expr  (8)
+	expr : expr . BITXOR expr  (9)
+	expr : expr . BITOR expr  (10)
+	expr : expr . BITAND expr  (11)
+	expr : expr . EQ expr  (12)
+	expr : expr . NEQ expr  (13)
+	expr : expr . LT expr  (14)
+	expr : expr . LE expr  (15)
+	expr : expr . GT expr  (16)
+	expr : expr . GE expr  (17)
+	expr : expr . AND expr  (18)
+	expr : expr . OR expr  (19)
+	expr : expr . SEMICOLON expr  (20)
+	expr : IDENT ASSIGN expr .  (21)
+
+	PLUS  shift 12
+	MINUS  shift 13
+	DIV  shift 14
+	TIMES  shift 15
+	MOD  shift 16
+	LSHIFT  shift 17
+	RSHIFT  shift 18
+	BITXOR  shift 19
+	BITOR  shift 20
+	EQ  shift 21
+	NEQ  shift 22
+	LT  shift 23
+	LE  shift 24
+	GT  shift 25
+	GE  shift 26
+	AND  shift 27
+	OR  shift 28
+	BITAND  shift 31
+	SEMICOLON  reduce 21
+	EOF  reduce 21
+
+
+state 33
+	expr : expr . PLUS expr  (2)
+	expr : expr PLUS expr .  (2)
+	expr : expr . MINUS expr  (3)
+	expr : expr . TIMES expr  (4)
+	expr : expr . DIV expr  (5)
+	expr : expr . MOD expr  (6)
+	expr : expr . LSHIFT expr  (7)
+	expr : expr . RSHIFT expr  (8)
+	expr : expr . BITXOR expr  (9)
+	expr : expr . BITOR expr  (10)
+	expr : expr . BITAND expr  (11)
+	expr : expr . EQ expr  (12)
+	expr : expr . NEQ expr  (13)
+	expr : expr . LT expr  (14)
+	expr : expr . LE expr  (15)
+	expr : expr . GT expr  (16)
+	expr : expr . GE expr  (17)
+	expr : expr . AND expr  (18)
+	expr : expr . OR expr  (19)
+	expr : expr . SEMICOLON expr  (20)
+
+	DIV  shift 14
+	TIMES  shift 15
+	MOD  shift 16
+	PLUS  reduce 2
+	MINUS  reduce 2
+	LSHIFT  reduce 2
+	RSHIFT  reduce 2
+	BITXOR  reduce 2
+	BITOR  reduce 2
+	EQ  reduce 2
+	NEQ  reduce 2
+	LT  reduce 2
+	LE  reduce 2
+	GT  reduce 2
+	GE  reduce 2
+	AND  reduce 2
+	OR  reduce 2
+	SEMICOLON  reduce 2
+	EOF  reduce 2
+	BITAND  reduce 2
+
+
+state 34
+	expr : expr . PLUS expr  (2)
+	expr : expr . MINUS expr  (3)
+	expr : expr MINUS expr .  (3)
+	expr : expr . TIMES expr  (4)
+	expr : expr . DIV expr  (5)
+	expr : expr . MOD expr  (6)
+	expr : expr . LSHIFT expr  (7)
+	expr : expr . RSHIFT expr  (8)
+	expr : expr . BITXOR expr  (9)
+	expr : expr . BITOR expr  (10)
+	expr : expr . BITAND expr  (11)
+	expr : expr . EQ expr  (12)
+	expr : expr . NEQ expr  (13)
+	expr : expr . LT expr  (14)
+	expr : expr . LE expr  (15)
+	expr : expr . GT expr  (16)
+	expr : expr . GE expr  (17)
+	expr : expr . AND expr  (18)
+	expr : expr . OR expr  (19)
+	expr : expr . SEMICOLON expr  (20)
+
+	DIV  shift 14
+	TIMES  shift 15
+	MOD  shift 16
+	PLUS  reduce 3
+	MINUS  reduce 3
+	LSHIFT  reduce 3
+	RSHIFT  reduce 3
+	BITXOR  reduce 3
+	BITOR  reduce 3
+	EQ  reduce 3
+	NEQ  reduce 3
+	LT  reduce 3
+	LE  reduce 3
+	GT  reduce 3
+	GE  reduce 3
+	AND  reduce 3
+	OR  reduce 3
+	SEMICOLON  reduce 3
+	EOF  reduce 3
+	BITAND  reduce 3
+
+
+state 35
+	expr : expr . PLUS expr  (2)
+	expr : expr . MINUS expr  (3)
+	expr : expr . TIMES expr  (4)
+	expr : expr . DIV expr  (5)
+	expr : expr DIV expr .  (5)
+	expr : expr . MOD expr  (6)
+	expr : expr . LSHIFT expr  (7)
+	expr : expr . RSHIFT expr  (8)
+	expr : expr . BITXOR expr  (9)
+	expr : expr . BITOR expr  (10)
+	expr : expr . BITAND expr  (11)
+	expr : expr . EQ expr  (12)
+	expr : expr . NEQ expr  (13)
+	expr : expr . LT expr  (14)
+	expr : expr . LE expr  (15)
+	expr : expr . GT expr  (16)
+	expr : expr . GE expr  (17)
+	expr : expr . AND expr  (18)
+	expr : expr . OR expr  (19)
+	expr : expr . SEMICOLON expr  (20)
+
+	.  reduce 5
+
+
+state 36
+	expr : expr . PLUS expr  (2)
+	expr : expr . MINUS expr  (3)
+	expr : expr . TIMES expr  (4)
+	expr : expr TIMES expr .  (4)
+	expr : expr . DIV expr  (5)
+	expr : expr . MOD expr  (6)
+	expr : expr . LSHIFT expr  (7)
+	expr : expr . RSHIFT expr  (8)
+	expr : expr . BITXOR expr  (9)
+	expr : expr . BITOR expr  (10)
+	expr : expr . BITAND expr  (11)
+	expr : expr . EQ expr  (12)
+	expr : expr . NEQ expr  (13)
+	expr : expr . LT expr  (14)
+	expr : expr . LE expr  (15)
+	expr : expr . GT expr  (16)
+	expr : expr . GE expr  (17)
+	expr : expr . AND expr  (18)
+	expr : expr . OR expr  (19)
+	expr : expr . SEMICOLON expr  (20)
+
+	.  reduce 4
+
+
+state 37
+	expr : expr . PLUS expr  (2)
+	expr : expr . MINUS expr  (3)
+	expr : expr . TIMES expr  (4)
+	expr : expr . DIV expr  (5)
+	expr : expr . MOD expr  (6)
+	expr : expr MOD expr .  (6)
+	expr : expr . LSHIFT expr  (7)
+	expr : expr . RSHIFT expr  (8)
+	expr : expr . BITXOR expr  (9)
+	expr : expr . BITOR expr  (10)
+	expr : expr . BITAND expr  (11)
+	expr : expr . EQ expr  (12)
+	expr : expr . NEQ expr  (13)
+	expr : expr . LT expr  (14)
+	expr : expr . LE expr  (15)
+	expr : expr . GT expr  (16)
+	expr : expr . GE expr  (17)
+	expr : expr . AND expr  (18)
+	expr : expr . OR expr  (19)
+	expr : expr . SEMICOLON expr  (20)
+
+	.  reduce 6
+
+
+state 38
+	expr : expr . PLUS expr  (2)
+	expr : expr . MINUS expr  (3)
+	expr : expr . TIMES expr  (4)
+	expr : expr . DIV expr  (5)
+	expr : expr . MOD expr  (6)
+	expr : expr . LSHIFT expr  (7)
+	expr : expr LSHIFT expr .  (7)
+	expr : expr . RSHIFT expr  (8)
+	expr : expr . BITXOR expr  (9)
+	expr : expr . BITOR expr  (10)
+	expr : expr . BITAND expr  (11)
+	expr : expr . EQ expr  (12)
+	expr : expr . NEQ expr  (13)
+	expr : expr . LT expr  (14)
+	expr : expr . LE expr  (15)
+	expr : expr . GT expr  (16)
+	expr : expr . GE expr  (17)
+	expr : expr . AND expr  (18)
+	expr : expr . OR expr  (19)
+	expr : expr . SEMICOLON expr  (20)
+
+	PLUS  shift 12
+	MINUS  shift 13
+	DIV  shift 14
+	TIMES  shift 15
+	MOD  shift 16
+	LSHIFT  reduce 7
+	RSHIFT  reduce 7
+	BITXOR  reduce 7
+	BITOR  reduce 7
+	EQ  reduce 7
+	NEQ  reduce 7
+	LT  reduce 7
+	LE  reduce 7
+	GT  reduce 7
+	GE  reduce 7
+	AND  reduce 7
+	OR  reduce 7
+	SEMICOLON  reduce 7
+	EOF  reduce 7
+	BITAND  reduce 7
+
+
+state 39
+	expr : expr . PLUS expr  (2)
+	expr : expr . MINUS expr  (3)
+	expr : expr . TIMES expr  (4)
+	expr : expr . DIV expr  (5)
+	expr : expr . MOD expr  (6)
+	expr : expr . LSHIFT expr  (7)
+	expr : expr . RSHIFT expr  (8)
+	expr : expr RSHIFT expr .  (8)
+	expr : expr . BITXOR expr  (9)
+	expr : expr . BITOR expr  (10)
+	expr : expr . BITAND expr  (11)
+	expr : expr . EQ expr  (12)
+	expr : expr . NEQ expr  (13)
+	expr : expr . LT expr  (14)
+	expr : expr . LE expr  (15)
+	expr : expr . GT expr  (16)
+	expr : expr . GE expr  (17)
+	expr : expr . AND expr  (18)
+	expr : expr . OR expr  (19)
+	expr : expr . SEMICOLON expr  (20)
+
+	PLUS  shift 12
+	MINUS  shift 13
+	DIV  shift 14
+	TIMES  shift 15
+	MOD  shift 16
+	LSHIFT  reduce 8
+	RSHIFT  reduce 8
+	BITXOR  reduce 8
+	BITOR  reduce 8
+	EQ  reduce 8
+	NEQ  reduce 8
+	LT  reduce 8
+	LE  reduce 8
+	GT  reduce 8
+	GE  reduce 8
+	AND  reduce 8
+	OR  reduce 8
+	SEMICOLON  reduce 8
+	EOF  reduce 8
+	BITAND  reduce 8
+
+
+state 40
+	expr : expr . PLUS expr  (2)
+	expr : expr . MINUS expr  (3)
+	expr : expr . TIMES expr  (4)
+	expr : expr . DIV expr  (5)
+	expr : expr . MOD expr  (6)
+	expr : expr . LSHIFT expr  (7)
+	expr : expr . RSHIFT expr  (8)
+	expr : expr . BITXOR expr  (9)
+	expr : expr BITXOR expr .  (9)
+	expr : expr . BITOR expr  (10)
+	expr : expr . BITAND expr  (11)
+	expr : expr . EQ expr  (12)
+	expr : expr . NEQ expr  (13)
+	expr : expr . LT expr  (14)
+	expr : expr . LE expr  (15)
+	expr : expr . GT expr  (16)
+	expr : expr . GE expr  (17)
+	expr : expr . AND expr  (18)
+	expr : expr . OR expr  (19)
+	expr : expr . SEMICOLON expr  (20)
+
+	PLUS  shift 12
+	MINUS  shift 13
+	DIV  shift 14
+	TIMES  shift 15
+	MOD  shift 16
+	LSHIFT  shift 17
+	RSHIFT  shift 18
+	EQ  shift 21
+	NEQ  shift 22
+	LT  shift 23
+	LE  shift 24
+	GT  shift 25
+	GE  shift 26
+	BITAND  shift 31
+	BITXOR  reduce 9
+	BITOR  reduce 9
+	AND  reduce 9
+	OR  reduce 9
+	SEMICOLON  reduce 9
+	EOF  reduce 9
+
+
+state 41
+	expr : expr . PLUS expr  (2)
+	expr : expr . MINUS expr  (3)
+	expr : expr . TIMES expr  (4)
+	expr : expr . DIV expr  (5)
+	expr : expr . MOD expr  (6)
+	expr : expr . LSHIFT expr  (7)
+	expr : expr . RSHIFT expr  (8)
+	expr : expr . BITXOR expr  (9)
+	expr : expr . BITOR expr  (10)
+	expr : expr BITOR expr .  (10)
+	expr : expr . BITAND expr  (11)
+	expr : expr . EQ expr  (12)
+	expr : expr . NEQ expr  (13)
+	expr : expr . LT expr  (14)
+	expr : expr . LE expr  (15)
+	expr : expr . GT expr  (16)
+	expr : expr . GE expr  (17)
+	expr : expr . AND expr  (18)
+	expr : expr . OR expr  (19)
+	expr : expr . SEMICOLON expr  (20)
+
+	PLUS  shift 12
+	MINUS  shift 13
+	DIV  shift 14
+	TIMES  shift 15
+	MOD  shift 16
+	LSHIFT  shift 17
+	RSHIFT  shift 18
+	BITXOR  shift 19
+	EQ  shift 21
+	NEQ  shift 22
+	LT  shift 23
+	LE  shift 24
+	GT  shift 25
+	GE  shift 26
+	BITAND  shift 31
+	BITOR  reduce 10
+	AND  reduce 10
+	OR  reduce 10
+	SEMICOLON  reduce 10
+	EOF  reduce 10
+
+
+state 42
+	expr : expr . PLUS expr  (2)
+	expr : expr . MINUS expr  (3)
+	expr : expr . TIMES expr  (4)
+	expr : expr . DIV expr  (5)
+	expr : expr . MOD expr  (6)
+	expr : expr . LSHIFT expr  (7)
+	expr : expr . RSHIFT expr  (8)
+	expr : expr . BITXOR expr  (9)
+	expr : expr . BITOR expr  (10)
+	expr : expr . BITAND expr  (11)
+	expr : expr . EQ expr  (12)
+	expr : expr EQ expr .  (12)
+	expr : expr . NEQ expr  (13)
+	expr : expr . LT expr  (14)
+	expr : expr . LE expr  (15)
+	expr : expr . GT expr  (16)
+	expr : expr . GE expr  (17)
+	expr : expr . AND expr  (18)
+	expr : expr . OR expr  (19)
+	expr : expr . SEMICOLON expr  (20)
+
+	PLUS  shift 12
+	MINUS  shift 13
+	DIV  shift 14
+	TIMES  shift 15
+	MOD  shift 16
+	LSHIFT  shift 17
+	RSHIFT  shift 18
+	LT  shift 23
+	LE  shift 24
+	GT  shift 25
+	GE  shift 26
+	BITXOR  reduce 12
+	BITOR  reduce 12
+	EQ  reduce 12
+	NEQ  reduce 12
+	AND  reduce 12
+	OR  reduce 12
+	SEMICOLON  reduce 12
+	EOF  reduce 12
+	BITAND  reduce 12
+
+
+state 43
+	expr : expr . PLUS expr  (2)
+	expr : expr . MINUS expr  (3)
+	expr : expr . TIMES expr  (4)
+	expr : expr . DIV expr  (5)
+	expr : expr . MOD expr  (6)
+	expr : expr . LSHIFT expr  (7)
+	expr : expr . RSHIFT expr  (8)
+	expr : expr . BITXOR expr  (9)
+	expr : expr . BITOR expr  (10)
+	expr : expr . BITAND expr  (11)
+	expr : expr . EQ expr  (12)
+	expr : expr . NEQ expr  (13)
+	expr : expr NEQ expr .  (13)
+	expr : expr . LT expr  (14)
+	expr : expr . LE expr  (15)
+	expr : expr . GT expr  (16)
+	expr : expr . GE expr  (17)
+	expr : expr . AND expr  (18)
+	expr : expr . OR expr  (19)
+	expr : expr . SEMICOLON expr  (20)
+
+	PLUS  shift 12
+	MINUS  shift 13
+	DIV  shift 14
+	TIMES  shift 15
+	MOD  shift 16
+	LSHIFT  shift 17
+	RSHIFT  shift 18
+	LT  shift 23
+	LE  shift 24
+	GT  shift 25
+	GE  shift 26
+	BITXOR  reduce 13
+	BITOR  reduce 13
+	EQ  reduce 13
+	NEQ  reduce 13
+	AND  reduce 13
+	OR  reduce 13
+	SEMICOLON  reduce 13
+	EOF  reduce 13
+	BITAND  reduce 13
+
+
+state 44
+	expr : expr . PLUS expr  (2)
+	expr : expr . MINUS expr  (3)
+	expr : expr . TIMES expr  (4)
+	expr : expr . DIV expr  (5)
+	expr : expr . MOD expr  (6)
+	expr : expr . LSHIFT expr  (7)
+	expr : expr . RSHIFT expr  (8)
+	expr : expr . BITXOR expr  (9)
+	expr : expr . BITOR expr  (10)
+	expr : expr . BITAND expr  (11)
+	expr : expr . EQ expr  (12)
+	expr : expr . NEQ expr  (13)
+	expr : expr . LT expr  (14)
+	expr : expr LT expr .  (14)
+	expr : expr . LE expr  (15)
+	expr : expr . GT expr  (16)
+	expr : expr . GE expr  (17)
+	expr : expr . AND expr  (18)
+	expr : expr . OR expr  (19)
+	expr : expr . SEMICOLON expr  (20)
+
+	PLUS  shift 12
+	MINUS  shift 13
+	DIV  shift 14
+	TIMES  shift 15
+	MOD  shift 16
+	LSHIFT  shift 17
+	RSHIFT  shift 18
+	BITXOR  reduce 14
+	BITOR  reduce 14
+	EQ  reduce 14
+	NEQ  reduce 14
+	LT  reduce 14
+	LE  reduce 14
+	GT  reduce 14
+	GE  reduce 14
+	AND  reduce 14
+	OR  reduce 14
+	SEMICOLON  reduce 14
+	EOF  reduce 14
+	BITAND  reduce 14
+
+
+state 45
+	expr : expr . PLUS expr  (2)
+	expr : expr . MINUS expr  (3)
+	expr : expr . TIMES expr  (4)
+	expr : expr . DIV expr  (5)
+	expr : expr . MOD expr  (6)
+	expr : expr . LSHIFT expr  (7)
+	expr : expr . RSHIFT expr  (8)
+	expr : expr . BITXOR expr  (9)
+	expr : expr . BITOR expr  (10)
+	expr : expr . BITAND expr  (11)
+	expr : expr . EQ expr  (12)
+	expr : expr . NEQ expr  (13)
+	expr : expr . LT expr  (14)
+	expr : expr . LE expr  (15)
+	expr : expr LE expr .  (15)
+	expr : expr . GT expr  (16)
+	expr : expr . GE expr  (17)
+	expr : expr . AND expr  (18)
+	expr : expr . OR expr  (19)
+	expr : expr . SEMICOLON expr  (20)
+
+	PLUS  shift 12
+	MINUS  shift 13
+	DIV  shift 14
+	TIMES  shift 15
+	MOD  shift 16
+	LSHIFT  shift 17
+	RSHIFT  shift 18
+	BITXOR  reduce 15
+	BITOR  reduce 15
+	EQ  reduce 15
+	NEQ  reduce 15
+	LT  reduce 15
+	LE  reduce 15
+	GT  reduce 15
+	GE  reduce 15
+	AND  reduce 15
+	OR  reduce 15
+	SEMICOLON  reduce 15
+	EOF  reduce 15
+	BITAND  reduce 15
+
+
+state 46
+	expr : expr . PLUS expr  (2)
+	expr : expr . MINUS expr  (3)
+	expr : expr . TIMES expr  (4)
+	expr : expr . DIV expr  (5)
+	expr : expr . MOD expr  (6)
+	expr : expr . LSHIFT expr  (7)
+	expr : expr . RSHIFT expr  (8)
+	expr : expr . BITXOR expr  (9)
+	expr : expr . BITOR expr  (10)
+	expr : expr . BITAND expr  (11)
+	expr : expr . EQ expr  (12)
+	expr : expr . NEQ expr  (13)
+	expr : expr . LT expr  (14)
+	expr : expr . LE expr  (15)
+	expr : expr . GT expr  (16)
+	expr : expr GT expr .  (16)
+	expr : expr . GE expr  (17)
+	expr : expr . AND expr  (18)
+	expr : expr . OR expr  (19)
+	expr : expr . SEMICOLON expr  (20)
+
+	PLUS  shift 12
+	MINUS  shift 13
+	DIV  shift 14
+	TIMES  shift 15
+	MOD  shift 16
+	LSHIFT  shift 17
+	RSHIFT  shift 18
+	BITXOR  reduce 16
+	BITOR  reduce 16
+	EQ  reduce 16
+	NEQ  reduce 16
+	LT  reduce 16
+	LE  reduce 16
+	GT  reduce 16
+	GE  reduce 16
+	AND  reduce 16
+	OR  reduce 16
+	SEMICOLON  reduce 16
+	EOF  reduce 16
+	BITAND  reduce 16
+
+
+state 47
+	expr : expr . PLUS expr  (2)
+	expr : expr . MINUS expr  (3)
+	expr : expr . TIMES expr  (4)
+	expr : expr . DIV expr  (5)
+	expr : expr . MOD expr  (6)
+	expr : expr . LSHIFT expr  (7)
+	expr : expr . RSHIFT expr  (8)
+	expr : expr . BITXOR expr  (9)
+	expr : expr . BITOR expr  (10)
+	expr : expr . BITAND expr  (11)
+	expr : expr . EQ expr  (12)
+	expr : expr . NEQ expr  (13)
+	expr : expr . LT expr  (14)
+	expr : expr . LE expr  (15)
+	expr : expr . GT expr  (16)
+	expr : expr . GE expr  (17)
+	expr : expr GE expr .  (17)
+	expr : expr . AND expr  (18)
+	expr : expr . OR expr  (19)
+	expr : expr . SEMICOLON expr  (20)
+
+	PLUS  shift 12
+	MINUS  shift 13
+	DIV  shift 14
+	TIMES  shift 15
+	MOD  shift 16
+	LSHIFT  shift 17
+	RSHIFT  shift 18
+	BITXOR  reduce 17
+	BITOR  reduce 17
+	EQ  reduce 17
+	NEQ  reduce 17
+	LT  reduce 17
+	LE  reduce 17
+	GT  reduce 17
+	GE  reduce 17
+	AND  reduce 17
+	OR  reduce 17
+	SEMICOLON  reduce 17
+	EOF  reduce 17
+	BITAND  reduce 17
+
+
+state 48
+	expr : expr . PLUS expr  (2)
+	expr : expr . MINUS expr  (3)
+	expr : expr . TIMES expr  (4)
+	expr : expr . DIV expr  (5)
+	expr : expr . MOD expr  (6)
+	expr : expr . LSHIFT expr  (7)
+	expr : expr . RSHIFT expr  (8)
+	expr : expr . BITXOR expr  (9)
+	expr : expr . BITOR expr  (10)
+	expr : expr . BITAND expr  (11)
+	expr : expr . EQ expr  (12)
+	expr : expr . NEQ expr  (13)
+	expr : expr . LT expr  (14)
+	expr : expr . LE expr  (15)
+	expr : expr . GT expr  (16)
+	expr : expr . GE expr  (17)
+	expr : expr . AND expr  (18)
+	expr : expr AND expr .  (18)
+	expr : expr . OR expr  (19)
+	expr : expr . SEMICOLON expr  (20)
+
+	PLUS  shift 12
+	MINUS  shift 13
+	DIV  shift 14
+	TIMES  shift 15
+	MOD  shift 16
+	LSHIFT  shift 17
+	RSHIFT  shift 18
+	BITXOR  shift 19
+	BITOR  shift 20
+	EQ  shift 21
+	NEQ  shift 22
+	LT  shift 23
+	LE  shift 24
+	GT  shift 25
+	GE  shift 26
+	BITAND  shift 31
+	AND  reduce 18
+	OR  reduce 18
+	SEMICOLON  reduce 18
+	EOF  reduce 18
+
+
+state 49
+	expr : expr . PLUS expr  (2)
+	expr : expr . MINUS expr  (3)
+	expr : expr . TIMES expr  (4)
+	expr : expr . DIV expr  (5)
+	expr : expr . MOD expr  (6)
+	expr : expr . LSHIFT expr  (7)
+	expr : expr . RSHIFT expr  (8)
+	expr : expr . BITXOR expr  (9)
+	expr : expr . BITOR expr  (10)
+	expr : expr . BITAND expr  (11)
+	expr : expr . EQ expr  (12)
+	expr : expr . NEQ expr  (13)
+	expr : expr . LT expr  (14)
+	expr : expr . LE expr  (15)
+	expr : expr . GT expr  (16)
+	expr : expr . GE expr  (17)
+	expr : expr . AND expr  (18)
+	expr : expr . OR expr  (19)
+	expr : expr OR expr .  (19)
+	expr : expr . SEMICOLON expr  (20)
+
+	PLUS  shift 12
+	MINUS  shift 13
+	DIV  shift 14
+	TIMES  shift 15
+	MOD  shift 16
+	LSHIFT  shift 17
+	RSHIFT  shift 18
+	BITXOR  shift 19
+	BITOR  shift 20
+	EQ  shift 21
+	NEQ  shift 22
+	LT  shift 23
+	LE  shift 24
+	GT  shift 25
+	GE  shift 26
+	AND  shift 27
+	BITAND  shift 31
+	OR  reduce 19
+	SEMICOLON  reduce 19
+	EOF  reduce 19
+
+
+state 50
+	expr : expr . PLUS expr  (2)
+	expr : expr . MINUS expr  (3)
+	expr : expr . TIMES expr  (4)
+	expr : expr . DIV expr  (5)
+	expr : expr . MOD expr  (6)
+	expr : expr . LSHIFT expr  (7)
+	expr : expr . RSHIFT expr  (8)
+	expr : expr . BITXOR expr  (9)
+	expr : expr . BITOR expr  (10)
+	expr : expr . BITAND expr  (11)
+	expr : expr . EQ expr  (12)
+	expr : expr . NEQ expr  (13)
+	expr : expr . LT expr  (14)
+	expr : expr . LE expr  (15)
+	expr : expr . GT expr  (16)
+	expr : expr . GE expr  (17)
+	expr : expr . AND expr  (18)
+	expr : expr . OR expr  (19)
+	expr : expr . SEMICOLON expr  (20)
+	expr : expr SEMICOLON expr .  (20)
+
+	PLUS  shift 12
+	MINUS  shift 13
+	DIV  shift 14
+	TIMES  shift 15
+	MOD  shift 16
+	LSHIFT  shift 17
+	RSHIFT  shift 18
+	BITXOR  shift 19
+	BITOR  shift 20
+	EQ  shift 21
+	NEQ  shift 22
+	LT  shift 23
+	LE  shift 24
+	GT  shift 25
+	GE  shift 26
+	AND  shift 27
+	OR  shift 28
+	BITAND  shift 31
+	SEMICOLON  reduce 20
+	EOF  reduce 20
+
+
+state 51
+	expr : expr . PLUS expr  (2)
+	expr : expr . MINUS expr  (3)
+	expr : expr . TIMES expr  (4)
+	expr : expr . DIV expr  (5)
+	expr : expr . MOD expr  (6)
+	expr : expr . LSHIFT expr  (7)
+	expr : expr . RSHIFT expr  (8)
+	expr : expr . BITXOR expr  (9)
+	expr : expr . BITOR expr  (10)
+	expr : expr . BITAND expr  (11)
+	expr : expr BITAND expr .  (11)
+	expr : expr . EQ expr  (12)
+	expr : expr . NEQ expr  (13)
+	expr : expr . LT expr  (14)
+	expr : expr . LE expr  (15)
+	expr : expr . GT expr  (16)
+	expr : expr . GE expr  (17)
+	expr : expr . AND expr  (18)
+	expr : expr . OR expr  (19)
+	expr : expr . SEMICOLON expr  (20)
+
+	PLUS  shift 12
+	MINUS  shift 13
+	DIV  shift 14
+	TIMES  shift 15
+	MOD  shift 16
+	LSHIFT  shift 17
+	RSHIFT  shift 18
+	EQ  shift 21
+	NEQ  shift 22
+	LT  shift 23
+	LE  shift 24
+	GT  shift 25
+	GE  shift 26
+	BITXOR  reduce 11
+	BITOR  reduce 11
+	AND  reduce 11
+	OR  reduce 11
+	SEMICOLON  reduce 11
+	EOF  reduce 11
+	BITAND  reduce 11
+
+
+93 terminals, 4 nonterminals
+29 grammar rules, 52 states
