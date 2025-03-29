@@ -1,4 +1,4 @@
-(* OCamllex scanner for P.A.T. *)
+(* OCAMLLEX SCANNER FOR P.A.T. *)
 
 (* Regular expressions for token components *)
 let digit      = ['0'-'9']
@@ -8,14 +8,15 @@ let newline    = ['\n' '\r' "\r\n"]
 let identifier = alpha (alpha | digit | '_')*
 
 (* Literals *)
-let int_lit = ['-']? digit+
+let int_lit   = ['-']? digit+
 let float_lit = ['-']? ((digit* '.' digit+) | (digit+ '.' digit*))
 
 (* Boolean literal? Also, define string_lit as 0 or more char_lit? *)
 let string_lit = '"' ([^ '"' '\\' '\n'])* '"' (* Match nicely formatted strings. No multi-line *)
-let char_lit = '\'' ([^ '\'' '\\' '\n']) '\'' (* Match nicely formatted chars. No multi-line *)
+let char_lit   = '\'' ([^ '\'' '\\' '\n']) '\'' (* Match nicely formatted chars. No multi-line *)
 
 rule token = parse
+
     (* Whitespace *)
     | whitespace            { token lexbuf }
     | newline               { token lexbuf }
@@ -24,7 +25,8 @@ rule token = parse
     | "//" [^ '\n']*        { token lexbuf }
     | "/*"                  { comment lexbuf }
 
-    (* Keywords *)
+    (*************** KEYWORDS ***************)
+    
     (* Functions and Packages *)
     | "func"                { FUNC }
     | "package"             { PACKAGE }

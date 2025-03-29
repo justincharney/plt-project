@@ -1,4 +1,4 @@
-/* Ocamlyacc parser */
+(* OCAMLYACC PARSER FOR P.A.T. *)
 
 %{ open Ast %}
 
@@ -44,42 +44,37 @@
 %left PLUS MINUS
 %left TIMES DIV MOD
 %right NOT BITNOT
-%right INC DEC
-%left INC DEC
+%right INC DEC (* ++x *)
+%left INC DEC (* x++ *)
 
 %start program
-%type <Ast.tokenseq> program
+%type <Ast.expr> program
 
 %%
 
 program:
-  tokens EOF { $1}
+  expr EOF { $1 }
 
-tokens:
-   /* nothing */ { [] }
- | one_token tokens { $1 :: $2 }
-
-one_token:
-  | SEMI  {  "SEMI" }
-  | LPAREN { "LPAREN" }
-  | RPAREN { "RPAREN" }
-  | LBRACE { "LBRACE" }
-  | RBRACE { "RBRACE" }
-  | COMMA { "COMMA" }
-  | PLUS { "PLUS" }
-  | MINUS { "MINUS" }
-  | ASSIGN { "ASSIGN" }
-  | EQ { "EQ" }
-  | NEQ { "NEQ" }
-  | LT { "LT" }
-  | AND { "AND" }
-  | OR { "OR" }
-  | IF { "IF" }
-  | ELSE { "ELSE" }
-  | WHILE { "WHILE" }
-  | RETURN { "RETURN" }
-  | INT { "INT" }
-  | BOOL { "BOOL" }
-  | BLIT { "BOOL: " ^ string_of_bool $1 }
-  | LITERAL { "LITERAL: " ^ string_of_int $1 }
-  | ID { "ID: " ^ $1 }
+expr:
+| expr PLUS      expr         { Binop($1, Plus, $3) }
+| expr MINUS     expr         { Binop($1, Minus, $3) }
+| expr TIMES     expr         { Binop($1, Times, $3) }
+| expr DIV       expr         { Binop($1, Div, $3) }
+| expr MOD       expr         { Binop($1, Mod, $3) }
+| expr LSHIFT    expr         { Binop($1, Lshift, $3) }
+| expr RSHIFT    expr         { Binop($1, Rshift, $3) }
+| expr BITXOR    expr         { Binop($1, Bitxor, $3) }
+| expr BITOR     expr         { Binop($1, Bitor, $3) }
+| expr BITAND    expr         { Binop($1, Bitand, $3) }
+| expr EQ        expr         { Binop($1, Eq, $3) }
+| expr NEQ       expr         { Binop($1, Neq, $3) }
+| expr LT        expr         { Binop($1, Lt, $3) }
+| expr LE        expr         { Binop($1, Le, $3) }
+| expr GT        expr         { Binop($1, Gt, $3) }
+| expr GE        expr         { Binop($1, Ge, $3) }
+| expr AND       expr         { Binop($1, And, $3) }
+| expr OR        expr         { Binop($1, Or, $3) }
+| expr SEMICOLON expr         { Seq ($1, $3)} (* sequencing *)
+| IDENT ASSIGN expr           { Assign ($1, $3)} (* assignment *)
+| IDENT                       { Var($1) } (* variable id *)
+| LITERAL                     { Lit($1) }
