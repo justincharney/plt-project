@@ -81,7 +81,7 @@ type token =
 
  (* Separators *)
  | LPAREN | RPAREN | LBRACE | RBRACE | LBRACKET | RBRACKET
- | SEMICOLON | COLON | COMMA | DOT | QUESTION
+ | SEMICOLON | COLON | COMMA | DOT
 
 
  (* Special tokens *)
@@ -243,7 +243,6 @@ rule token = parse
     | ":"                   { COLON }
     | ","                   { COMMA }
     | "."                   { DOT }
-    | "?"                   { QUESTION } (* ternary? *)
 
     (* Ocamllex checks rules in order, so this is after keywords *)
     | identifier            { IDENT (Lexing.lexeme lexbuf) }
