@@ -4,6 +4,32 @@
 
 (* Any OCaml functions defined here will be subsequently available in the remainder of the lexer definition. *)
 
+let interpret_string s =
+  let rec interp i acc =
+    if i >= String.length s then acc
+    else if s.[i] = '\\' then
+      let c = match s.[i+1] with
+        | 'n' -> '\n'
+        | 't' -> '\t'
+        | 'r' -> '\r'
+        | '"' -> '"'
+        | '\\' -> '\\'
+        | _ -> failwith "Invalid escape sequence"
+      in interp (i+2) (acc ^ String.make 1 c)
+    else interp (i+1) (acc ^ String.make 1 s.[i])
+  in interp 0 ""
+
+let interpret_char s =
+  if String.length s = 1 then s.[0]
+  else if s.[0] = '\\' then
+    match s.[1] with
+    | 'n' -> '\n'
+    | 't' -> '\t'
+    | 'r' -> '\r'
+    | '\'' -> '\''
+    | '\\' -> '\\'
+    | _ -> failwith "Invalid escape sequence"
+  else failwith "Invalid character literal"
 
 (* Token type definition exposed to other modules *)
 type token =
@@ -54,7 +80,7 @@ type token =
 
 
  (* Separators *)
- | LPAREN | RPAREN | LBRACE | RBRACE | LBRACKET | BRACKET
+ | LPAREN | RPAREN | LBRACE | RBRACE | LBRACKET | RBRACKET
  | SEMICOLON | COLON | COMMA | DOT | QUESTION
 
 
@@ -68,7 +94,7 @@ type token =
 let digit      = ['0'-'9']
 let alpha      = ['a'-'z' 'A'-'Z']
 let whitespace = [' ' '\t']
-let newline    = ['\n' '\r' "\r\n"]
+let newline    = '\n' | '\r' | "\r\n"
 let identifier = alpha (alpha | digit | '_')*
 
 (* Literals *)
@@ -76,8 +102,8 @@ let int_lit   = ['-']? digit+
 let float_lit = ['-']? ((digit* '.' digit+) | (digit+ '.' digit*))
 
 (* Boolean literal? Also, define string_lit as 0 or more char_lit? *)
-let string_lit = '"' ([^ '"' '\\' '\n'])* '"' (* Match nicely formatted strings. No multi-line *)
-let char_lit   = '\'' ([^ '\'' '\\' '\n']) '\'' (* Match nicely formatted chars. No multi-line *)
+let string_lit = '"' ([^ '"' '\\'] | '\\' ['n' 't' 'r' '"' '\\'])* '"'
+let char_lit = '\'' ([^ '\'' '\\'] | '\\' ['n' 't' 'r' '\'' '\\']) '\''
 
 rule token = parse
 
@@ -90,7 +116,7 @@ rule token = parse
     | "/*"                  { comment lexbuf }
 
     (*************** KEYWORDS ***************)
-    
+
     (* Functions and Packages *)
     | "func"                { FUNC }
     | "package"             { PACKAGE }
@@ -150,16 +176,18 @@ rule token = parse
     (* Literals *)
     | int_lit               { INT_LIT (int_of_string (Lexing.lexeme lexbuf)) }
     | float_lit             { FLOAT_LIT (float_of_string (Lexing.lexeme lexbuf)) }
-    
-    (* Remove quotes from str and char *)
-    | string_lit            { let s = Lexing.lexeme lexbuf in STRING_LIT (String.sub s 1 (String.length s - 2))}
-    | char_lit              { let c = Lexing.lexeme lexbuf in CHAR_LIT (String.get c 1)}
+    | string_lit            { let s = Lexing.lexeme lexbuf in
+                                (* Remove the quotes *)
+                                let content = String.sub s 1 (String.length s - 2) in
+                                STRING_LIT (interpret_string content) }
+    | char_lit              { let c = Lexing.lexeme lexbuf in
+                                let content = String.sub c 1 (String.length c - 2) in
+                                CHAR_LIT (interpret_char content)}
 
     (* Arithmetic *)
     | "+"                   { PLUS }
     | "-"                   { MINUS }
     | "/"                   { DIV }
-    | "*"                   { TIMES } (* new *)
     | "%"                   { MOD }
 
     (* Bitwise *)
@@ -168,7 +196,6 @@ rule token = parse
     | "^"                   { BITXOR }
     | "|"                   { BITOR }
     | "~"                   { BITNOT }
-    | "&"                   { BITAND } (* new *)
 
     (* Assignment *)
     | "="                   { ASSIGN }

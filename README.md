@@ -119,5 +119,7 @@ There are several ways to run the tests:
    dune exec tests/test_scanner.exe
 
    # Or run all tests
-   dune runtest
+   dune clean
+   dune build
+   dune test
    ```
