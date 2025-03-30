@@ -8,7 +8,7 @@ type biop =
 
 (* all unary operators in lang *)
 type unop = 
-  | BITNOT | NOT | INC | DEC
+  | Bitnot | Not | Inc | Dec | Ampersand
 
 (* some basic expression in lang *)
 type expr =
@@ -21,7 +21,6 @@ type expr =
   | Unaop of unop * expr
   | Identifier of string
 
-
 (* statement in lang, only decl or expr *)
 type stmt =
   | Block of seq
@@ -29,7 +28,6 @@ type stmt =
   | If of expr * stmt * stmt (* Handle empty else case *)
   | While of expr * stmt
   | For of expr * stmt
-
 
 (* old code *)
 type primitive_type =

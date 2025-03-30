@@ -32,13 +32,13 @@ let interpret_char s =
   else failwith "Invalid character literal"
 
 (* Token type definition exposed to other modules *)
+
+(* Keywords *)
 type token =
- (* Keywords *)
  | FUNC | PACKAGE | IMPORT | TYPE | STRUCT | RETURN | BREAK | IF | ELSE
  | CONTINUE | FOR | CONST | VAR | MAKE | WHILE
  | TRUE | FALSE | FINAL | MUT | LATE | PRIVATE | GET | POST | DELETE | ERROR
  | NULL
-
 
  (* Built-in type keywords *)
  | BOOL
@@ -47,10 +47,8 @@ type token =
  | I8 | I16 | I32 | I64
  | F16 | F32
 
-
  (* Identifiers *)
  | IDENT of string
-
 
  (* Literals *)
  | INT_LIT of int
@@ -61,32 +59,36 @@ type token =
 
 
  (* Operators *)
+
  (* Arithmetic *)
  | PLUS | MINUS | DIV | MOD
+
  (* Bitwise *)
  | LSHIFT | RSHIFT | BITXOR | BITOR | BITNOT
+
  (* Assignment *)
  | ASSIGN | DECL_ASSIGN (* = vs := *)
  | PLUS_ASSIGN | MINUS_ASSIGN | TIMES_ASSIGN | DIV_ASSIGN | MOD_ASSIGN
  | LSHIFT_ASSIGN | RSHIFT_ASSIGN | BITAND_ASSIGN | BITXOR_ASSIGN | BITOR_ASSIGN
+
  (* Equivalence *)
  | EQ | NEQ | LT | LE | GT | GE
+
  (* Logical *)
  | AND | OR | NOT
+
  (* Unary *)
  | INC | DEC
+
  (* Ambiguous - BITAND/ADDR_OF or DEREF/TIMES *)
  | AMPERSAND | ASTERISK
-
 
  (* Separators *)
  | LPAREN | RPAREN | LBRACE | RBRACE | LBRACKET | RBRACKET
  | SEMICOLON | COLON | COMMA | DOT
 
-
  (* Special tokens *)
  | EOF     (* End of file *)
-
 
 }
 

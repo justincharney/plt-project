@@ -8,7 +8,7 @@
 %token CONST VAR MAKE ERROR NULL 
 %token FINAL MUT LATE PRIVATE GET POST DELETE
 %token BOOL STRING U8 U16 U32 U64 I8 I16 I32 I64 F16 F32
-%token PLUS MINUS DIV TIMES MOD 
+%token PLUS MINUS DIV AMPERSAND MOD 
 %token LSHIFT RSHIFT BITXOR BITOR BITNOT
 %token ASSIGN PLUS_ASSIGN MINUS_ASSIGN TIMES_ASSIGN DIV_ASSIGN MOD_ASSIGN
 %token DECL_ASSIGN LSHIFT_ASSIGN RSHIFT_ASSIGN
@@ -25,16 +25,12 @@
 %token <string> STRING_LIT
 %token <string> IDENT
 
-// included vast majority of precedence rules
-// not included --> DECL_ASSIGN :=
-// are we including a ternary operator? :(
-
 %left SEMICOLON
 %right BITAND_ASSIGN BITOR_ASSIGN BITXOR_ASSIGN
 %right LSHIFT_ASSIGN RSHIFT_ASSIGN
 %right TIMES_ASSIGN DIV_ASSIGN MOD_ASSIGN
 %right PLUS_ASSIGN MINUS_ASSIGN
-%right ASSIGN
+%right ASSIGN DECL_ASSIGN
 %left OR
 %left AND
 %left BITOR
@@ -44,7 +40,7 @@
 %left LT LE GT GE
 %left LSHIFT RSHIFT
 %left PLUS MINUS
-%left TIMES DIV MOD
+%left AMPERSAND DIV MOD
 %right NOT BITNOT
 %left INC DEC (* x++ *)
 
@@ -76,7 +72,7 @@ expr:
 | expr AND       expr         { Binop($1, And, $3) }
 | expr OR        expr         { Binop($1, Or, $3) }
 | expr SEMICOLON expr         { Sequence($1, $3)} (* sequencing *)
-| IDENT ASSIGN expr           { Assign($1, $3)} (* assignment *)
+| IDENT ASSIGN   expr         { Assign($1, $3)} (* assignment *)
 | INT_LIT                     { IntLit($1) }
 | BOOL_LIT                    { BoolLit($1) }
 | CHAR_LIT                    { CharLit($1) }
