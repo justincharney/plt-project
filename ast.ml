@@ -10,6 +10,12 @@ type biop =
 type unop = 
   | Bitnot | Not | Inc | Dec | Ampersand
 
+(* all assignment operators in lang *)
+type asgn = 
+| Assign | Decl_assign | Plus_assign | Minus_Assign 
+| Div_assign | Mod_assign | Lshift_assing | Rshift_assign
+| Bitand_assign | Bitxor_assign | Bitor_assign
+
 (* some basic expression in lang *)
 type expr =
   | IntLit of int
@@ -17,9 +23,13 @@ type expr =
   | CharLit of char
   | FloatLit of float
   | StringLit of string
+  | Identifier of string
+
   | Binop of expr * biop * expr
   | Unaop of unop * expr
-  | Identifier of string
+
+type assignment = 
+  | Assignment of expr * asgn * expr 
 
 (* statement in lang, only decl or expr *)
 type stmt =
