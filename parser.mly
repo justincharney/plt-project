@@ -55,7 +55,7 @@ program:
 expr:
 | expr PLUS      expr         { Binop($1, Plus, $3) }
 | expr MINUS     expr         { Binop($1, Minus, $3) }
-| expr TIMES     expr         { Binop($1, Times, $3) }
+| expr ASTERISK     expr      { Binop($1, Asterisk, $3) }
 | expr DIV       expr         { Binop($1, Div, $3) }
 | expr MOD       expr         { Binop($1, Mod, $3) }
 | expr LSHIFT    expr         { Binop($1, Lshift, $3) }

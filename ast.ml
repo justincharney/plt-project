@@ -2,7 +2,7 @@
 
 (* all binary operators in lang *)
 type biop = 
-  | Plus | Minus | Div | Times | Mod 
+  | Plus | Minus | Div | Asterisk | Mod 
   | Lshift | Rshift | Bitxor | Bitor | Bitand 
   | Eq | Neq | Lt | Le | Gt | Ge | And | Or
 
@@ -27,18 +27,23 @@ type expr =
 
   | Binop of expr * biop * expr
   | Unaop of unop * expr
-
-type assignment = 
-  | Assignment of expr * asgn * expr 
-
-(* statement in lang, only decl or expr *)
-type stmt =
-  | Block of seq
-  | Expr of expr
-  | If of expr * stmt * stmt (* Handle empty else case *)
+  | Assign of expr * asgn * expr
+  | Indexing of expr * expr
+  | FunctionCall of string * expr list
+  | If of expr * stmt * block (* Handle empty else case *)
   | While of expr * stmt
   | For of expr * stmt
 
+and block = stmt list
+
+(* statement in lang, only decl or expr *)
+and stmt = 
+  | Block of block (* fix *)
+  | Expr of expr
+  | Declaration of string * string * asgn * expr
+  | InfDeclaration of string * asgn * expr
+  | Return of expr option
+ 
 (* old code *)
 type primitive_type =
   | TBool
