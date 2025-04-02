@@ -1,5 +1,13 @@
 (* AST FOR P.A.T. *)
 
+(* old code *)
+type primitive_type =
+  | TBool
+  | TUint8 | TUint16 | TUint32 | TUint64
+  | TInt8 | TInt16 | TInt32 | TInt64
+  | TFloat32 | TFloat64
+  | TString
+
 (* all binary operators in lang *)
 type biop = 
   | Plus | Minus | Div | Asterisk | Mod 
@@ -28,11 +36,13 @@ type expr =
   | Binop of expr * biop * expr
   | Unaop of unop * expr
   | Assign of expr * asgn * expr
-  | Indexing of expr * expr
+  | Cast of primitive_type * expr
   | FunctionCall of string * expr list
-  | If of expr * stmt * block (* Handle empty else case *)
-  | While of expr * stmt
-  | For of expr * stmt
+  | Slicing of string * expr
+  | If of expr * expr * block option (* Handle empty else case *)
+  | While of expr * expr
+  | For of expr * expr * expr * expr
+  | Indexing of expr * expr
 
 and block = stmt list
 
@@ -40,14 +50,6 @@ and block = stmt list
 and stmt = 
   | Block of block (* fix *)
   | Expr of expr
-  | Declaration of string * string * asgn * expr
+  | Declaration of primitive_type * string * asgn * expr
   | InfDeclaration of string * asgn * expr
   | Return of expr option
- 
-(* old code *)
-type primitive_type =
-  | TBool
-  | TUint8 | TUint16 | TUint32 | TUint64
-  | TInt8 | TInt16 | TInt32 | TInt64
-  | TFloat32 | TFloat64
-  | TString
