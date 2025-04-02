@@ -20,8 +20,8 @@ type unop =
 
 (* all assignment operators in lang *)
 type asgn = 
-| Assign | Decl_assign | Plus_assign | Minus_Assign 
-| Div_assign | Mod_assign | Lshift_assing | Rshift_assign
+| Assign | Decl_assign | Plus_assign | Minus_assign 
+| Div_assign | Mod_assign | Lshift_assign | Rshift_assign
 | Bitand_assign | Bitxor_assign | Bitor_assign
 
 (* some basic expression in lang *)
@@ -33,16 +33,19 @@ type expr =
   | StringLit of string
   | Identifier of string
 
+  | FunctionCall of string * expr list
+  | Slicing of string * expr
+  | Indexing of expr * expr
+  | Group of expr
+
   | Binop of expr * biop * expr
   | Unaop of unop * expr
   | Assign of expr * asgn * expr
+
   | Cast of primitive_type * expr
-  | FunctionCall of string * expr list
-  | Slicing of string * expr
-  | If of expr * expr * block option (* Handle empty else case *)
-  | While of expr * expr
+  | If of expr * expr * block option
   | For of expr * expr * expr * expr
-  | Indexing of expr * expr
+  | While of expr * expr
 
 and block = stmt list
 
