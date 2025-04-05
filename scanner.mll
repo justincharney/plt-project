@@ -61,10 +61,10 @@ type token =
  (* Operators *)
 
  (* Arithmetic *)
- | PLUS | MINUS | DIV | MOD
+ | PLUS | MINUS | DIV | MOD | MULT
 
  (* Bitwise *)
- | LSHIFT | RSHIFT | BITXOR | BITOR | BITNOT
+ | LSHIFT | RSHIFT | BITXOR | BITOR | BITNOT | BITAND
 
  (* Assignment *)
  | ASSIGN | DECL_ASSIGN (* = vs := *)
@@ -79,9 +79,6 @@ type token =
 
  (* Unary *)
  | INC | DEC
-
- (* Ambiguous - BITAND/ADDR_OF or DEREF/TIMES *)
- | AMPERSAND | ASTERISK
 
  (* Separators *)
  | LPAREN | RPAREN | LBRACE | RBRACE | LBRACKET | RBRACKET
@@ -191,6 +188,7 @@ rule token = parse
     | "-"                   { MINUS }
     | "/"                   { DIV }
     | "%"                   { MOD }
+    | "*"                   { MULT }
 
     (* Bitwise *)
     | "<<"                  { LSHIFT }
@@ -198,6 +196,7 @@ rule token = parse
     | "^"                   { BITXOR }
     | "|"                   { BITOR }
     | "~"                   { BITNOT }
+    | "&"                   { BITAND }
 
     (* Assignment *)
     | "="                   { ASSIGN }
@@ -225,10 +224,6 @@ rule token = parse
     | "&&"                  { AND }
     | "||"                  { OR }
     | "!"                   { NOT }
-
-    (* Ambiguous - Parser needs to disambiguate *)
-    | "&"                   { AMPERSAND }
-    | "*"                   { ASTERISK }
 
     (* Unary *)
     | "++"                  { INC }

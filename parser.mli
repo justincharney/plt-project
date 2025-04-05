@@ -38,13 +38,14 @@ type token =
   | PLUS
   | MINUS
   | DIV
-  | TIMES
+  | MULT
   | MOD
   | LSHIFT
   | RSHIFT
   | BITXOR
   | BITOR
   | BITNOT
+  | BITAND
   | ASSIGN
   | PLUS_ASSIGN
   | MINUS_ASSIGN
@@ -66,8 +67,6 @@ type token =
   | AND
   | OR
   | NOT
-  | AMPERSAND
-  | ASTERISK
   | INC
   | DEC
   | LPAREN
@@ -85,32 +84,32 @@ type token =
   | INT_LIT of (
 # 21 "parser.mly"
         int
-# 89 "parser.mli"
+# 88 "parser.mli"
 )
   | BOOL_LIT of (
 # 22 "parser.mly"
         bool
-# 94 "parser.mli"
+# 93 "parser.mli"
 )
   | CHAR_LIT of (
 # 23 "parser.mly"
         char
-# 99 "parser.mli"
+# 98 "parser.mli"
 )
   | FLOAT_LIT of (
 # 24 "parser.mly"
         float
-# 104 "parser.mli"
+# 103 "parser.mli"
 )
   | STRING_LIT of (
 # 25 "parser.mly"
         string
-# 109 "parser.mli"
+# 108 "parser.mli"
 )
   | IDENT of (
 # 26 "parser.mly"
         string
-# 114 "parser.mli"
+# 113 "parser.mli"
 )
 
 val program :

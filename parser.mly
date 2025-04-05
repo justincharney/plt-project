@@ -8,13 +8,13 @@
 %token CONST VAR MAKE ERROR NULL 
 %token FINAL MUT LATE PRIVATE GET POST DELETE
 %token BOOL STRING U8 U16 U32 U64 I8 I16 I32 I64 F16 F32
-%token PLUS MINUS DIV AMPERSAND MOD 
-%token LSHIFT RSHIFT BITXOR BITOR BITNOT
+%token PLUS MINUS DIV MULT MOD 
+%token LSHIFT RSHIFT BITXOR BITOR BITNOT BITAND
 %token ASSIGN PLUS_ASSIGN MINUS_ASSIGN TIMES_ASSIGN DIV_ASSIGN MOD_ASSIGN
 %token DECL_ASSIGN LSHIFT_ASSIGN RSHIFT_ASSIGN
 %token BITAND_ASSIGN BITXOR_ASSIGN BITOR_ASSIGN
 %token EQ NEQ LT LE GT GE AND OR NOT 
-%token AMPERSAND ASTERISK INC DEC 
+%token INC DEC 
 %token LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET
 %token SEMICOLON COLON COMMA DOT QUESTION EOF
 
@@ -40,7 +40,7 @@
 %left LT LE GT GE
 %left LSHIFT RSHIFT
 %left PLUS MINUS
-%left AMPERSAND DIV MOD
+%left MULT DIV MOD
 %right NOT BITNOT
 %left INC DEC (* x++ *)
 
@@ -55,7 +55,7 @@ program:
 expr:
 | expr PLUS      expr         { Binop($1, Plus, $3) }
 | expr MINUS     expr         { Binop($1, Minus, $3) }
-| expr ASTERISK     expr      { Binop($1, Asterisk, $3) }
+| expr MULT      expr         { Binop($1, Mult, $3) }
 | expr DIV       expr         { Binop($1, Div, $3) }
 | expr MOD       expr         { Binop($1, Mod, $3) }
 | expr LSHIFT    expr         { Binop($1, Lshift, $3) }
