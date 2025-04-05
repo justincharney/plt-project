@@ -28,31 +28,19 @@ type type_modifier =
 (* OPERATORS *)
 (* all binary operators in lang *)
 type biop =
-  | Plus | Minus | Div | Asterisk | Mod
+  | Plus | Minus | Div | Mult | Mod
   | Lshift | Rshift | Bitxor | Bitor | Bitand
   | Eq | Neq | Lt | Le | Gt | Ge | And | Or
 
 (* all unary operators in lang *)
-(* Renamed to AddrOf and Deref for memory operators *)
 type unop =
-  | Bitnot | Not | AddrOf | Deref | Neg
+  | Bitnot | Not | Neg
   | Inc | Dec
 
-(* all assignment operators in lang *)
-type asgn =
-| Assign | Decl_assign | Plus_assign | Minus_assign
-| Div_assign | Mod_assign | Lshift_assign | Rshift_assign
-| Bitand_assign | Bitxor_assign | Bitor_assign
-
-(* Not sure if we want this or just have them as regular FunctionCalls *)
-type builtin_func =
-  | Println
-  | Sprintf
-  | Len
-  | Cap
-  | Assert
-  | Exit
-  | Append
+(* compound operators in lang *)
+type compoud_op =
+| PlusAssign | MinusAssign | TimesAssign | DivAssign | ModAssign
+| LshiftAssign | RshiftAssign | BitandAssign | BitxorAssign | BitorAssign
 
 (* some basic expression in lang *)
 type expr =
@@ -71,21 +59,22 @@ type expr =
   | Identifier of string
   | FieldAccess of expr * string (* For struct.field *)
   | IndexAccess of expr * expr (* array_or_slice_exp[index_exp] *)
-  | SliceExpr of expr * expr * expr (* arr[start:end] *)
+  | SliceExpr of expr * expr option * expr option (* arr[start?:end?] *)
 
   (* Operations *)
   | Binop of expr * biop * expr (* e.g. a + b *)
   | Unaop of unop * expr (* e.g. -x *)
-  | SimpleAssign of expr * expr     (* For basic assignment: x = y *)
-  | CompoundAssign of expr * biop * expr  (* For operations like x += y *)
+  | SimpleAssign of expr * expr (* For basic assignment: x = y *)
+  | CompoundAssign of expr * compoud_op * expr  (* For operations like x += y *)
+
+  | Sequence of expr * expr (* expr1; expr2 - Evaluates expr1, then expr2, returns value of expr2 *)
+  | ErrorExp of expr (* error("message") *)
 
   | FunctionCall of string * expr list (* func_name(arg1, arg2) *)
-  | BuiltInCall of builtin_func
   | MethodCall of expr * string * expr list (* myStruct.someMethod(arg1, arg2) *)
   | Make of type_expr * expr * expr option (* make([]type, len, cap?) *)
 
   | Cast of type_expr * expr (* i64(x) *)
-  | Malloc of type_expr
 
 (* statement in lang, only decl or expr *)
 and stmt =
@@ -96,15 +85,17 @@ and stmt =
   | IfStmt of expr * stmt list * stmt option  (* condition, then_block, else_block (else can be Block or IfStmt for else if) *)
   | ForStmt of stmt option * expr option * expr option * stmt list (* init; condition; update; body *)
   | WhileStmt of expr * stmt list (* condition; body *)
-  | Return of expr option (* return; *)
+  | Return of expr list option (* return val1, var2; or return; *)
   | Break
   | Continue
 
-  (* Memory - free is used for its side effect *)
-  | Free of expr (* free(pointer_expr) *)
-
-  | Declaration of type_expr * string * expr
-  | InfDeclaration of string * expr
+  (* Declarations (infered type) *)
+  | VarDecl of {
+      is_const: bool; (* true for const, false for var *)
+      name: string; (* variable name *)
+      var_type: type_expr option; (* None for inferred type with := *)
+      initializer_expr: expr option;
+    }
 
 (* Top level declarations *)
 
@@ -122,13 +113,12 @@ type field = {
   default_value: expr option;
 }
 
-type http_method = GET | POST | DELETE
 
 (* Function declaration *)
 type func_decl = {
   name: string;
   params: param list;
-  return_type: type_expr ;
+  return_types: type_expr list ;
   body: stmt list;
 }
 
@@ -137,23 +127,23 @@ type type_decl =
   | TypeStruct of string * field list (* struct definition *)
   | TypeAlias of string * type_expr (* type alias *)
 
-(* HTTP func declaration *)
-type http_func_decl = {
-  method_type: http_method;
-  path: string list; (* List of path segments like ["ping", "pong"] for /ping/pong *)
-  body: stmt list;
-}
-
 (* Package and import declarations *)
 type package_decl = string
 type import_decl = string
+
+(* global variable declaration - same as regular var decl but only for global scope *)
+type global_decl = {
+  is_const: bool;
+  name: string;
+  var_type: type_expr option;
+  initializer_expr: expr option;
+}
 
 (* Overall program structure *)
 type program = {
   package_name: package_decl;
   imports: import_decl list;
   type_declarations: type_decl list;
-  global_vars: stmt list;
-  functions: func_decl list;
-  http_functions: http_func_decl list;
+  global_vars: global_decl list;
+  functions: func_decl list; (* enforce main function inclusion during semantic analysis *)
 }

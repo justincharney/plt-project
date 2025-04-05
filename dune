@@ -6,6 +6,11 @@
 (name scanner)
 (modules scanner))
 
+; define the ast as a library
+(library
+(name ast)
+(modules ast))
+
 (executable
  (name hello)
  (modules hello)
