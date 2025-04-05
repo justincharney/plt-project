@@ -20,9 +20,6 @@ type token =
   | MUT
   | LATE
   | PRIVATE
-  | GET
-  | POST
-  | DELETE
   | BOOL
   | STRING
   | U8
@@ -84,32 +81,32 @@ type token =
   | INT_LIT of (
 # 21 "parser.mly"
         int
-# 88 "parser.mli"
+# 85 "parser.mli"
 )
   | BOOL_LIT of (
 # 22 "parser.mly"
         bool
-# 93 "parser.mli"
+# 90 "parser.mli"
 )
   | CHAR_LIT of (
 # 23 "parser.mly"
         char
-# 98 "parser.mli"
+# 95 "parser.mli"
 )
   | FLOAT_LIT of (
 # 24 "parser.mly"
         float
-# 103 "parser.mli"
+# 100 "parser.mli"
 )
   | STRING_LIT of (
 # 25 "parser.mly"
         string
-# 108 "parser.mli"
+# 105 "parser.mli"
 )
   | IDENT of (
 # 26 "parser.mly"
         string
-# 113 "parser.mli"
+# 110 "parser.mli"
 )
 
 val program :

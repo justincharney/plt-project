@@ -37,7 +37,7 @@ let interpret_char s =
 type token =
  | FUNC | PACKAGE | IMPORT | TYPE | STRUCT | RETURN | BREAK | IF | ELSE
  | CONTINUE | FOR | CONST | VAR | MAKE | WHILE
- | TRUE | FALSE | FINAL | MUT | LATE | PRIVATE | GET | POST | DELETE | ERROR
+ | TRUE | FALSE | FINAL | MUT | LATE | PRIVATE | ERROR
  | NULL
 
  (* Built-in type keywords *)
@@ -152,11 +152,6 @@ rule token = parse
     | "mut"                 { MUT }
     | "late"                { LATE }
     | "private"             { PRIVATE }
-
-    (* HTTP Functions*)
-    | "GET"                 { GET }
-    | "POST"                { POST }
-    | "DELETE"              { DELETE }
 
     (* Built-in types *)
     | "bool"               { BOOL }
