@@ -1,3 +1,7 @@
 (test
  (name test_scanner)
  (libraries scanner ounit2))
+
+ (test
+  (name test_ast)
+  (libraries ast ounit2))

@@ -42,8 +42,8 @@ let scanner_tests = "test suite for scanner" >::: [
 
   "type casting" >:: (fun _ ->
     assert_equal
-      [VAR; IDENT "x"; DECL_ASSIGN; U16; LPAREN; INT_LIT 10; RPAREN; SEMICOLON]
-      (get_all_tokens "var x := u16(10);"));
+      [IDENT "x"; DECL_ASSIGN; U16; LPAREN; INT_LIT 10; RPAREN; SEMICOLON]
+      (get_all_tokens "x := u16(10);"));
 
   "escape sequeneces" >:: (fun _ ->
     assert_equal

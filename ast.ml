@@ -1,58 +1,149 @@
 (* AST FOR P.A.T. *)
 
-(* old code *)
+(* TYPES *)
 type primitive_type =
-  | TBool
-  | TUint8 | TUint16 | TUint32 | TUint64
-  | TInt8 | TInt16 | TInt32 | TInt64
-  | TFloat32 | TFloat64
-  | TString
+  | Bool
+  | String
+  | U8 | U16 | U32 | U64
+  | I8 | I16 | I32 | I64
+  | F16 | F32
+  | Error
 
+(* Represent the non-primitive types in our language *)
+type type_expr =
+  | Primitive of primitive_type
+  | Pointer of type_expr
+  | Array of type_expr * int (* element type, length *)
+  | Slice of type_expr (* element type *)
+  | Struct of string (* struct name *)
+  | TypeName of string (* named type - like example 3.6 *)
+
+(* Modifiers *)
+type type_modifier =
+  | Private
+  | Mutable
+  | Final
+  | Late
+
+(* OPERATORS *)
 (* all binary operators in lang *)
-type biop = 
-  | Plus | Minus | Div | Asterisk | Mod 
-  | Lshift | Rshift | Bitxor | Bitor | Bitand 
+type biop =
+  | Plus | Minus | Div | Mult | Mod
+  | Lshift | Rshift | Bitxor | Bitor | Bitand
   | Eq | Neq | Lt | Le | Gt | Ge | And | Or
 
 (* all unary operators in lang *)
-type unop = 
-  | Bitnot | Not | Inc | Dec | Ampersand
+type unop =
+  | Bitnot | Not | Neg
+  | Inc | Dec
 
-(* all assignment operators in lang *)
-type asgn = 
-| Assign | Decl_assign | Plus_assign | Minus_assign 
-| Div_assign | Mod_assign | Lshift_assign | Rshift_assign
-| Bitand_assign | Bitxor_assign | Bitor_assign
+(* compound operators in lang *)
+type compoud_op =
+| PlusAssign | MinusAssign | TimesAssign | DivAssign | ModAssign
+| LshiftAssign | RshiftAssign | BitandAssign | BitxorAssign | BitorAssign
 
 (* some basic expression in lang *)
 type expr =
+  (* Literals *)
   | IntLit of int
   | BoolLit of bool
   | CharLit of char
   | FloatLit of float
   | StringLit of string
+  | Null (* For null literal *)
+  | ArrayLit of type_expr * expr list (* [3]i32{1, 2, 3} *)
+  | StructLit of string * (string * expr) list (* e.g. goody{"funky supreme", 1000} *)
+  | SliceLit of type_expr * expr list (* []i32{1, 2, 3} *)
+
+  (* Variables and access *)
   | Identifier of string
+  | FieldAccess of expr * string (* For struct.field *)
+  | IndexAccess of expr * expr (* array_or_slice_exp[index_exp] *)
+  | SliceExpr of expr * expr option * expr option (* arr[start?:end?] *)
 
-  | FunctionCall of string * expr list
-  | Slicing of string * expr
-  | Indexing of expr * expr
-  | Group of expr
+  (* Operations *)
+  | Binop of expr * biop * expr (* e.g. a + b *)
+  | Unaop of unop * expr (* e.g. -x *)
+  | SimpleAssign of expr * expr (* For basic assignment: x = y *)
+  | CompoundAssign of expr * compoud_op * expr  (* For operations like x += y *)
 
-  | Binop of expr * biop * expr
-  | Unaop of unop * expr
-  | Assign of expr * asgn * expr
+  | Sequence of expr * expr (* expr1; expr2 - Evaluates expr1, then expr2, returns value of expr2 *)
+  | ErrorExp of expr (* error("message") *)
 
-  | Cast of primitive_type * expr
-  | If of expr * expr * block option
-  | For of expr * expr * expr * expr
-  | While of expr * expr
+  | FunctionCall of string * expr list (* func_name(arg1, arg2) *)
+  | MethodCall of expr * string * expr list (* myStruct.someMethod(arg1, arg2) *)
+  | Make of type_expr * expr * expr option (* make([]type, len, cap?) *)
 
-and block = stmt list
+  | Cast of type_expr * expr (* i64(x) *)
 
 (* statement in lang, only decl or expr *)
-and stmt = 
-  | Block of block (* fix *)
+and stmt =
+  | Block of stmt list
   | Expr of expr
-  | Declaration of primitive_type * string * asgn * expr
-  | InfDeclaration of string * asgn * expr
-  | Return of expr option
+
+  (* Control flow *)
+  | IfStmt of expr * stmt list * stmt option  (* condition, then_block, else_block (else can be Block or IfStmt for else if) *)
+  | ForStmt of stmt option * expr option * expr option * stmt list (* init; condition; update; body *)
+  | WhileStmt of expr * stmt list (* condition; body *)
+  | Return of expr list option (* return val1, var2; or return; *)
+  | Break
+  | Continue
+
+  (* Declarations (infered type) *)
+  | VarDecl of {
+      is_const: bool; (* true for const, false for var *)
+      name: string; (* variable name *)
+      var_type: type_expr option; (* None for inferred type with := *)
+      initializer_expr: expr option;
+    }
+
+(* Top level declarations *)
+
+(* Function parameters *)
+type param = {
+  name: string;
+  param_type: type_expr
+}
+
+(* Struct field definition *)
+type field = {
+  name: string;
+  field_type: type_expr;
+  modifier: type_modifier option;
+  default_value: expr option;
+}
+
+
+(* Function declaration *)
+type func_decl = {
+  name: string;
+  params: param list;
+  return_types: type_expr list ;
+  body: stmt list;
+}
+
+(* Type declaration *)
+type type_decl =
+  | TypeStruct of string * field list (* struct definition *)
+  | TypeAlias of string * type_expr (* type alias *)
+
+(* Package and import declarations *)
+type package_decl = string
+type import_decl = string
+
+(* global variable declaration - same as regular var decl but only for global scope *)
+type global_decl = {
+  is_const: bool;
+  name: string;
+  var_type: type_expr option;
+  initializer_expr: expr option;
+}
+
+(* Overall program structure *)
+type program = {
+  package_name: package_decl;
+  imports: import_decl list;
+  type_declarations: type_decl list;
+  global_vars: global_decl list;
+  functions: func_decl list; (* enforce main function inclusion during semantic analysis *)
+}
