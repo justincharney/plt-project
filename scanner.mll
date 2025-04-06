@@ -36,7 +36,7 @@ let interpret_char s =
 (* Keywords *)
 type token =
  | FUNC | PACKAGE | IMPORT | TYPE | STRUCT | RETURN | BREAK | IF | ELSE
- | CONTINUE | FOR | CONST | VAR | MAKE | WHILE
+ | CONTINUE | FOR | CONST | WHILE
  | TRUE | FALSE | FINAL | MUT | LATE | PRIVATE | ERROR
  | NULL
 
@@ -45,7 +45,7 @@ type token =
  | STRING
  | U8 | U16 | U32 | U64
  | I8 | I16 | I32 | I64
- | F16 | F32
+ | F32 | F64
 
  (* Identifiers *)
  | IDENT of string
@@ -82,7 +82,7 @@ type token =
 
  (* Separators *)
  | LPAREN | RPAREN | LBRACE | RBRACE | LBRACKET | RBRACKET
- | SEMICOLON | COLON | COMMA | DOT
+ | SEMICOLON | COLON | COMMA | DOT | TRIPLEDOT
 
  (* Special tokens *)
  | EOF     (* End of file *)
@@ -136,8 +136,6 @@ rule token = parse
 
     (* Constants and Variables *)
     | "const"               { CONST }
-    | "var"                 { VAR }
-    | "make"                { MAKE }
 
     (* Boolean Literals *)
     | "true"                { BOOL_LIT(true) }
@@ -164,8 +162,8 @@ rule token = parse
     | "i16"                { I16 }
     | "i32"                { I32 }
     | "i64"                { I64 }
-    | "f16"                { F16 }
     | "f32"                { F32 }
+    | "f64"                { F64 }
 
     (* Literals *)
     | int_lit               { INT_LIT (int_of_string (Lexing.lexeme lexbuf)) }
@@ -235,6 +233,7 @@ rule token = parse
     | ":"                   { COLON }
     | ","                   { COMMA }
     | "."                   { DOT }
+    | "..."                 { TRIPLEDOT }
 
     (* Ocamllex checks rules in order, so this is after keywords *)
     | identifier            { IDENT (Lexing.lexeme lexbuf) }
