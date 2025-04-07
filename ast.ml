@@ -122,7 +122,8 @@ type stmt =
 (* Function parameters *)
 type param = {
   name: string;
-  param_type: type_expr
+  param_type: type_expr;
+  is_variadic: bool; (* in semantic checker must check that if param variadic also last param in the list *)
 }
 
 (* Function declaration *)
@@ -136,6 +137,7 @@ type func_decl = {
 type struct_func = {
   name: string;
   struct_name: string;
+  params: param list;
   return_types: type_expr list;
   body: stmt list;
 }
