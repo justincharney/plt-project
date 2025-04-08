@@ -68,7 +68,6 @@ type expr =
   | Unaop of unop * expr (* e.g. -x *)
   | Assignment of expr * assign_op * expr  (* For operations like x += y | x = y | x &= y *)
 
-  | Make of type_expr * expr * expr option (* x := make([]i32, 1, 100) *)
   | FunctionCall of expr * expr list (* func_name(arg1, arg2) *)
   | MethodCall of expr * expr * expr list (* myStruct.someMethod(arg1, arg2) *)
 
