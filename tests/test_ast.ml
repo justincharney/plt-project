@@ -27,16 +27,16 @@ let ast_construction_tests = "test suite for AST construction" >::: [
     let _ = Identifier "x" in
     let _ = Binop (IntLit 1, Plus, IntLit 2) in
     let _ = Unaop (Neg, Identifier "y") in
-    let _ = SimpleAssign (Identifier "x", IntLit 5) in
-    let _ = CompoundAssign (Identifier "count", PlusAssign, IntLit 1) in
-    let _ = FieldAccess (Identifier "myStructVar", "fieldName") in
+    let _ = Assignment (Identifier "x", RegAssign, IntLit 5) in
+    let _ = Assignment (Identifier "count", PlusAssign, IntLit 1) in
+    let _ = FieldAccess (Identifier "myStructVar", Identifier "fieldName") in
     let _ = IndexAccess (Identifier "myArray", IntLit 0) in
-    let _ = SliceExpr (Identifier "mySlice", Some (IntLit 1), Some (IntLit 5)) in
-    let _ = FunctionCall ("myFunc", [IntLit 1; BoolLit false]) in
+    let _ = SliceExpr (Identifier "mySlice", IntLit 1, Some (IntLit 5)) in
+    let _ = FunctionCall (Identifier "myFunc", [IntLit 1; BoolLit false]) in
     let _ = Cast (Primitive I16, Identifier "long_val") in
     let _ = Make (Slice (Primitive I32), IntLit 10, None) in
     let _ = ErrorExp (StringLit "Something went wrong") in
-    let _ = Sequence (SimpleAssign (Identifier "a", IntLit 1), Identifier "a") in
+    let _ = Sequence (Assignment (Identifier "a", RegAssign, IntLit 1), Identifier "a") in
     assert_bool "Basic expression creation possible" true
   );
 
