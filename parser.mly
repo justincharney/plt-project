@@ -126,6 +126,9 @@ expr:
 | expr OR        expr         { Binop($1, Or, $3) }
 | expr SEMICOLON expr         { Sequence($1, $3)} (* sequencing *)
 | IDENT ASSIGN   expr         { Assign($1, $3)} (* assignment *)
+| LPAREN expr RPAREN          { $2 }
+| NOT expr                    { Unaop(Not, $2) }
+| BITNOT expr                 { Unaop(Bitnot, $2) }
 | INT_LIT                     { IntLit($1) }
 | BOOL_LIT                    { BoolLit($1) }
 | CHAR_LIT                    { CharLit($1) }
