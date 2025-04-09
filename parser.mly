@@ -45,12 +45,65 @@
 %left INC DEC (* x++ *)
 
 %start program
-%type <Ast.expr> program
+%type <Ast.program> program
 
 %%
 
 program:
-  expr EOF { $1 }
+  package_decl import_decls type_decls var_decls func_decls struct_func_decls 
+  { { package_name = $1;
+      imports = $2;
+      type_declarations = $3;
+      global_vars = $4;
+      functions = $5;
+      struct_functions = $6 }
+  }
+
+package_decl:
+  PACKAGE IDENT { $2 }
+
+
+import_decls:
+  | /* nothing */ { [] }
+  | import_decls import_decl { $1 :: $2 }
+
+import_decl:
+  | IMPORT STRING_LIT { $2 }
+
+
+type_decls:
+  | /* nothing */ { [] }
+  | type_decls type_decl { $1 :: $2 }
+
+type_decl:
+  | STRUCT IDENT LBRACE field_list RBRACE { TypeStruct ($2, $4) } /* does struct not have identifier? */
+  | TYPE IDENT ASSIGN type_expr { TypeAlias ($2, $4) }
+
+field_list:
+  | /* nothing */ { [] }
+  | field_list field_decl { $1 :: $2 }
+
+field_decl:
+    opt_type_modifier IDENT type_expr expr
+    { { name = $2;
+        field_type = $3;
+        modifier = $1;
+        default_value = $4 }
+    }
+
+opt_type_modifier:
+  | /* nothing */ { [] }
+  | modifier               { $1 }
+
+modifier:
+  | PRIVATE                { Private }
+  | MUTABLE                { Mutable }
+  | FINAL                  { Final }
+  | LATE                   { Late }
+
+type_expr:
+  | /* nothing */ { None }
+  | ASSIGN expr   { $2 }
 
 expr:
 | expr PLUS      expr         { Binop($1, Plus, $3) }

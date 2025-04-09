@@ -76,8 +76,6 @@ type expr =
   | Break 
   | Continue
 
-
-
 (* Struct field definition *)
 type field = {
   name: string;
@@ -85,6 +83,7 @@ type field = {
   modifier: type_modifier option;
   default_value: expr option;
 }
+
 (* Type declaration *)
 type type_decl =
   | TypeStruct of string * field list (* struct definition *)
@@ -106,7 +105,6 @@ type var_decl = (* x = i64(2) *)
   }
 
 (* Top level declarations *)
-
 (* statement in lang, only decl or expr *)
 type stmt =
   | Expr of expr
@@ -141,7 +139,6 @@ type struct_func = {
   return_types: type_expr list;
   body: stmt list;
 }
-
 
 (* Package and import declarations *)
 type package_decl = string
