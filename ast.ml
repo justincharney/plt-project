@@ -39,7 +39,7 @@ type unop =
 
 (* compound operators in lang *)
 type assign_op =
-| RegAssign
+| RegAssign | DeclAssign
 | PlusAssign | MinusAssign | TimesAssign | DivAssign | ModAssign
 | LshiftAssign | RshiftAssign | BitandAssign | BitxorAssign | BitorAssign
 
