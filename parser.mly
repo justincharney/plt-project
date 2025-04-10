@@ -66,7 +66,7 @@ package_decl:
 /********** IMPORTS **********/
 import_decls:
   | /* nothing */            { [] }
-  | import_decls import_decl { $1 :: [$2] }
+  | import_decls import_decl { $1 @ [$2] }
 
 import_decl:
   | IMPORT IDENT { $2 }
@@ -99,7 +99,7 @@ opt_type_modifier:
 
 modifier:
   | PRIVATE                { Private }
-  | MUTABLE                { Mutable }
+  | MUT                    { Mutable }
   | FINAL                  { Final }
   | LATE                   { Late }
 
@@ -109,7 +109,7 @@ opt_default:
 
 opt_semicolon:
   | /* nothing */ { [] }
-  | SEMICOLON     { $1 }
+  | SEMICOLON     { [] }
 
 /********** VARIABLE DECLARATIONS **********/
 
