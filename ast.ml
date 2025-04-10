@@ -94,9 +94,10 @@ type var_decl = (* x = i64(2) *)
   | InferType of {
     is_const: bool;
     name: string;
-    var_type: type_expr option;
+    var_type: type_expr option; (* is this needed if this inference? *)
     initializer_expr: expr;
   }
+
   | StrictType of { (* i64 x = 2 *)
     is_const: bool;
     name: string;

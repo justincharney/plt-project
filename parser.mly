@@ -59,32 +59,34 @@ program:
       struct_functions = $6 }
   }
 
+/********** PACKAGE **********/
 package_decl:
   PACKAGE IDENT { $2 }
 
-
+/********** IMPORTS **********/
 import_decls:
-  | /* nothing */ { [] }
-  | import_decls import_decl { $1 :: $2 }
+  | /* nothing */            { [] }
+  | import_decls import_decl { $1 :: [$2] }
 
 import_decl:
-  | IMPORT STRING_LIT { $2 }
+  | IMPORT IDENT { $2 }
 
-
+/********** TYPE DECLARATIONS **********/
 type_decls:
-  | /* nothing */ { [] }
-  | type_decls type_decl { $1 :: $2 }
+  | /* nothing */        { [] }
+  | type_decls type_decl { $1 :: [$2] }
 
+/*** STRUCTS AND ALIAS ***/
 type_decl:
-  | STRUCT IDENT LBRACE field_list RBRACE { TypeStruct ($2, $4) } /* does struct not have identifier? */
-  | TYPE IDENT ASSIGN type_expr { TypeAlias ($2, $4) }
+  | STRUCT IDENT LBRACE field_list RBRACE { TypeStruct ($2, $4) } /* why no ID on LRM? */
+  | TYPE IDENT ASSIGN type_expr           { TypeAlias ($2, $4) }
 
 field_list:
-  | /* nothing */ { [] }
-  | field_list field_decl { $1 :: $2 }
+  | /* nothing */         { [] }
+  | field_list field_decl { $1 :: [$2] }
 
 field_decl:
-    opt_type_modifier IDENT type_expr expr
+    opt_type_modifier IDENT type_expr opt_default opt_semicolon
     { { name = $2;
         field_type = $3;
         modifier = $1;
@@ -92,7 +94,7 @@ field_decl:
     }
 
 opt_type_modifier:
-  | /* nothing */ { [] }
+  | /* nothing */          { None }
   | modifier               { $1 }
 
 modifier:
@@ -101,9 +103,47 @@ modifier:
   | FINAL                  { Final }
   | LATE                   { Late }
 
-type_expr:
+opt_default:
+  | /* nothing */ { [] }
+  | ASSIGN expr   { Some $2 }
+
+opt_semicolon:
+  | /* nothing */ { [] }
+  | SEMICOLON     { $1 }
+
+/********** VARIABLE DECLARATIONS **********/
+
+var_decls:
+  | /* nothing */       { [] }
+  | var_decls var_decl  { $1 :: [$2]}
+
+var_decl:
+   | opt_const type_expr IDENT ASSIGN expr opt_semicolon /* const i64 = 256 */
+    { StrictType { 
+      is_const = $1 
+      name = $3
+      var_type = $2
+      initializer_expr = $5} }
+
+  | opt_const opt_type_expr IDENT DECL_ASSIGN expr opt_semicolon /* const x := 256 */
+      { InferType { 
+        is_const = $1;
+        name = $3;
+        var_type = $2; (* is this needed if inference? *)
+        initializer_expr = $5 } }
+
+opt_const: 
+  | /* nothing */ { false }
+  | CONST         { true }
+
+opt_type_expr:
   | /* nothing */ { None }
-  | ASSIGN expr   { $2 }
+  | type_expr     { Some $1 }
+
+/********** FUNCTION DECLARATIONS **********/
+
+
+
 
 expr:
 | expr PLUS      expr         { Binop($1, Plus, $3) }
