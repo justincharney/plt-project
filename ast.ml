@@ -53,7 +53,7 @@ type expr =
   | FloatLit of float
   | StringLit of string
   | Null (* For null literal *)
-  | ArrayLit of type_expr * expr list (* [3]i32{1, 2, 3} *)
+  | ArrayLit of expr * type_expr * expr list (* [3]i32{1, 2, 3} *)
   | StructLit of expr * (expr * expr) list (* e.g. goody{x:"funky supreme", y:1000} *)
   | SliceLit of type_expr * expr list (* []i32{1, 2, 3} *)
 

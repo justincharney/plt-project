@@ -14,7 +14,7 @@
 %token DECL_ASSIGN LSHIFT_ASSIGN RSHIFT_ASSIGN
 %token BITAND_ASSIGN BITXOR_ASSIGN BITOR_ASSIGN
 %token EQ NEQ LT LE GT GE AND OR NOT 
-%token INC DEC 
+%token INC DEC NEG
 %token LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET
 %token SEMICOLON COLON COMMA DOT TRIPLEDOT QUESTION EOF
 
@@ -25,12 +25,9 @@
 %token <string> STRING_LIT
 %token <string> IDENT
 
+%left COMMA
 %left SEMICOLON
-%right BITAND_ASSIGN BITOR_ASSIGN BITXOR_ASSIGN
-%right LSHIFT_ASSIGN RSHIFT_ASSIGN
-%right TIMES_ASSIGN DIV_ASSIGN MOD_ASSIGN
-%right PLUS_ASSIGN MINUS_ASSIGN
-%right ASSIGN DECL_ASSIGN
+%right BITAND_ASSIGN BITOR_ASSIGN BITXOR_ASSIGN LSHIFT_ASSIGN RSHIFT_ASSIGN TIMES_ASSIGN DIV_ASSIGN MOD_ASSIGN PLUS_ASSIGN MINUS_ASSIGN ASSIGN DECL_ASSIGN
 %left OR
 %left AND
 %left BITOR
@@ -41,8 +38,8 @@
 %left LSHIFT RSHIFT
 %left PLUS MINUS
 %left MULT DIV MOD
-%right NOT BITNOT
-%left INC DEC (* x++ *)
+%right NOT BITNOT INC DEC (* CAST *) NEG
+%left DOT LPAREN LBRACKET (* FUNCTION CALLS, ARRAY SUBSCRIPTING, INC, DEC *) 
 
 %start program
 %type <Ast.program> program
@@ -206,9 +203,8 @@ stmt:
   | IF expr LBRACE stmts RBRACE else_block                                 { IfStmt ($2, $4, $6) }
   | FOR opt_stmt SEMICOLON opt_expr SEMICOLON opt_expr LBRACE stmts RBRACE { ForStmt ($2, $4, $6, $8) }
   | WHILE expr LBRACE stmts RBRACE                                         { WhileStmt ($2, $3) }
-  | RETURN expr_list opt_newsemi (* MAKE SURE TO REVIEW *)                 { Return ($2)} 
+  | RETURN expr_list opt_newsemi                                           { Return ($2)} 
 
-(* MAKE SURE TO REVIEW *)
 else_block:
   | /* nothing */                               { [] }
   | ELSE LBRACE stmts RBRACE                    { $3 }
@@ -245,6 +241,7 @@ expr:
 | expr GE        expr                    { Binop($1, Ge, $3) }
 | expr AND       expr                    { Binop($1, And, $3) }
 | expr OR        expr                    { Binop($1, Or, $3) }
+
 | expr ASSIGN expr                       { Assignment ($1, RegAssign, $3) }
 | expr DECL_ASSIGN expr                  { Assignment ($1, DeclAssign, $3) }
 | expr PLUS_ASSIGN expr                  { Assignment ($1, PlusAssign, $3) }
@@ -257,26 +254,26 @@ expr:
 | expr BITAND_ASSIGN expr                { Assignment ($1, BitandAssign, $3) }
 | expr BITXOR_ASSIGN expr                { Assignment ($1, BitxorAssign, $3) }
 | expr BITOR_ASSIGN expr                 { Assignment ($1, BitorAssign, $3) }
+
 | BITNOT expr                            { Unaop (Bitnot, $2) }
 | NOT expr                               { Unaop (Not, $2) }
 | NEG expr                               { Unaop (Neg, $2) }
 | INC expr                               { Unaop (Inc, $2) }
 | DEC expr                               { Unaop (Dec, $2) }
+
 | expr DOT expr                          { FieldAccess ($1, $3) }
 | expr LBRACKET expr RBRACKET            { IndexAccess ($1, $3) }
 | expr LBRACKET expr COLON expr RBRACKET { SliceExpr ($1, $3, Some $5) }
 | expr LBRACKET expr COLON RBRACKET      { SliceExpr ($1, $3, None) }
-
 | expr LPAREN expr_list RPAREN           { FunctionCall ($1, $3) }
-(* METHOD CALL *) 
+| expr DOT expr LPAREN expr_list RPAREN  { MethodCall ($1, $3, $5)}
 | type_expr LPAREN expr RPAREN           { Cast ($1, $3) }
 
+| LBRACKET expr RBRACKET type_expr LBRACE expr_list RBRACE { ArrayLit ($2, $4, $6)}
+| expr LBRACE field_expr_list RBRACE                       { StructLit ($1, $3) }
+| LBRACKET RBRACKET type_expr LBRACE expr_list RBRACE      { SliceLit ($3, $5) }
+
 | LPAREN expr RPAREN                     { SubExpr $2 }
-
-| BREAK                                  { Break }
-| CONTINUE                               { Continue }
-
-(* | LBRACKET expr_list RBRACKET            { ArrayLit (??, $2) } STILL NEED TO FIGURE OUT *)
 | INT_LIT                                { IntLit ($1) }
 | BOOL_LIT                               { BoolLit ($1) }
 | CHAR_LIT                               { CharLit ($1) }
@@ -286,7 +283,8 @@ expr:
 | TRUE                                   { BoolLit true }
 | FALSE                                  { BoolLit false }
 | NULL                                   { Null }
-
+| BREAK                                  { Break }
+| CONTINUE                               { Continue }
 
 type_expr:
   | primitive_type                            { Primitive $1 }
@@ -294,7 +292,11 @@ type_expr:
   | ARRAY type_expr LBRACKET INT_LIT RBRACKET { Array ($2, $4) }
   | SLICE type_expr                           { Slice $2 }
   | STRUCT IDENT                              { Struct $2 }
-  | IDENT                                     { TypeName $1 }
+  | IDENT                                     { TypeName $1 } (* idk about this one *)
+
+field_expr_list:
+  | expr COLON expr                         { [($1, $3)] }
+  | expr COLON expr COMMA field_expr_list   { ($1, $3) :: $5 }
 
 primitive_type:
   | BOOL                   { Bool }
@@ -310,12 +312,5 @@ primitive_type:
   | F32                    { F32 }
   | F64                    { F64 }
   | ERROR                  { Error }
-
-
-(* NOT DONE *)
-
-(* TODO *)
-(* DEFINE type_expr *)
-(* NEED RETURN STATEMENT (END OF FUNCTION) *)
 
 %%

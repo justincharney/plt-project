@@ -221,6 +221,7 @@ rule token = parse
     (* Unary *)
     | "++"                  { INC }
     | "--"                  { DEC }
+    | "-"                   { NEG }
 
     (* Separators *)
     | "("                   { LPAREN }
