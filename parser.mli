@@ -30,8 +30,8 @@ type token =
   | I16
   | I32
   | I64
-  | F16
   | F32
+  | F64
   | PLUS
   | MINUS
   | DIV
@@ -66,6 +66,7 @@ type token =
   | NOT
   | INC
   | DEC
+  | NEG
   | LPAREN
   | RPAREN
   | LBRACE
@@ -76,38 +77,39 @@ type token =
   | COLON
   | COMMA
   | DOT
+  | TRIPLEDOT
   | QUESTION
   | EOF
   | INT_LIT of (
 # 21 "parser.mly"
         int
-# 85 "parser.mli"
+# 87 "parser.mli"
 )
   | BOOL_LIT of (
 # 22 "parser.mly"
         bool
-# 90 "parser.mli"
+# 92 "parser.mli"
 )
   | CHAR_LIT of (
 # 23 "parser.mly"
         char
-# 95 "parser.mli"
+# 97 "parser.mli"
 )
   | FLOAT_LIT of (
 # 24 "parser.mly"
         float
-# 100 "parser.mli"
+# 102 "parser.mli"
 )
   | STRING_LIT of (
 # 25 "parser.mly"
         string
-# 105 "parser.mli"
+# 107 "parser.mli"
 )
   | IDENT of (
 # 26 "parser.mly"
         string
-# 110 "parser.mli"
+# 112 "parser.mli"
 )
 
 val program :
-  (Lexing.lexbuf  -> token) -> Lexing.lexbuf -> Ast.expr
+  (Lexing.lexbuf  -> token) -> Lexing.lexbuf -> Ast.program
