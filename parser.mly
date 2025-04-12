@@ -47,7 +47,7 @@
 %%
 
 program:
-  package_decl import_decls type_decls var_decls func_decls struct_func_decls 
+  package_decl import_decls type_decls var_decls func_decls struct_func_decls
   { { package_name =      $1;
       imports =           $2;
       type_declarations = $3;
@@ -59,13 +59,13 @@ program:
 /********** PACKAGE **********/
 
 package_decl:
-  | PACKAGE IDENT { $2 }
+  | PACKAGE IDENT EOF { $2 }
 
 /********** IMPORTS **********/
 
 import_decls:
-  | /* nothing */            { [] }
-  | import_decls import_decl { $1 :: $2 }
+  | /* nothing */                { [] }
+  | import_decls import_decl EOF { $1 :: $2 }
 
 import_decl:
   | IMPORT STRING_LIT { $2 }
@@ -73,8 +73,8 @@ import_decl:
 /********** TYPE DECLARATIONS **********/
 
 type_decls:
-  | /* nothing */        { [] }
-  | type_decls type_decl { $1 :: [$2] }
+  | /* nothing */            { [] }
+  | type_decls type_decl EOF { $1 :: $2 }
 
 /*** STRUCTS AND ALIAS ***/
 
@@ -83,8 +83,8 @@ type_decl:
   | TYPE IDENT ASSIGN type_expr           { TypeAlias ($2, $4) }
 
 field_list:
-  | /* nothing */         { [] }
-  | field_list field_decl { $1 :: [$2] }
+  | /* nothing */             { [] }
+  | field_list field_decl EOF { $1 :: [$2] }
 
 field_decl:
     opt_type_modifier IDENT type_expr opt_default opt_newsemi (* REMEMBER TO MAKE IT ACCEPT '/n' OR ';' *)
@@ -116,8 +116,8 @@ opt_newsemi:
 
 /* NEED CASE FOR DECLARATIoNS LIKE: i64 x; */
 var_decls:
-  | /* nothing */       { [] }
-  | var_decls var_decl  { $1 :: $2 }
+  | /* nothing */          { [] }
+  | var_decls var_decl EOF { $1 :: $2 }
 
 var_decl:
   | opt_const type_expr IDENT ASSIGN expr opt_newsemi /* const i64 x = 256 */
@@ -145,8 +145,8 @@ opt_type_expr:
 /********** FUNCTION DECLARATIONS **********/
 
 func_decls:
-  | /* nothing */        { [] }
-  | func_decls func_decl { $1 :: $2 }
+  | /* nothing */            { [] }
+  | func_decls func_decl EOF { $1 :: $2 }
 
 func_decl:
   | FUNC IDENT LPAREN params RPAREN return_types LBRACE stmts RBRACE 
@@ -185,11 +185,12 @@ type_expr_list:
 /********** STRUCT-FUNC DECLARATION **********/
 
 struct_func_decls:
-  | /* nothing */                      { [] }
-  | struct_func_decls struct_func_decl { $1 :: $2 }
+  | /* nothing */                          { [] }
+  | struct_func_decls struct_func_decl EOF { $1 :: $2 }
 
 struct_func_decl: (* REVIEW THIS, NOT QUITE SURE ON SYNTAX OF A STRUCT-FUNC *)
-  | FUNC LPAREN IDENT type_expr RPAREN IDENT LPAREN params RPAREN return_types LBRACE stmts RBRACE {{
+  | FUNC LPAREN IDENT type_expr RPAREN IDENT LPAREN params RPAREN return_types LBRACE stmts RBRACE 
+  {{
   name:         $6;
   struct_name:  $3;
   params:       $8;
@@ -211,7 +212,6 @@ stmt:
   | RETURN expr_list opt_newsemi                                           { Return ($2)} 
 
 else_block:
-  | /* nothing */                               { [] }
   | ELSE LBRACE stmts RBRACE                    { $3 }
   | ELSE IF expr LBRACE stmts RBRACE else_block { [IfStmt ($3, $5, $7)] }
 
@@ -224,8 +224,8 @@ opt_expr:
   | expr                     { Some $1 }
 
 expr_list:
-  | expr                     { [$1] }
-  | expr COMMA expr_list     { $1 :: $3 }
+  | expr                     { $1 }
+  | expr COMMA expr_list     { $1 :: [$3] }
 
 expr:
 | expr PLUS      expr                    { Binop($1, Plus, $3) }
@@ -270,7 +270,7 @@ expr:
 | expr LBRACKET expr RBRACKET            { IndexAccess ($1, $3) }
 | expr LBRACKET expr COLON expr RBRACKET { SliceExpr ($1, $3, Some $5) }
 | expr LBRACKET expr COLON RBRACKET      { SliceExpr ($1, $3, None) }
-| expr LPAREN expr_list RPAREN           { FunctionCall ($1, $3) }
+| IDENT LPAREN expr_list RPAREN          { FunctionCall ($1, $3) }
 | expr DOT IDENT LPAREN expr_list RPAREN { MethodCall ($1, $3, $5)}
 | type_expr LPAREN expr RPAREN           { Cast ($1, $3) }
 

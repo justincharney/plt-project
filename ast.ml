@@ -68,7 +68,7 @@ type expr =
   | Unaop of unop * expr (* e.g. -x *)
   | Assignment of expr * assign_op * expr  (* For operations like x += y | x = y | x &= y *)
 
-  | FunctionCall of expr * expr list (* func_name(arg1, arg2) *)
+  | FunctionCall of string * expr list (* func_name(arg1, arg2) *)
   | MethodCall of expr * expr * expr list (* myStruct.someMethod(arg1, arg2) *)
 
   | Cast of type_expr * expr (* i64(x) | error("system fail") | f32(1.2) *)
