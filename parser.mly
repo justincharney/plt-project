@@ -84,8 +84,8 @@ type_decls:
 /*** STRUCTS AND ALIAS ***/
 
 type_decl:
-  | STRUCT IDENT LBRACE field_list RBRACE { TypeStruct ($2, $4) } /* why no ID in LRM? */
-  | TYPE IDENT ASSIGN type_expr           { TypeAlias ($2, $4)  }
+  | TYPE IDENT STRUCT LBRACE field_list RBRACE { TypeStruct ($2, $5) } /* why no ID in LRM? */
+  | TYPE IDENT ASSIGN type_expr                { TypeAlias ($2, $4)  }
 
 field_list:
   | /* nothing */         { []         }
@@ -291,11 +291,9 @@ expr:
 | CONTINUE                               { Continue        }
 
 type_expr:
-  | primitive_type                            { Primitive $1   }
-  | LBRACKET expr RBRACKET type_expr       { Array ($4, $2) }
-  | LBRACKET RBRACKET type_expr               { Slice $3       }
-  | STRUCT IDENT                              { Struct $2      } 
-(*| IDENT                                     { TypeName $1 } I'm not quite sure what this is *)
+  | primitive_type                   { Primitive $1   }
+  | LBRACKET expr RBRACKET type_expr { Array ($4, $2) }
+  | LBRACKET RBRACKET type_expr      { Slice $3       }
 
 field_expr_list:
   | expr COLON expr                         { [($1, $3)]     }
