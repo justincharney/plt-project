@@ -39,6 +39,8 @@ type token =
  | CONTINUE | FOR | CONST | WHILE
  | TRUE | FALSE | FINAL | MUT | LATE | PRIVATE | ERROR
  | NULL
+ | DOUBLECOLON
+ | BLANK
 
  (* Built-in type keywords *)
  | BOOL
@@ -221,7 +223,6 @@ rule token = parse
     (* Unary *)
     | "++"                  { INC }
     | "--"                  { DEC }
-    | "-"                   { NEG }
 
     (* Separators *)
     | "("                   { LPAREN }
@@ -235,6 +236,8 @@ rule token = parse
     | ","                   { COMMA }
     | "."                   { DOT }
     | "..."                 { TRIPLEDOT }
+    | "::"                  { DOUBLECOLON }
+    | "___"                 { BLANK }
 
     (* Ocamllex checks rules in order, so this is after keywords *)
     | identifier            { IDENT (Lexing.lexeme lexbuf) }

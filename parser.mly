@@ -3,9 +3,10 @@
 %{ open Ast %}
 
 (* included all necessary tokens *)
+%token DOUBLECOLON
 %token FUNC PACKAGE IMPORT TYPE STRUCT
 %token RETURN BREAK IF ELSE CONTINUE FOR WHILE
-%token CONST VAR MAKE ERROR NULL 
+%token CONST ERROR NULL 
 %token FINAL MUT LATE PRIVATE
 %token BOOL STRING U8 U16 U32 U64 I8 I16 I32 I64 F32 F64
 %token PLUS MINUS DIV MULT MOD 
@@ -17,6 +18,9 @@
 %token INC DEC NEG
 %token LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET
 %token SEMICOLON COLON COMMA DOT TRIPLEDOT QUESTION
+
+%nonassoc struct_prec
+%nonassoc empty_var_decls_prec
 
 %token <int> INT_LIT
 %token <bool> BOOL_LIT
@@ -38,8 +42,9 @@
 %left LSHIFT RSHIFT
 %left PLUS MINUS
 %left MULT DIV MOD
-%right NOT BITNOT INC DEC NEG (* CAST *)
-%left DOT LPAREN LBRACKET (* FUNCTION CALLS, ARRAY SUBSCRIPTING, INC, DEC *) 
+%right NOT BITNOT INC DEC (* CAST *)
+%left DOT LBRACKET (* FUNCTION CALLS, ARRAY SUBSCRIPTING, INC, DEC *) 
+%left LPAREN
 
 %start program
 %type <Ast.program> program
@@ -73,8 +78,8 @@ import_decl:
 /********** TYPE DECLARATIONS **********/
 
 type_decls:
-  | /* nothing */        { []       }
-  | type_decls type_decl { $1 :: $2 }
+  // | /* nothing */        { []       }
+  | type_decls type_decl { [$1] @ $2 }
 
 /*** STRUCTS AND ALIAS ***/
 
@@ -87,16 +92,12 @@ field_list:
   | field_list field_decl { $1 :: [$2] }
 
 field_decl:
-    opt_type_modifier IDENT type_expr opt_default (* REMEMBER TO MAKE IT ACCEPT '/n' OR ';' *)
+    modifier IDENT type_expr opt_default (* REMEMBER TO MAKE IT ACCEPT '\n' OR ';' *)
     { { name =          $2;
         field_type =    $3;
         modifier =      $1;
         default_value = $4; }
     }
-
-opt_type_modifier:
-  | /* nothing */ { None    }
-  | modifier      { Some $1 }
 
 modifier:
   | PRIVATE { Private }
@@ -112,8 +113,8 @@ opt_default:
 
 /* NEED CASE FOR DECLARATIONS LIKE: i64 x; */
 var_decls:
-  | /* nothing */      { []       }
-  | var_decls var_decl { $1 :: $2 }
+  // | /* nothing */      { []       }
+  | var_decls var_decl { [$1] @ $2 }
 
 var_decl:
   | CONST type_expr IDENT ASSIGN expr /* const i64 x = 256 */
@@ -134,21 +135,21 @@ var_decl:
   { InferType { 
     is_const =         true;
     name =             $2;
-(*  var_type =         $2; is this needed if inference? *)
+    var_type =         None; 
     initializer_expr = $4; }}
 
   | IDENT DECL_ASSIGN expr /* const x := 256 */
   { InferType { 
     is_const =         false;
     name =             $1;
-(*  var_type =         $1; is this needed if inference? *)
+    var_type =         None;
     initializer_expr = $3; }}
 
 /********** FUNCTION DECLARATIONS **********/
 
 func_decls:
-  | /* nothing */        { []       }
-  | func_decls func_decl { $1 :: $2 }
+  // | /* nothing */        { []       }
+  | func_decls func_decl { [$1] @ $2 }
 
 func_decl:
   | FUNC IDENT LPAREN params RPAREN return_types LBRACE stmts RBRACE 
@@ -187,10 +188,10 @@ type_expr_list:
 /********** STRUCT-FUNC DECLARATION **********/
 
 struct_func_decls:
-  | /* nothing */                      { []       }
-  | struct_func_decls struct_func_decl { $1 :: $2 }
+  // | /* nothing */                      { []       }
+  | struct_func_decls struct_func_decl { [$1] @ $2 }
 
-struct_func_decl: (* REVIEW THIS, NOT QUITE SURE ON SYNTAX OF A STRUCT-FUNC *)
+struct_func_decl:
   | FUNC LPAREN IDENT type_expr RPAREN IDENT LPAREN params RPAREN return_types LBRACE stmts RBRACE 
   {{
   name:         $6;
@@ -230,24 +231,24 @@ expr_list:
   | expr COMMA expr_list     { $1 :: [$3] }
 
 expr:
-| expr PLUS      expr                    { Binop($1, Plus, $3)   }
-| expr MINUS     expr                    { Binop($1, Minus, $3)  }
-| expr MULT      expr                    { Binop($1, Mult, $3)   }
-| expr DIV       expr                    { Binop($1, Div, $3)    }
-| expr MOD       expr                    { Binop($1, Mod, $3)    }
-| expr LSHIFT    expr                    { Binop($1, Lshift, $3) }
-| expr RSHIFT    expr                    { Binop($1, Rshift, $3) }
-| expr BITXOR    expr                    { Binop($1, Bitxor, $3) }
-| expr BITOR     expr                    { Binop($1, Bitor, $3)  }
-| expr BITAND    expr                    { Binop($1, Bitand, $3) }
-| expr EQ        expr                    { Binop($1, Eq, $3)     }
-| expr NEQ       expr                    { Binop($1, Neq, $3)    }
-| expr LT        expr                    { Binop($1, Lt, $3)     }
-| expr LE        expr                    { Binop($1, Le, $3)     }
-| expr GT        expr                    { Binop($1, Gt, $3)     }
-| expr GE        expr                    { Binop($1, Ge, $3)     }
-| expr AND       expr                    { Binop($1, And, $3)    }
-| expr OR        expr                    { Binop($1, Or, $3)     }
+| expr PLUS   expr                    { Binop($1, Plus, $3)   }
+| expr MINUS  expr                    { Binop($1, Minus, $3)  }
+| expr MULT   expr                    { Binop($1, Mult, $3)   }
+| expr DIV    expr                    { Binop($1, Div, $3)    }
+| expr MOD    expr                    { Binop($1, Mod, $3)    }
+| expr LSHIFT expr                    { Binop($1, Lshift, $3) }
+| expr RSHIFT expr                    { Binop($1, Rshift, $3) }
+| expr BITXOR expr                    { Binop($1, Bitxor, $3) }
+| expr BITOR  expr                    { Binop($1, Bitor, $3)  }
+| expr BITAND expr                    { Binop($1, Bitand, $3) }
+| expr EQ     expr                    { Binop($1, Eq, $3)     }
+| expr NEQ    expr                    { Binop($1, Neq, $3)    }
+| expr LT     expr                    { Binop($1, Lt, $3)     }
+| expr LE     expr                    { Binop($1, Le, $3)     }
+| expr GT     expr                    { Binop($1, Gt, $3)     }
+| expr GE     expr                    { Binop($1, Ge, $3)     }
+| expr AND    expr                    { Binop($1, And, $3)    }
+| expr OR     expr                    { Binop($1, Or, $3)     }
 
 | expr ASSIGN expr                       { Assignment ($1, RegAssign, $3)    }
 | expr DECL_ASSIGN expr                  { Assignment ($1, DeclAssign, $3)   }
@@ -262,19 +263,18 @@ expr:
 | expr BITXOR_ASSIGN expr                { Assignment ($1, BitxorAssign, $3) }
 | expr BITOR_ASSIGN expr                 { Assignment ($1, BitorAssign, $3)  }
 
-| BITNOT expr                            { Unaop (Bitnot, $2) }
-| NOT expr                               { Unaop (Not, $2)    }
-| NEG expr                               { Unaop (Neg, $2)    }
-| INC expr                               { Unaop (Inc, $2)    }
-| DEC expr                               { Unaop (Dec, $2)    }
+| BITNOT expr { Unaop (Bitnot, $2) }
+| NOT expr    { Unaop (Not, $2)    }
+| INC expr    { Unaop (Inc, $2)    }
+| DEC expr    { Unaop (Dec, $2)    }
 
-| expr DOT IDENT                         { FieldAccess ($1, Identifier($3)) }
-| expr LBRACKET expr RBRACKET            { IndexAccess ($1, $3)             }
-| expr LBRACKET expr COLON expr RBRACKET { SliceExpr ($1, $3, Some $5)      }
-| expr LBRACKET expr COLON RBRACKET      { SliceExpr ($1, $3, None)         }
-| IDENT LPAREN expr_list RPAREN          { FunctionCall ($1, $3)            }
-| expr DOT IDENT LPAREN expr_list RPAREN { MethodCall ($1, $3, $5)          }
-| type_expr LPAREN expr RPAREN           { Cast ($1, $3)                    }
+| IDENT DOUBLECOLON IDENT { FieldAccess ($1, Identifier($3)) }
+| IDENT LBRACKET expr RBRACKET            { IndexAccess ($1, $3)             }
+| IDENT LBRACKET expr COLON expr RBRACKET { SliceExpr ($1, $3, Some $5)      }
+| IDENT LBRACKET expr COLON RBRACKET      { SliceExpr ($1, $3, None)         }
+| IDENT LPAREN expr_list RPAREN           { FunctionCall ($1, $3)            }
+| IDENT DOT IDENT LPAREN expr_list RPAREN  { MethodCall ($1, $3, $5)          }
+| type_expr LPAREN expr RPAREN            { Cast ($1, $3)                    }
 
 | LBRACKET expr RBRACKET type_expr LBRACE expr_list RBRACE { ArrayLit ($2, $4, $6) }
 | IDENT LBRACE field_expr_list RBRACE                      { StructLit ($1, $3)    }
@@ -286,14 +286,13 @@ expr:
 | CHAR_LIT                               { CharLit ($1)    }
 | FLOAT_LIT                              { FloatLit ($1)   }
 | STRING_LIT                             { StringLit ($1)  }
-| IDENT                                  { Identifier ($1) }
 | NULL                                   { Null            }
 | BREAK                                  { Break           }
 | CONTINUE                               { Continue        }
 
 type_expr:
   | primitive_type                            { Primitive $1   }
-  | LBRACKET INT_LIT RBRACKET type_expr       { Array ($4, $2) }
+  | LBRACKET expr RBRACKET type_expr       { Array ($4, $2) }
   | LBRACKET RBRACKET type_expr               { Slice $3       }
   | STRUCT IDENT                              { Struct $2      } 
 (*| IDENT                                     { TypeName $1 } I'm not quite sure what this is *)

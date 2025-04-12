@@ -1,4 +1,5 @@
 type token =
+  | DOUBLECOLON
   | FUNC
   | PACKAGE
   | IMPORT
@@ -12,8 +13,6 @@ type token =
   | FOR
   | WHILE
   | CONST
-  | VAR
-  | MAKE
   | ERROR
   | NULL
   | FINAL
@@ -80,34 +79,34 @@ type token =
   | TRIPLEDOT
   | QUESTION
   | INT_LIT of (
-# 21 "parser.mly"
+# 25 "parser.mly"
         int
-# 86 "parser.mli"
+# 85 "parser.mli"
 )
   | BOOL_LIT of (
-# 22 "parser.mly"
+# 26 "parser.mly"
         bool
-# 91 "parser.mli"
+# 90 "parser.mli"
 )
   | CHAR_LIT of (
-# 23 "parser.mly"
+# 27 "parser.mly"
         char
-# 96 "parser.mli"
+# 95 "parser.mli"
 )
   | FLOAT_LIT of (
-# 24 "parser.mly"
+# 28 "parser.mly"
         float
-# 101 "parser.mli"
+# 100 "parser.mli"
 )
   | STRING_LIT of (
-# 25 "parser.mly"
+# 29 "parser.mly"
         string
-# 106 "parser.mli"
+# 105 "parser.mli"
 )
   | IDENT of (
-# 26 "parser.mly"
+# 30 "parser.mly"
         string
-# 111 "parser.mli"
+# 110 "parser.mli"
 )
 
 val program :

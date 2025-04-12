@@ -15,6 +15,7 @@ type type_expr =
   | Array of type_expr * int (* element type, length *)
   | Slice of type_expr (* element type *)
   | Struct of string (* struct name *)
+  (* Add back TypeName, refer to Example 3.6 *)
 
 (* Modifiers *)
 type type_modifier =
