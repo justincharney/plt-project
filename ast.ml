@@ -12,11 +12,9 @@ type primitive_type =
 (* Represent the non-primitive types in our language *)
 type type_expr =
   | Primitive of primitive_type
-  | Pointer of type_expr
   | Array of type_expr * int (* element type, length *)
   | Slice of type_expr (* element type *)
   | Struct of string (* struct name *)
-  | TypeName of string (* ??? where is this used? named type - like example 3.6 *)
 
 (* Modifiers *)
 type type_modifier =
@@ -46,35 +44,39 @@ type assign_op =
 (* some basic expression in lang *)
 type expr =
   | SubExpr of expr (* ? for parentheses expressions like (1+2)? specifically for parser to parse into these expressions...unsure *)
+  
   (* Literals *)
   | IntLit of int
   | BoolLit of bool
   | CharLit of char
   | FloatLit of float
   | StringLit of string
-  | Null (* For null literal *)
-  | ArrayLit of expr * type_expr * expr list (* [3]i32{1, 2, 3} *)
+  | ArrayLit of expr * type_expr * expr list (* [3]i32{1, 2, 3} | The {...} is not in LRM *)
   | StructLit of expr * (expr * expr) list (* e.g. goody{x:"funky supreme", y:1000} *)
-  | SliceLit of type_expr * expr list (* []i32{1, 2, 3} *)
+  | SliceLit of type_expr * expr list (* []i32{1, 2, 3} | Not in LRM? *)
+  | Null (* For null literal *)
 
-  (* Variables and access *)
+  (* Variables and Field/Index Access *)
   | Identifier of string
-  | FieldAccess of expr * expr (* For struct.field *)
-  | IndexAccess of expr * expr (* array_or_slice_exp[index_exp] *)
-  | SliceExpr of expr * expr * expr option (* arr[start:end?] *)
+  | FieldAccess of expr * expr (* For struct.field | LRM says identifier . identifier *)
+  | IndexAccess of expr * expr (* array_or_slice_exp[index_exp] | LRM says identifier '[' expr ']' *)
+  | SliceExpr of expr * expr * expr option (* arr[start:end?]  | LRM says identifier '[' digit+ ':' (digit+)? ']' *)
 
   (* Operations *)
   | Binop of expr * biop * expr (* e.g. a + b *)
   | Unaop of unop * expr (* e.g. -x *)
-  | Assignment of expr * assign_op * expr  (* For operations like x += y | x = y | x &= y *)
+  | Assignment of expr * assign_op * expr  (* For operations like x += y and x = y | NOT CORRECT?*)
 
+  (* Error Expression and Casting *)
+  | Cast of type_expr * expr (* i64(x) | error("system fail") | f32(1.2) *)
+
+  (* Function and Method Calls*)
   | FunctionCall of string * expr list (* func_name(arg1, arg2) *)
   | MethodCall of expr * expr * expr list (* myStruct.someMethod(arg1, arg2) *)
 
-  | Cast of type_expr * expr (* i64(x) | error("system fail") | f32(1.2) *)
-
-  | Break 
+  (* Loop Controls*)
   | Continue
+  | Break 
 
 (* Struct field definition *)
 type field = {
@@ -94,7 +96,7 @@ type var_decl = (* x = i64(2) *)
   | InferType of {
     is_const: bool;
     name: string;
-(*  var_type: type_expr option; is this needed if this is inference? *)
+    var_type: type_expr option;
     initializer_expr: expr;
   }
 
