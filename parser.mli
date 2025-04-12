@@ -79,36 +79,35 @@ type token =
   | DOT
   | TRIPLEDOT
   | QUESTION
-  | EOF
   | INT_LIT of (
 # 21 "parser.mly"
         int
-# 87 "parser.mli"
+# 86 "parser.mli"
 )
   | BOOL_LIT of (
 # 22 "parser.mly"
         bool
-# 92 "parser.mli"
+# 91 "parser.mli"
 )
   | CHAR_LIT of (
 # 23 "parser.mly"
         char
-# 97 "parser.mli"
+# 96 "parser.mli"
 )
   | FLOAT_LIT of (
 # 24 "parser.mly"
         float
-# 102 "parser.mli"
+# 101 "parser.mli"
 )
   | STRING_LIT of (
 # 25 "parser.mly"
         string
-# 107 "parser.mli"
+# 106 "parser.mli"
 )
   | IDENT of (
 # 26 "parser.mly"
         string
-# 112 "parser.mli"
+# 111 "parser.mli"
 )
 
 val program :

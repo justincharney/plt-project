@@ -16,7 +16,7 @@
 %token EQ NEQ LT LE GT GE AND OR NOT 
 %token INC DEC NEG
 %token LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET
-%token SEMICOLON COLON COMMA DOT TRIPLEDOT QUESTION EOF
+%token SEMICOLON COLON COMMA DOT TRIPLEDOT QUESTION
 
 %token <int> INT_LIT
 %token <bool> BOOL_LIT
@@ -59,13 +59,13 @@ program:
 /********** PACKAGE **********/
 
 package_decl:
-  | PACKAGE IDENT EOF { $2 }
+  | PACKAGE IDENT { $2 }
 
 /********** IMPORTS **********/
 
 import_decls:
   | /* nothing */                { [] }
-  | import_decls import_decl EOF { $1 :: $2 }
+  | import_decls import_decl { $1 :: $2 }
 
 import_decl:
   | IMPORT STRING_LIT { $2 }
@@ -74,7 +74,7 @@ import_decl:
 
 type_decls:
   | /* nothing */            { [] }
-  | type_decls type_decl EOF { $1 :: $2 }
+  | type_decls type_decl { $1 :: $2 }
 
 /*** STRUCTS AND ALIAS ***/
 
@@ -84,10 +84,10 @@ type_decl:
 
 field_list:
   | /* nothing */             { [] }
-  | field_list field_decl EOF { $1 :: [$2] }
+  | field_list field_decl { $1 :: [$2] }
 
 field_decl:
-    opt_type_modifier IDENT type_expr opt_default opt_newsemi (* REMEMBER TO MAKE IT ACCEPT '/n' OR ';' *)
+    opt_type_modifier IDENT type_expr opt_default (* REMEMBER TO MAKE IT ACCEPT '/n' OR ';' *)
     { { name =          $2;
         field_type =    $3;
         modifier =      $1;
@@ -108,45 +108,47 @@ opt_default:
   | /* nothing */ { [] }
   | ASSIGN expr   { Some $2 }
 
-opt_newsemi:
-  | /* nothing */ { None }
-  | SEMICOLON     { SEMICOLON }
-
 /********** VARIABLE DECLARATIONS **********/
 
 /* NEED CASE FOR DECLARATIoNS LIKE: i64 x; */
 var_decls:
   | /* nothing */          { [] }
-  | var_decls var_decl EOF { $1 :: $2 }
+  | var_decls var_decl { $1 :: $2 }
 
 var_decl:
-  | opt_const type_expr IDENT ASSIGN expr opt_newsemi /* const i64 x = 256 */
+  | CONST type_expr IDENT ASSIGN expr /* const i64 x = 256 */
   { StrictType { 
-    is_const =         $1;
+    is_const =         true;
     name =             $3;
     var_type =         $2;
     initializer_expr = $5; }}
 
-  | opt_const opt_type_expr IDENT DECL_ASSIGN expr opt_newsemi /* const x := 256 */
+  | type_expr IDENT ASSIGN expr /* const i64 x = 256 */
+  { StrictType { 
+    is_const =         false;
+    name =             $2;
+    var_type =         $1;
+    initializer_expr = $4; }}
+
+  | CONST IDENT DECL_ASSIGN expr /* const x := 256 */
   { InferType { 
-    is_const =         $1;
-    name =             $3;
-    var_type =         $2; (* is this needed if inference? *)
-    initializer_expr = $5; }}
+    is_const =         true;
+    name =             $2;
+(*  var_type =         $2; is this needed if inference? *)
+    initializer_expr = $4; }}
 
-opt_const: 
-  | /* nothing */ { false }
-  | CONST         { true }
-
-opt_type_expr:
-  | /* nothing */ { None }
-  | type_expr     { Some $1 }
+  | IDENT DECL_ASSIGN expr /* const x := 256 */
+  { InferType { 
+    is_const =         false;
+    name =             $1;
+(*  var_type =         $1; is this needed if inference? *)
+    initializer_expr = $3; }}
 
 /********** FUNCTION DECLARATIONS **********/
 
 func_decls:
   | /* nothing */            { [] }
-  | func_decls func_decl EOF { $1 :: $2 }
+  | func_decls func_decl { $1 :: $2 }
 
 func_decl:
   | FUNC IDENT LPAREN params RPAREN return_types LBRACE stmts RBRACE 
@@ -186,7 +188,7 @@ type_expr_list:
 
 struct_func_decls:
   | /* nothing */                          { [] }
-  | struct_func_decls struct_func_decl EOF { $1 :: $2 }
+  | struct_func_decls struct_func_decl { $1 :: $2 }
 
 struct_func_decl: (* REVIEW THIS, NOT QUITE SURE ON SYNTAX OF A STRUCT-FUNC *)
   | FUNC LPAREN IDENT type_expr RPAREN IDENT LPAREN params RPAREN return_types LBRACE stmts RBRACE 
@@ -204,12 +206,12 @@ stmts:
   | stmts stmt    { $1 :: $2 }
 
 stmt:
-  | expr opt_newsemi                                                       { Expr ($1) }
-  | var_decl opt_newsemi                                                   { VarDecl ($1) }
+  | expr                                                       { Expr ($1) }
+  | var_decl                                                   { VarDecl ($1) }
   | IF expr LBRACE stmts RBRACE else_block                                 { IfStmt ($2, $4, $6) }
   | FOR opt_stmt SEMICOLON opt_expr SEMICOLON opt_expr LBRACE stmts RBRACE { ForStmt ($2, $4, $6, $8) }
   | WHILE expr LBRACE stmts RBRACE                                         { WhileStmt ($2, $4) }
-  | RETURN expr_list opt_newsemi                                           { Return ($2)} 
+  | RETURN expr_list                                           { Return ($2)} 
 
 else_block:
   | ELSE LBRACE stmts RBRACE                    { $3 }
@@ -275,7 +277,7 @@ expr:
 | type_expr LPAREN expr RPAREN           { Cast ($1, $3) }
 
 | LBRACKET expr RBRACKET type_expr LBRACE expr_list RBRACE { ArrayLit ($2, $4, $6)}
-| expr LBRACE field_expr_list RBRACE                       { StructLit ($1, $3) }
+| IDENT LBRACE field_expr_list RBRACE                      { StructLit ($1, $3) }
 | LBRACKET RBRACKET type_expr LBRACE expr_list RBRACE      { SliceLit ($3, $5) }
 
 | LPAREN expr RPAREN                     { SubExpr $2 }
@@ -293,8 +295,8 @@ type_expr:
   | primitive_type                            { Primitive $1 }
   | LBRACKET INT_LIT RBRACKET type_expr       { Array ($4, $2) }
   | LBRACKET RBRACKET type_expr               { Slice $3 }
-  | STRUCT IDENT                              { Struct $2 } (* 
-  | IDENT                                     { TypeName $1 } I'm not quite sure what this is *)
+  | STRUCT IDENT                              { Struct $2 } 
+(*| IDENT                                     { TypeName $1 } I'm not quite sure what this is *)
 
 field_expr_list:
   | expr COLON expr                         { [($1, $3)] }

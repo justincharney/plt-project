@@ -94,7 +94,7 @@ type var_decl = (* x = i64(2) *)
   | InferType of {
     is_const: bool;
     name: string;
-    var_type: type_expr option; (* is this needed if this inference? *)
+(*  var_type: type_expr option; is this needed if this is inference? *)
     initializer_expr: expr;
   }
 
