@@ -19,9 +19,6 @@
 %token LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET
 %token SEMICOLON COLON COMMA DOT TRIPLEDOT QUESTION
 
-%nonassoc struct_prec
-%nonassoc empty_var_decls_prec
-
 %token <int> INT_LIT
 %token <bool> BOOL_LIT
 %token <char> CHAR_LIT

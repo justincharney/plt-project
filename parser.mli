@@ -79,32 +79,32 @@ type token =
   | TRIPLEDOT
   | QUESTION
   | INT_LIT of (
-# 25 "parser.mly"
+# 22 "parser.mly"
         int
 # 85 "parser.mli"
 )
   | BOOL_LIT of (
-# 26 "parser.mly"
+# 23 "parser.mly"
         bool
 # 90 "parser.mli"
 )
   | CHAR_LIT of (
-# 27 "parser.mly"
+# 24 "parser.mly"
         char
 # 95 "parser.mli"
 )
   | FLOAT_LIT of (
-# 28 "parser.mly"
+# 25 "parser.mly"
         float
 # 100 "parser.mli"
 )
   | STRING_LIT of (
-# 29 "parser.mly"
+# 26 "parser.mly"
         string
 # 105 "parser.mli"
 )
   | IDENT of (
-# 30 "parser.mly"
+# 27 "parser.mly"
         string
 # 110 "parser.mli"
 )
