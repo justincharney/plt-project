@@ -42,8 +42,9 @@ type assign_op =
 | LshiftAssign | RshiftAssign | BitandAssign | BitxorAssign | BitorAssign
 
 (* some basic expression in lang *)
+(* Note: Can further break down by creating a literal type, but we optd not to.*)
 type expr =
-  | SubExpr of expr (* ? for parentheses expressions like (1+2)? specifically for parser to parse into these expressions...unsure *)
+  | SubExpr of expr (* For expressions like (1 + (2 * 3)) *)
   
   (* Literals *)
   | IntLit of int
@@ -51,30 +52,30 @@ type expr =
   | CharLit of char
   | FloatLit of float
   | StringLit of string
-  | ArrayLit of expr * type_expr * expr list (* [3]i32{1, 2, 3} | The {...} is not in LRM *)
+  | ArrayLit of expr * type_expr * expr list (* [3]i32{1, 2, 3} *)
   | StructLit of expr * (expr * expr) list (* e.g. goody{x:"funky supreme", y:1000} *)
   | SliceLit of type_expr * expr list (* []i32{1, 2, 3} | Not in LRM? *)
   | Null (* For null literal *)
 
   (* Variables and Field/Index Access *)
   | Identifier of string
-  | FieldAccess of expr * expr (* For struct.field | LRM says identifier . identifier *)
-  | IndexAccess of expr * expr (* array_or_slice_exp[index_exp] | LRM says identifier '[' expr ']' *)
-  | SliceExpr of expr * expr * expr option (* arr[start:end?]  | LRM says identifier '[' digit+ ':' (digit+)? ']' *)
+  | FieldAccess of expr * expr (* For struct.field *)
+  | IndexAccess of expr * expr (* array_or_slice_exp[index_exp] *)
+  | SliceExpr of expr * expr * expr option (* arr[start:end?] *)
 
   (* Operations *)
   | Binop of expr * biop * expr (* e.g. a + b *)
   | Unaop of unop * expr (* e.g. -x *)
-  | Assignment of expr * assign_op * expr  (* For operations like x += y and x = y | NOT CORRECT?*)
+  | Assignment of expr * assign_op * expr  (* For operations like x += y and x = y *)
 
   (* Error Expression and Casting *)
   | Cast of type_expr * expr (* i64(x) | error("system fail") | f32(1.2) *)
 
-  (* Function and Method Calls*)
+  (* Function and Method Calls *)
   | FunctionCall of string * expr list (* func_name(arg1, arg2) *)
   | MethodCall of expr * expr * expr list (* myStruct.someMethod(arg1, arg2) *)
 
-  (* Loop Controls*)
+  (* Loop Controls *)
   | Continue
   | Break 
 
@@ -92,8 +93,8 @@ type type_decl =
   | TypeAlias of string * type_expr (* type alias *)
 
 (* Variable declaration *)
-type var_decl = (* x = i64(2) *)
-  | InferType of {
+type var_decl = 
+  | InferType of { (* x = i64(2) *)
     is_const: bool;
     name: string;
     var_type: type_expr option;
@@ -114,7 +115,7 @@ type stmt =
   | VarDecl of var_decl
 
   (* Control flow *)
-  | IfStmt of expr * stmt list * stmt list  (* condition, then_block, else_block (else can be Block or IfStmt for else if) *)
+  | IfStmt of expr * stmt list * stmt list  (* condition, then_block, else_block *)
   | ForStmt of stmt option * expr option * expr option * stmt list (* init; condition; update; body *)
   | WhileStmt of expr * stmt list (* condition; body *)
   | Return of expr list (* return val1, var2; or return; *)
