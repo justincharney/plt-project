@@ -40,7 +40,6 @@ type token =
  | TRUE | FALSE | FINAL | MUT | LATE | PRIVATE | ERROR
  | NULL
  | DOUBLECOLON
- | BLANK
 
  (* Built-in type keywords *)
  | BOOL
@@ -237,7 +236,6 @@ rule token = parse
     | "."                   { DOT }
     | "..."                 { TRIPLEDOT }
     | "::"                  { DOUBLECOLON }
-    | "___"                 { BLANK }
 
     (* Ocamllex checks rules in order, so this is after keywords *)
     | identifier            { IDENT (Lexing.lexeme lexbuf) }

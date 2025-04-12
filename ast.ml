@@ -82,7 +82,7 @@ type expr =
 type field = {
   name: string;
   field_type: type_expr;
-  modifier: type_modifier option;
+  modifier: type_modifier;
   default_value: expr option;
 }
 
