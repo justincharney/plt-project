@@ -106,46 +106,54 @@ opt_default:
   | ASSIGN expr   { Some $2 }
 
 /********** VARIABLE DECLARATIONS **********/
+(* type now required when inferring *)
 
 /* NEED CASE FOR DECLARATIONS LIKE: i64 x; */
 var_decls:
   | var_decls var_decl { [$1] @ $2 }
 
 var_decl:
-  | CONST type_expr_w_structs IDENT ASSIGN expr /* const i64 x = 256 */
+  | CONST type_expr_w_structs IDENT opt_assign /* const i64 x = 256 */
   { StrictType { 
     is_const =         true;
     name =             $3;
     var_type =         $2;
-    initializer_expr = $5; }}
+    initializer_expr = $4; }}
 
-  | type_expr_w_structs IDENT ASSIGN expr /* const i64 x = 256 */
+  | type_expr_w_structs IDENT opt_assign /* const i64 x = 256 */
   { StrictType { 
     is_const =         false;
     name =             $2;
     var_type =         $1;
-    initializer_expr = $4; }}
+    initializer_expr = $3; }}
   (*add the ident parts of these*)
 
-  | CONST IDENT DECL_ASSIGN expr /* const x := 256 */
+  | CONST IDENT req_decl_assign /* const x := 256 */
   { InferType { 
     is_const =         true;
     name =             $2;
     var_type =         None; 
-    initializer_expr = $4; }}
+    initializer_expr = $3; }}
 
-  | IDENT DECL_ASSIGN expr /* const x := 256 */
+  | IDENT req_decl_assign /* const x := 256 */
   { InferType { 
     is_const =         false;
     name =             $1;
     var_type =         None;
-    initializer_expr = $3; }}
+    initializer_expr = $2; }}
 
 type_expr_w_structs:
   | primitive_type                   { Primitive $1   }
   | LBRACKET expr RBRACKET type_expr { Array ($4, $2) }
   | LBRACKET RBRACKET type_expr      { Slice($3)      }
   | IDENT                       { TypeName($1) }
+
+opt_assign:
+  | /* nothing */ { None }
+  | ASSIGN expr   { Some $2 }
+
+req_decl_assign:
+  | DECL_ASSIGN expr { $2 }
 
 /********** FUNCTION DECLARATIONS **********/
 

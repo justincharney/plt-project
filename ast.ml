@@ -93,6 +93,7 @@ type type_decl =
   | TypeAlias of string * type_expr (* type alias *)
 
 (* Variable declaration *)
+(* note: non-initialized variables are not allowed when type is inferred *)
 type var_decl = 
   | InferType of { (* x = i64(2) *)
     is_const: bool;
@@ -105,7 +106,7 @@ type var_decl =
     is_const: bool;
     name: string;
     var_type: type_expr;
-    initializer_expr: expr;
+    initializer_expr: expr option;
   }
 
 (* Top level declarations *)
