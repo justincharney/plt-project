@@ -68,7 +68,7 @@ program:
           struct_functions  = List.rev s } }
 
 import_list:
-      /* ε */                { [] }
+      /* None */                { [] }
     | import_list import_decl { $2 :: $1 }
 
 import_decl:
@@ -76,7 +76,7 @@ import_decl:
 
 /* === Top‑level declarations ============================================ */
 decl_list:
-      /* ε */                 { ([],[],[],[]) }
+      /* None */                 { ([],[],[],[]) }
     | decl_list top_decl      {
         let (tl,gl,fl,sl) = $1 in
         match $2 with
@@ -106,11 +106,10 @@ type_expr:
     | IDENT                                { TypeName $1 }
     | LBRACKET INT_LIT RBRACKET type_expr  { Array($4,$2) }
     | LBRACKET RBRACKET type_expr          { Slice $3 }
-    | STRUCT IDENT                         { Struct $2 }   /* reference by name */
 
 /* ---------- Fields (inside struct) -------------------------------------- */
 modifier_opt:
-      /* ε */      { None }
+      /* None */      { None }
     | PRIVATE      { Some Private }
     | MUT          { Some Mutable }
     | FINAL        { Some Final }
@@ -121,11 +120,11 @@ field:
       { { name=$2; field_type=$3; modifier=$1; default_value=$4 } }
 
 default_opt:
-      /* ε */                { None }
+      /* None */                { None }
     | ASSIGN expr            { Some $2 }
 
 field_list:
-      /* ε */                { [] }
+      /* None */                { [] }
     | field_list field SEMICOLON { $2 :: $1 }
 
 /* ---------- Type declarations ------------------------------------------ */
@@ -149,7 +148,7 @@ global_decl:
             initializer_expr=Some $3 } }
 
 type_ann_opt:
-      /* ε */         { None }
+      /* None */         { None }
     | COLON type_expr { Some $2 }
 
 /* ---------- Function & struct‑function --------------------------------- */
@@ -157,12 +156,12 @@ param:
       IDENT type_expr { { name=$1; param_type=$2 } }
 
 param_list:
-      /* ε */            { [] }
+      /* None */            { [] }
     | param               { [$1] }
     | param_list COMMA param { $3 :: $1 }
 
 return_types:
-      /* ε */                        { [] }
+      /* None */                        { [] }
     | type_expr                      { [$1] }
     | LPAREN type_expr_list RPAREN   { List.rev $2 }
 
@@ -187,7 +186,7 @@ block:
       LBRACE stmt_list RBRACE { $2 }
 
 stmt_list:
-      /* ε */            { [] }
+      /* None */            { [] }
     | stmt_list stmt      { $2 :: $1 }
 
 stmt:
@@ -203,7 +202,7 @@ stmt:
     | CONTINUE SEMICOLON            { Continue }
 
 ret_opt:
-      /* ε */           { None }
+      /* None */           { None }
     | expr_list         { Some (List.rev $1) }
 
 expr_list:
@@ -216,7 +215,7 @@ for_clause:
         { { init=$1; cond=$3; step=$5 } }
 
 expr_opt:
-      /* ε */ { None } | expr { Some $1 }
+      /* None */ { None } | expr { Some $1 }
 
 /* ---------- Local variable decl (stmt) --------------------------------- */
 
@@ -229,6 +228,14 @@ var_decl:
         { VarDecl{is_const=false; name=$1; var_type=None; initializer_expr=Some $3} }
 
 /* ---------- Expressions ------------------------------------------------- */
+
+/* An lvalue represents an expression that can appear on the left side of an assignment */
+lvalue:
+      IDENT                         { Identifier $1 }         /* Simple variable */
+    | expr DOT IDENT                { FieldAccess($1, $3) }   /* Struct field access */
+    | expr LBRACKET expr RBRACKET   { IndexAccess($1, $3) }   /* Array/Slice element access */
+  ;
+
 expr:
       literal                          { $1 }
     | IDENT                            { Identifier $1 }
@@ -269,17 +276,17 @@ expr:
     | expr GE expr                     { Binop($1,Ge,$3) }
 
     /* assignment (RIGHT‑associative, precedence set earlier) */
-    | expr ASSIGN expr                 { SimpleAssign($1,$3) }
-    | expr PLUS_ASSIGN  expr           { CompoundAssign($1,PlusAssign,$3) }
-    | expr MINUS_ASSIGN expr           { CompoundAssign($1,MinusAssign,$3) }
-    | expr TIMES_ASSIGN expr           { CompoundAssign($1,TimesAssign,$3) }
-    | expr DIV_ASSIGN expr             { CompoundAssign($1,DivAssign,$3) }
-    | expr MOD_ASSIGN expr             { CompoundAssign($1,ModAssign,$3) }
-    | expr LSHIFT_ASSIGN expr          { CompoundAssign($1,LshiftAssign,$3) }
-    | expr RSHIFT_ASSIGN expr          { CompoundAssign($1,RshiftAssign,$3) }
-    | expr BITAND_ASSIGN expr          { CompoundAssign($1,BitandAssign,$3) }
-    | expr BITXOR_ASSIGN expr          { CompoundAssign($1,BitxorAssign,$3) }
-    | expr BITOR_ASSIGN expr           { CompoundAssign($1,BitorAssign,$3) }
+    | lvalue ASSIGN expr                 { SimpleAssign($1,$3) }
+    | lvalue PLUS_ASSIGN  expr           { CompoundAssign($1,PlusAssign,$3) }
+    | lvalue MINUS_ASSIGN expr           { CompoundAssign($1,MinusAssign,$3) }
+    | lvalue TIMES_ASSIGN expr           { CompoundAssign($1,TimesAssign,$3) }
+    | lvalue DIV_ASSIGN expr             { CompoundAssign($1,DivAssign,$3) }
+    | lvalue MOD_ASSIGN expr             { CompoundAssign($1,ModAssign,$3) }
+    | lvalue LSHIFT_ASSIGN expr          { CompoundAssign($1,LshiftAssign,$3) }
+    | lvalue RSHIFT_ASSIGN expr          { CompoundAssign($1,RshiftAssign,$3) }
+    | lvalue BITAND_ASSIGN expr          { CompoundAssign($1,BitandAssign,$3) }
+    | lvalue BITXOR_ASSIGN expr          { CompoundAssign($1,BitxorAssign,$3) }
+    | lvalue BITOR_ASSIGN expr           { CompoundAssign($1,BitorAssign,$3) }
 
     /* make (slice constructor) */
     | MAKE LPAREN type_expr COMMA expr cap_opt RPAREN
