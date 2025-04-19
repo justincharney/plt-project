@@ -1,7 +1,7 @@
 type token =
-  | FUNC
   | PACKAGE
   | IMPORT
+  | FUNC
   | TYPE
   | STRUCT
   | RETURN
@@ -12,14 +12,15 @@ type token =
   | FOR
   | WHILE
   | CONST
-  | VAR
   | MAKE
-  | ERROR
-  | NULL
   | FINAL
   | MUT
   | LATE
   | PRIVATE
+  | ERROR
+  | TRUE
+  | FALSE
+  | NULL
   | BOOL
   | STRING
   | U8
@@ -34,22 +35,25 @@ type token =
   | F32
   | PLUS
   | MINUS
-  | DIV
   | MULT
+  | DIV
   | MOD
   | LSHIFT
   | RSHIFT
+  | BITAND
   | BITXOR
   | BITOR
   | BITNOT
-  | BITAND
+  | AND
+  | OR
+  | NOT
   | ASSIGN
+  | DECL_ASSIGN
   | PLUS_ASSIGN
   | MINUS_ASSIGN
   | TIMES_ASSIGN
   | DIV_ASSIGN
   | MOD_ASSIGN
-  | DECL_ASSIGN
   | LSHIFT_ASSIGN
   | RSHIFT_ASSIGN
   | BITAND_ASSIGN
@@ -61,9 +65,6 @@ type token =
   | LE
   | GT
   | GE
-  | AND
-  | OR
-  | NOT
   | INC
   | DEC
   | LPAREN
@@ -76,38 +77,40 @@ type token =
   | COLON
   | COMMA
   | DOT
-  | QUESTION
-  | EOF
-  | INT_LIT of (
-# 21 "parser.mly"
-        int
-# 85 "parser.mli"
-)
-  | BOOL_LIT of (
-# 22 "parser.mly"
-        bool
-# 90 "parser.mli"
-)
-  | CHAR_LIT of (
+  | IDENT of (
 # 23 "parser.mly"
-        char
-# 95 "parser.mli"
+        string
+# 84 "parser.mli"
+)
+  | INT_LIT of (
+# 24 "parser.mly"
+        int
+# 89 "parser.mli"
 )
   | FLOAT_LIT of (
-# 24 "parser.mly"
+# 25 "parser.mly"
         float
-# 100 "parser.mli"
+# 94 "parser.mli"
 )
   | STRING_LIT of (
-# 25 "parser.mly"
-        string
-# 105 "parser.mli"
-)
-  | IDENT of (
 # 26 "parser.mly"
         string
-# 110 "parser.mli"
+# 99 "parser.mli"
 )
+  | CHAR_LIT of (
+# 27 "parser.mly"
+        char
+# 104 "parser.mli"
+)
+  | BOOL_LIT of (
+# 28 "parser.mly"
+        bool
+# 109 "parser.mli"
+)
+  | EOF
+  | UPLUS
+  | UMINUS
+  | IFX
 
 val program :
-  (Lexing.lexbuf  -> token) -> Lexing.lexbuf -> Ast.expr
+  (Lexing.lexbuf  -> token) -> Lexing.lexbuf -> Ast.program

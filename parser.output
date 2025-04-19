@@ -1,35 +1,174 @@
    0  $accept : %entry% $end
 
-   1  program : expr EOF
+   1  program : PACKAGE IDENT import_list decl_list EOF
 
-   2  expr : expr PLUS expr
-   3       | expr MINUS expr
-   4       | expr MULT expr
-   5       | expr DIV expr
-   6       | expr MOD expr
-   7       | expr LSHIFT expr
-   8       | expr RSHIFT expr
-   9       | expr BITXOR expr
-  10       | expr BITOR expr
-  11       | expr BITAND expr
-  12       | expr EQ expr
-  13       | expr NEQ expr
-  14       | expr LT expr
-  15       | expr LE expr
-  16       | expr GT expr
-  17       | expr GE expr
-  18       | expr AND expr
-  19       | expr OR expr
-  20       | expr SEMICOLON expr
-  21       | IDENT ASSIGN expr
-  22       | INT_LIT
-  23       | BOOL_LIT
-  24       | CHAR_LIT
-  25       | FLOAT_LIT
-  26       | STRING_LIT
-  27       | IDENT
+   2  import_list :
+   3              | import_list import_decl
 
-  28  %entry% : '\001' program
+   4  import_decl : IMPORT STRING_LIT
+
+   5  decl_list :
+   6            | decl_list top_decl
+
+   7  top_decl : type_decl
+   8           | global_decl
+   9           | func_decl
+  10           | struct_func_decl
+
+  11  primitive_type : BOOL
+  12                 | STRING
+  13                 | U8
+  14                 | U16
+  15                 | U32
+  16                 | U64
+  17                 | I8
+  18                 | I16
+  19                 | I32
+  20                 | I64
+  21                 | F16
+  22                 | F32
+  23                 | ERROR
+
+  24  type_expr : primitive_type
+  25            | IDENT
+  26            | LBRACKET INT_LIT RBRACKET type_expr
+  27            | LBRACKET RBRACKET type_expr
+  28            | STRUCT IDENT
+
+  29  modifier_opt :
+  30               | PRIVATE
+  31               | MUT
+  32               | FINAL
+  33               | LATE
+
+  34  field : modifier_opt IDENT type_expr default_opt
+
+  35  default_opt :
+  36              | ASSIGN expr
+
+  37  field_list :
+  38             | field_list field SEMICOLON
+
+  39  type_decl : TYPE IDENT STRUCT LBRACE field_list RBRACE
+  40            | TYPE IDENT ASSIGN type_expr
+
+  41  const_opt :
+  42            | CONST
+
+  43  global_decl : const_opt IDENT type_ann_opt ASSIGN expr
+  44              | const_opt IDENT DECL_ASSIGN expr
+
+  45  type_ann_opt :
+  46               | COLON type_expr
+
+  47  param : IDENT type_expr
+
+  48  param_list :
+  49             | param
+  50             | param_list COMMA param
+
+  51  return_types :
+  52               | type_expr
+  53               | LPAREN type_expr_list RPAREN
+
+  54  type_expr_list : type_expr
+  55                 | type_expr_list COMMA type_expr
+
+  56  func_body : block
+
+  57  func_decl : FUNC IDENT LPAREN param_list RPAREN return_types func_body
+
+  58  struct_func_decl : FUNC LPAREN IDENT IDENT RPAREN IDENT LPAREN param_list RPAREN return_types func_body
+
+  59  block : LBRACE stmt_list RBRACE
+
+  60  stmt_list :
+  61            | stmt_list stmt
+
+  62  stmt : expr SEMICOLON
+  63       | var_decl SEMICOLON
+  64       | block
+  65       | IF expr block
+  66       | IF expr block ELSE stmt
+  67       | WHILE expr block
+  68       | FOR for_clause block
+  69       | RETURN ret_opt SEMICOLON
+  70       | BREAK SEMICOLON
+  71       | CONTINUE SEMICOLON
+
+  72  ret_opt :
+  73          | expr_list
+
+  74  expr_list : expr
+  75            | expr_list COMMA expr
+
+  76  for_clause : expr_opt SEMICOLON expr_opt SEMICOLON expr_opt
+
+  77  expr_opt :
+  78           | expr
+
+  79  var_decl : const_opt IDENT type_ann_opt ASSIGN expr
+  80           | const_opt IDENT DECL_ASSIGN expr
+
+  81  expr : literal
+  82       | IDENT
+  83       | LPAREN expr RPAREN
+  84       | expr DOT IDENT
+  85       | expr LBRACKET expr RBRACKET
+  86       | expr LBRACKET expr_opt COLON expr_opt RBRACKET
+  87       | IDENT LPAREN arg_list RPAREN
+  88       | expr DOT IDENT LPAREN arg_list RPAREN
+  89       | NOT expr
+  90       | BITNOT expr
+  91       | MINUS expr
+  92       | INC expr
+  93       | DEC expr
+  94       | expr PLUS expr
+  95       | expr MINUS expr
+  96       | expr MULT expr
+  97       | expr DIV expr
+  98       | expr MOD expr
+  99       | expr LSHIFT expr
+ 100       | expr RSHIFT expr
+ 101       | expr BITAND expr
+ 102       | expr BITXOR expr
+ 103       | expr BITOR expr
+ 104       | expr AND expr
+ 105       | expr OR expr
+ 106       | expr EQ expr
+ 107       | expr NEQ expr
+ 108       | expr LT expr
+ 109       | expr LE expr
+ 110       | expr GT expr
+ 111       | expr GE expr
+ 112       | expr ASSIGN expr
+ 113       | expr PLUS_ASSIGN expr
+ 114       | expr MINUS_ASSIGN expr
+ 115       | expr TIMES_ASSIGN expr
+ 116       | expr DIV_ASSIGN expr
+ 117       | expr MOD_ASSIGN expr
+ 118       | expr LSHIFT_ASSIGN expr
+ 119       | expr RSHIFT_ASSIGN expr
+ 120       | expr BITAND_ASSIGN expr
+ 121       | expr BITXOR_ASSIGN expr
+ 122       | expr BITOR_ASSIGN expr
+ 123       | MAKE LPAREN type_expr COMMA expr cap_opt RPAREN
+ 124       | type_expr LPAREN expr RPAREN
+
+ 125  arg_list :
+ 126           | expr_list
+
+ 127  cap_opt :
+ 128          | COMMA expr
+
+ 129  literal : INT_LIT
+ 130          | FLOAT_LIT
+ 131          | CHAR_LIT
+ 132          | STRING_LIT
+ 133          | BOOL_LIT
+ 134          | NULL
+
+ 135  %entry% : '\001' program
 
 state 0
 	$accept : . %entry% $end  (0)
@@ -41,18 +180,12 @@ state 0
 
 
 state 1
-	%entry% : '\001' . program  (28)
+	%entry% : '\001' . program  (135)
 
-	INT_LIT  shift 3
-	BOOL_LIT  shift 4
-	CHAR_LIT  shift 5
-	FLOAT_LIT  shift 6
-	STRING_LIT  shift 7
-	IDENT  shift 8
+	PACKAGE  shift 3
 	.  error
 
-	program  goto 9
-	expr  goto 10
+	program  goto 4
 
 
 state 2
@@ -62,1221 +195,7477 @@ state 2
 
 
 state 3
-	expr : INT_LIT .  (22)
+	program : PACKAGE . IDENT import_list decl_list EOF  (1)
 
-	.  reduce 22
+	IDENT  shift 5
+	.  error
 
 
 state 4
-	expr : BOOL_LIT .  (23)
+	%entry% : '\001' program .  (135)
 
-	.  reduce 23
+	.  reduce 135
 
 
 state 5
-	expr : CHAR_LIT .  (24)
+	program : PACKAGE IDENT . import_list decl_list EOF  (1)
+	import_list : .  (2)
 
-	.  reduce 24
+	.  reduce 2
+
+	import_list  goto 6
 
 
 state 6
-	expr : FLOAT_LIT .  (25)
+	program : PACKAGE IDENT import_list . decl_list EOF  (1)
+	import_list : import_list . import_decl  (3)
+	decl_list : .  (5)
 
-	.  reduce 25
+	IMPORT  shift 7
+	FUNC  reduce 5
+	TYPE  reduce 5
+	CONST  reduce 5
+	IDENT  reduce 5
+	EOF  reduce 5
+
+	decl_list  goto 8
+	import_decl  goto 9
 
 
 state 7
-	expr : STRING_LIT .  (26)
+	import_decl : IMPORT . STRING_LIT  (4)
 
-	.  reduce 26
+	STRING_LIT  shift 10
+	.  error
 
 
 state 8
-	expr : IDENT . ASSIGN expr  (21)
-	expr : IDENT .  (27)
+	program : PACKAGE IDENT import_list decl_list . EOF  (1)
+	decl_list : decl_list . top_decl  (6)
+	const_opt : .  (41)
 
-	ASSIGN  shift 11
-	PLUS  reduce 27
-	MINUS  reduce 27
-	DIV  reduce 27
-	MULT  reduce 27
-	MOD  reduce 27
-	LSHIFT  reduce 27
-	RSHIFT  reduce 27
-	BITXOR  reduce 27
-	BITOR  reduce 27
-	BITAND  reduce 27
-	EQ  reduce 27
-	NEQ  reduce 27
-	LT  reduce 27
-	LE  reduce 27
-	GT  reduce 27
-	GE  reduce 27
-	AND  reduce 27
-	OR  reduce 27
-	SEMICOLON  reduce 27
-	EOF  reduce 27
+	FUNC  shift 11
+	TYPE  shift 12
+	CONST  shift 13
+	EOF  shift 14
+	IDENT  reduce 41
+
+	top_decl  goto 15
+	type_decl  goto 16
+	global_decl  goto 17
+	func_decl  goto 18
+	struct_func_decl  goto 19
+	const_opt  goto 20
 
 
 state 9
-	%entry% : '\001' program .  (28)
+	import_list : import_list import_decl .  (3)
 
-	.  reduce 28
+	.  reduce 3
 
 
 state 10
-	program : expr . EOF  (1)
-	expr : expr . PLUS expr  (2)
-	expr : expr . MINUS expr  (3)
-	expr : expr . MULT expr  (4)
-	expr : expr . DIV expr  (5)
-	expr : expr . MOD expr  (6)
-	expr : expr . LSHIFT expr  (7)
-	expr : expr . RSHIFT expr  (8)
-	expr : expr . BITXOR expr  (9)
-	expr : expr . BITOR expr  (10)
-	expr : expr . BITAND expr  (11)
-	expr : expr . EQ expr  (12)
-	expr : expr . NEQ expr  (13)
-	expr : expr . LT expr  (14)
-	expr : expr . LE expr  (15)
-	expr : expr . GT expr  (16)
-	expr : expr . GE expr  (17)
-	expr : expr . AND expr  (18)
-	expr : expr . OR expr  (19)
-	expr : expr . SEMICOLON expr  (20)
-
-	PLUS  shift 12
-	MINUS  shift 13
-	DIV  shift 14
-	MULT  shift 15
-	MOD  shift 16
-	LSHIFT  shift 17
-	RSHIFT  shift 18
-	BITXOR  shift 19
-	BITOR  shift 20
-	BITAND  shift 21
-	EQ  shift 22
-	NEQ  shift 23
-	LT  shift 24
-	LE  shift 25
-	GT  shift 26
-	GE  shift 27
-	AND  shift 28
-	OR  shift 29
-	SEMICOLON  shift 30
-	EOF  shift 31
-	.  error
-
-
-state 11
-	expr : IDENT ASSIGN . expr  (21)
-
-	INT_LIT  shift 3
-	BOOL_LIT  shift 4
-	CHAR_LIT  shift 5
-	FLOAT_LIT  shift 6
-	STRING_LIT  shift 7
-	IDENT  shift 8
-	.  error
-
-	expr  goto 32
-
-
-state 12
-	expr : expr PLUS . expr  (2)
-
-	INT_LIT  shift 3
-	BOOL_LIT  shift 4
-	CHAR_LIT  shift 5
-	FLOAT_LIT  shift 6
-	STRING_LIT  shift 7
-	IDENT  shift 8
-	.  error
-
-	expr  goto 33
-
-
-state 13
-	expr : expr MINUS . expr  (3)
-
-	INT_LIT  shift 3
-	BOOL_LIT  shift 4
-	CHAR_LIT  shift 5
-	FLOAT_LIT  shift 6
-	STRING_LIT  shift 7
-	IDENT  shift 8
-	.  error
-
-	expr  goto 34
-
-
-state 14
-	expr : expr DIV . expr  (5)
-
-	INT_LIT  shift 3
-	BOOL_LIT  shift 4
-	CHAR_LIT  shift 5
-	FLOAT_LIT  shift 6
-	STRING_LIT  shift 7
-	IDENT  shift 8
-	.  error
-
-	expr  goto 35
-
-
-state 15
-	expr : expr MULT . expr  (4)
-
-	INT_LIT  shift 3
-	BOOL_LIT  shift 4
-	CHAR_LIT  shift 5
-	FLOAT_LIT  shift 6
-	STRING_LIT  shift 7
-	IDENT  shift 8
-	.  error
-
-	expr  goto 36
-
-
-state 16
-	expr : expr MOD . expr  (6)
-
-	INT_LIT  shift 3
-	BOOL_LIT  shift 4
-	CHAR_LIT  shift 5
-	FLOAT_LIT  shift 6
-	STRING_LIT  shift 7
-	IDENT  shift 8
-	.  error
-
-	expr  goto 37
-
-
-state 17
-	expr : expr LSHIFT . expr  (7)
-
-	INT_LIT  shift 3
-	BOOL_LIT  shift 4
-	CHAR_LIT  shift 5
-	FLOAT_LIT  shift 6
-	STRING_LIT  shift 7
-	IDENT  shift 8
-	.  error
-
-	expr  goto 38
-
-
-state 18
-	expr : expr RSHIFT . expr  (8)
-
-	INT_LIT  shift 3
-	BOOL_LIT  shift 4
-	CHAR_LIT  shift 5
-	FLOAT_LIT  shift 6
-	STRING_LIT  shift 7
-	IDENT  shift 8
-	.  error
-
-	expr  goto 39
-
-
-state 19
-	expr : expr BITXOR . expr  (9)
-
-	INT_LIT  shift 3
-	BOOL_LIT  shift 4
-	CHAR_LIT  shift 5
-	FLOAT_LIT  shift 6
-	STRING_LIT  shift 7
-	IDENT  shift 8
-	.  error
-
-	expr  goto 40
-
-
-state 20
-	expr : expr BITOR . expr  (10)
-
-	INT_LIT  shift 3
-	BOOL_LIT  shift 4
-	CHAR_LIT  shift 5
-	FLOAT_LIT  shift 6
-	STRING_LIT  shift 7
-	IDENT  shift 8
-	.  error
-
-	expr  goto 41
-
-
-state 21
-	expr : expr BITAND . expr  (11)
-
-	INT_LIT  shift 3
-	BOOL_LIT  shift 4
-	CHAR_LIT  shift 5
-	FLOAT_LIT  shift 6
-	STRING_LIT  shift 7
-	IDENT  shift 8
-	.  error
-
-	expr  goto 42
-
-
-state 22
-	expr : expr EQ . expr  (12)
-
-	INT_LIT  shift 3
-	BOOL_LIT  shift 4
-	CHAR_LIT  shift 5
-	FLOAT_LIT  shift 6
-	STRING_LIT  shift 7
-	IDENT  shift 8
-	.  error
-
-	expr  goto 43
-
-
-state 23
-	expr : expr NEQ . expr  (13)
-
-	INT_LIT  shift 3
-	BOOL_LIT  shift 4
-	CHAR_LIT  shift 5
-	FLOAT_LIT  shift 6
-	STRING_LIT  shift 7
-	IDENT  shift 8
-	.  error
-
-	expr  goto 44
-
-
-state 24
-	expr : expr LT . expr  (14)
-
-	INT_LIT  shift 3
-	BOOL_LIT  shift 4
-	CHAR_LIT  shift 5
-	FLOAT_LIT  shift 6
-	STRING_LIT  shift 7
-	IDENT  shift 8
-	.  error
-
-	expr  goto 45
-
-
-state 25
-	expr : expr LE . expr  (15)
-
-	INT_LIT  shift 3
-	BOOL_LIT  shift 4
-	CHAR_LIT  shift 5
-	FLOAT_LIT  shift 6
-	STRING_LIT  shift 7
-	IDENT  shift 8
-	.  error
-
-	expr  goto 46
-
-
-state 26
-	expr : expr GT . expr  (16)
-
-	INT_LIT  shift 3
-	BOOL_LIT  shift 4
-	CHAR_LIT  shift 5
-	FLOAT_LIT  shift 6
-	STRING_LIT  shift 7
-	IDENT  shift 8
-	.  error
-
-	expr  goto 47
-
-
-state 27
-	expr : expr GE . expr  (17)
-
-	INT_LIT  shift 3
-	BOOL_LIT  shift 4
-	CHAR_LIT  shift 5
-	FLOAT_LIT  shift 6
-	STRING_LIT  shift 7
-	IDENT  shift 8
-	.  error
-
-	expr  goto 48
-
-
-state 28
-	expr : expr AND . expr  (18)
-
-	INT_LIT  shift 3
-	BOOL_LIT  shift 4
-	CHAR_LIT  shift 5
-	FLOAT_LIT  shift 6
-	STRING_LIT  shift 7
-	IDENT  shift 8
-	.  error
-
-	expr  goto 49
-
-
-state 29
-	expr : expr OR . expr  (19)
-
-	INT_LIT  shift 3
-	BOOL_LIT  shift 4
-	CHAR_LIT  shift 5
-	FLOAT_LIT  shift 6
-	STRING_LIT  shift 7
-	IDENT  shift 8
-	.  error
-
-	expr  goto 50
-
-
-state 30
-	expr : expr SEMICOLON . expr  (20)
-
-	INT_LIT  shift 3
-	BOOL_LIT  shift 4
-	CHAR_LIT  shift 5
-	FLOAT_LIT  shift 6
-	STRING_LIT  shift 7
-	IDENT  shift 8
-	.  error
-
-	expr  goto 51
-
-
-state 31
-	program : expr EOF .  (1)
-
-	.  reduce 1
-
-
-state 32
-	expr : expr . PLUS expr  (2)
-	expr : expr . MINUS expr  (3)
-	expr : expr . MULT expr  (4)
-	expr : expr . DIV expr  (5)
-	expr : expr . MOD expr  (6)
-	expr : expr . LSHIFT expr  (7)
-	expr : expr . RSHIFT expr  (8)
-	expr : expr . BITXOR expr  (9)
-	expr : expr . BITOR expr  (10)
-	expr : expr . BITAND expr  (11)
-	expr : expr . EQ expr  (12)
-	expr : expr . NEQ expr  (13)
-	expr : expr . LT expr  (14)
-	expr : expr . LE expr  (15)
-	expr : expr . GT expr  (16)
-	expr : expr . GE expr  (17)
-	expr : expr . AND expr  (18)
-	expr : expr . OR expr  (19)
-	expr : expr . SEMICOLON expr  (20)
-	expr : IDENT ASSIGN expr .  (21)
-
-	PLUS  shift 12
-	MINUS  shift 13
-	DIV  shift 14
-	MULT  shift 15
-	MOD  shift 16
-	LSHIFT  shift 17
-	RSHIFT  shift 18
-	BITXOR  shift 19
-	BITOR  shift 20
-	BITAND  shift 21
-	EQ  shift 22
-	NEQ  shift 23
-	LT  shift 24
-	LE  shift 25
-	GT  shift 26
-	GE  shift 27
-	AND  shift 28
-	OR  shift 29
-	SEMICOLON  reduce 21
-	EOF  reduce 21
-
-
-state 33
-	expr : expr . PLUS expr  (2)
-	expr : expr PLUS expr .  (2)
-	expr : expr . MINUS expr  (3)
-	expr : expr . MULT expr  (4)
-	expr : expr . DIV expr  (5)
-	expr : expr . MOD expr  (6)
-	expr : expr . LSHIFT expr  (7)
-	expr : expr . RSHIFT expr  (8)
-	expr : expr . BITXOR expr  (9)
-	expr : expr . BITOR expr  (10)
-	expr : expr . BITAND expr  (11)
-	expr : expr . EQ expr  (12)
-	expr : expr . NEQ expr  (13)
-	expr : expr . LT expr  (14)
-	expr : expr . LE expr  (15)
-	expr : expr . GT expr  (16)
-	expr : expr . GE expr  (17)
-	expr : expr . AND expr  (18)
-	expr : expr . OR expr  (19)
-	expr : expr . SEMICOLON expr  (20)
-
-	DIV  shift 14
-	MULT  shift 15
-	MOD  shift 16
-	PLUS  reduce 2
-	MINUS  reduce 2
-	LSHIFT  reduce 2
-	RSHIFT  reduce 2
-	BITXOR  reduce 2
-	BITOR  reduce 2
-	BITAND  reduce 2
-	EQ  reduce 2
-	NEQ  reduce 2
-	LT  reduce 2
-	LE  reduce 2
-	GT  reduce 2
-	GE  reduce 2
-	AND  reduce 2
-	OR  reduce 2
-	SEMICOLON  reduce 2
-	EOF  reduce 2
-
-
-state 34
-	expr : expr . PLUS expr  (2)
-	expr : expr . MINUS expr  (3)
-	expr : expr MINUS expr .  (3)
-	expr : expr . MULT expr  (4)
-	expr : expr . DIV expr  (5)
-	expr : expr . MOD expr  (6)
-	expr : expr . LSHIFT expr  (7)
-	expr : expr . RSHIFT expr  (8)
-	expr : expr . BITXOR expr  (9)
-	expr : expr . BITOR expr  (10)
-	expr : expr . BITAND expr  (11)
-	expr : expr . EQ expr  (12)
-	expr : expr . NEQ expr  (13)
-	expr : expr . LT expr  (14)
-	expr : expr . LE expr  (15)
-	expr : expr . GT expr  (16)
-	expr : expr . GE expr  (17)
-	expr : expr . AND expr  (18)
-	expr : expr . OR expr  (19)
-	expr : expr . SEMICOLON expr  (20)
-
-	DIV  shift 14
-	MULT  shift 15
-	MOD  shift 16
-	PLUS  reduce 3
-	MINUS  reduce 3
-	LSHIFT  reduce 3
-	RSHIFT  reduce 3
-	BITXOR  reduce 3
-	BITOR  reduce 3
-	BITAND  reduce 3
-	EQ  reduce 3
-	NEQ  reduce 3
-	LT  reduce 3
-	LE  reduce 3
-	GT  reduce 3
-	GE  reduce 3
-	AND  reduce 3
-	OR  reduce 3
-	SEMICOLON  reduce 3
-	EOF  reduce 3
-
-
-state 35
-	expr : expr . PLUS expr  (2)
-	expr : expr . MINUS expr  (3)
-	expr : expr . MULT expr  (4)
-	expr : expr . DIV expr  (5)
-	expr : expr DIV expr .  (5)
-	expr : expr . MOD expr  (6)
-	expr : expr . LSHIFT expr  (7)
-	expr : expr . RSHIFT expr  (8)
-	expr : expr . BITXOR expr  (9)
-	expr : expr . BITOR expr  (10)
-	expr : expr . BITAND expr  (11)
-	expr : expr . EQ expr  (12)
-	expr : expr . NEQ expr  (13)
-	expr : expr . LT expr  (14)
-	expr : expr . LE expr  (15)
-	expr : expr . GT expr  (16)
-	expr : expr . GE expr  (17)
-	expr : expr . AND expr  (18)
-	expr : expr . OR expr  (19)
-	expr : expr . SEMICOLON expr  (20)
-
-	.  reduce 5
-
-
-state 36
-	expr : expr . PLUS expr  (2)
-	expr : expr . MINUS expr  (3)
-	expr : expr . MULT expr  (4)
-	expr : expr MULT expr .  (4)
-	expr : expr . DIV expr  (5)
-	expr : expr . MOD expr  (6)
-	expr : expr . LSHIFT expr  (7)
-	expr : expr . RSHIFT expr  (8)
-	expr : expr . BITXOR expr  (9)
-	expr : expr . BITOR expr  (10)
-	expr : expr . BITAND expr  (11)
-	expr : expr . EQ expr  (12)
-	expr : expr . NEQ expr  (13)
-	expr : expr . LT expr  (14)
-	expr : expr . LE expr  (15)
-	expr : expr . GT expr  (16)
-	expr : expr . GE expr  (17)
-	expr : expr . AND expr  (18)
-	expr : expr . OR expr  (19)
-	expr : expr . SEMICOLON expr  (20)
+	import_decl : IMPORT STRING_LIT .  (4)
 
 	.  reduce 4
 
 
-state 37
-	expr : expr . PLUS expr  (2)
-	expr : expr . MINUS expr  (3)
-	expr : expr . MULT expr  (4)
-	expr : expr . DIV expr  (5)
-	expr : expr . MOD expr  (6)
-	expr : expr MOD expr .  (6)
-	expr : expr . LSHIFT expr  (7)
-	expr : expr . RSHIFT expr  (8)
-	expr : expr . BITXOR expr  (9)
-	expr : expr . BITOR expr  (10)
-	expr : expr . BITAND expr  (11)
-	expr : expr . EQ expr  (12)
-	expr : expr . NEQ expr  (13)
-	expr : expr . LT expr  (14)
-	expr : expr . LE expr  (15)
-	expr : expr . GT expr  (16)
-	expr : expr . GE expr  (17)
-	expr : expr . AND expr  (18)
-	expr : expr . OR expr  (19)
-	expr : expr . SEMICOLON expr  (20)
+state 11
+	func_decl : FUNC . IDENT LPAREN param_list RPAREN return_types func_body  (57)
+	struct_func_decl : FUNC . LPAREN IDENT IDENT RPAREN IDENT LPAREN param_list RPAREN return_types func_body  (58)
+
+	LPAREN  shift 21
+	IDENT  shift 22
+	.  error
+
+
+state 12
+	type_decl : TYPE . IDENT STRUCT LBRACE field_list RBRACE  (39)
+	type_decl : TYPE . IDENT ASSIGN type_expr  (40)
+
+	IDENT  shift 23
+	.  error
+
+
+state 13
+	const_opt : CONST .  (42)
+
+	.  reduce 42
+
+
+state 14
+	program : PACKAGE IDENT import_list decl_list EOF .  (1)
+
+	.  reduce 1
+
+
+state 15
+	decl_list : decl_list top_decl .  (6)
 
 	.  reduce 6
 
 
-state 38
-	expr : expr . PLUS expr  (2)
-	expr : expr . MINUS expr  (3)
-	expr : expr . MULT expr  (4)
-	expr : expr . DIV expr  (5)
-	expr : expr . MOD expr  (6)
-	expr : expr . LSHIFT expr  (7)
-	expr : expr LSHIFT expr .  (7)
-	expr : expr . RSHIFT expr  (8)
-	expr : expr . BITXOR expr  (9)
-	expr : expr . BITOR expr  (10)
-	expr : expr . BITAND expr  (11)
-	expr : expr . EQ expr  (12)
-	expr : expr . NEQ expr  (13)
-	expr : expr . LT expr  (14)
-	expr : expr . LE expr  (15)
-	expr : expr . GT expr  (16)
-	expr : expr . GE expr  (17)
-	expr : expr . AND expr  (18)
-	expr : expr . OR expr  (19)
-	expr : expr . SEMICOLON expr  (20)
+state 16
+	top_decl : type_decl .  (7)
 
-	PLUS  shift 12
-	MINUS  shift 13
-	DIV  shift 14
-	MULT  shift 15
-	MOD  shift 16
-	LSHIFT  reduce 7
-	RSHIFT  reduce 7
-	BITXOR  reduce 7
-	BITOR  reduce 7
-	BITAND  reduce 7
-	EQ  reduce 7
-	NEQ  reduce 7
-	LT  reduce 7
-	LE  reduce 7
-	GT  reduce 7
-	GE  reduce 7
-	AND  reduce 7
-	OR  reduce 7
-	SEMICOLON  reduce 7
-	EOF  reduce 7
+	.  reduce 7
+
+
+state 17
+	top_decl : global_decl .  (8)
+
+	.  reduce 8
+
+
+state 18
+	top_decl : func_decl .  (9)
+
+	.  reduce 9
+
+
+state 19
+	top_decl : struct_func_decl .  (10)
+
+	.  reduce 10
+
+
+state 20
+	global_decl : const_opt . IDENT type_ann_opt ASSIGN expr  (43)
+	global_decl : const_opt . IDENT DECL_ASSIGN expr  (44)
+
+	IDENT  shift 24
+	.  error
+
+
+state 21
+	struct_func_decl : FUNC LPAREN . IDENT IDENT RPAREN IDENT LPAREN param_list RPAREN return_types func_body  (58)
+
+	IDENT  shift 25
+	.  error
+
+
+state 22
+	func_decl : FUNC IDENT . LPAREN param_list RPAREN return_types func_body  (57)
+
+	LPAREN  shift 26
+	.  error
+
+
+state 23
+	type_decl : TYPE IDENT . STRUCT LBRACE field_list RBRACE  (39)
+	type_decl : TYPE IDENT . ASSIGN type_expr  (40)
+
+	STRUCT  shift 27
+	ASSIGN  shift 28
+	.  error
+
+
+state 24
+	global_decl : const_opt IDENT . type_ann_opt ASSIGN expr  (43)
+	global_decl : const_opt IDENT . DECL_ASSIGN expr  (44)
+	type_ann_opt : .  (45)
+
+	DECL_ASSIGN  shift 29
+	COLON  shift 30
+	ASSIGN  reduce 45
+
+	type_ann_opt  goto 31
+
+
+state 25
+	struct_func_decl : FUNC LPAREN IDENT . IDENT RPAREN IDENT LPAREN param_list RPAREN return_types func_body  (58)
+
+	IDENT  shift 32
+	.  error
+
+
+state 26
+	func_decl : FUNC IDENT LPAREN . param_list RPAREN return_types func_body  (57)
+	param_list : .  (48)
+
+	IDENT  shift 33
+	RPAREN  reduce 48
+	COMMA  reduce 48
+
+	param  goto 34
+	param_list  goto 35
+
+
+state 27
+	type_decl : TYPE IDENT STRUCT . LBRACE field_list RBRACE  (39)
+
+	LBRACE  shift 36
+	.  error
+
+
+state 28
+	type_decl : TYPE IDENT ASSIGN . type_expr  (40)
+
+	STRUCT  shift 37
+	ERROR  shift 38
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	LBRACKET  shift 51
+	IDENT  shift 52
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 54
+
+
+state 29
+	global_decl : const_opt IDENT DECL_ASSIGN . expr  (44)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 70
+	literal  goto 71
+
+
+state 30
+	type_ann_opt : COLON . type_expr  (46)
+
+	STRUCT  shift 37
+	ERROR  shift 38
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	LBRACKET  shift 51
+	IDENT  shift 52
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 72
+
+
+state 31
+	global_decl : const_opt IDENT type_ann_opt . ASSIGN expr  (43)
+
+	ASSIGN  shift 73
+	.  error
+
+
+state 32
+	struct_func_decl : FUNC LPAREN IDENT IDENT . RPAREN IDENT LPAREN param_list RPAREN return_types func_body  (58)
+
+	RPAREN  shift 74
+	.  error
+
+
+state 33
+	param : IDENT . type_expr  (47)
+
+	STRUCT  shift 37
+	ERROR  shift 38
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	LBRACKET  shift 51
+	IDENT  shift 52
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 75
+
+
+state 34
+	param_list : param .  (49)
+
+	.  reduce 49
+
+
+state 35
+	param_list : param_list . COMMA param  (50)
+	func_decl : FUNC IDENT LPAREN param_list . RPAREN return_types func_body  (57)
+
+	RPAREN  shift 76
+	COMMA  shift 77
+	.  error
+
+
+state 36
+	type_decl : TYPE IDENT STRUCT LBRACE . field_list RBRACE  (39)
+	field_list : .  (37)
+
+	.  reduce 37
+
+	field_list  goto 78
+
+
+state 37
+	type_expr : STRUCT . IDENT  (28)
+
+	IDENT  shift 79
+	.  error
+
+
+state 38
+	primitive_type : ERROR .  (23)
+
+	.  reduce 23
 
 
 state 39
-	expr : expr . PLUS expr  (2)
-	expr : expr . MINUS expr  (3)
-	expr : expr . MULT expr  (4)
-	expr : expr . DIV expr  (5)
-	expr : expr . MOD expr  (6)
-	expr : expr . LSHIFT expr  (7)
-	expr : expr . RSHIFT expr  (8)
-	expr : expr RSHIFT expr .  (8)
-	expr : expr . BITXOR expr  (9)
-	expr : expr . BITOR expr  (10)
-	expr : expr . BITAND expr  (11)
-	expr : expr . EQ expr  (12)
-	expr : expr . NEQ expr  (13)
-	expr : expr . LT expr  (14)
-	expr : expr . LE expr  (15)
-	expr : expr . GT expr  (16)
-	expr : expr . GE expr  (17)
-	expr : expr . AND expr  (18)
-	expr : expr . OR expr  (19)
-	expr : expr . SEMICOLON expr  (20)
+	primitive_type : BOOL .  (11)
 
-	PLUS  shift 12
-	MINUS  shift 13
-	DIV  shift 14
-	MULT  shift 15
-	MOD  shift 16
-	LSHIFT  reduce 8
-	RSHIFT  reduce 8
-	BITXOR  reduce 8
-	BITOR  reduce 8
-	BITAND  reduce 8
-	EQ  reduce 8
-	NEQ  reduce 8
-	LT  reduce 8
-	LE  reduce 8
-	GT  reduce 8
-	GE  reduce 8
-	AND  reduce 8
-	OR  reduce 8
-	SEMICOLON  reduce 8
-	EOF  reduce 8
+	.  reduce 11
 
 
 state 40
-	expr : expr . PLUS expr  (2)
-	expr : expr . MINUS expr  (3)
-	expr : expr . MULT expr  (4)
-	expr : expr . DIV expr  (5)
-	expr : expr . MOD expr  (6)
-	expr : expr . LSHIFT expr  (7)
-	expr : expr . RSHIFT expr  (8)
-	expr : expr . BITXOR expr  (9)
-	expr : expr BITXOR expr .  (9)
-	expr : expr . BITOR expr  (10)
-	expr : expr . BITAND expr  (11)
-	expr : expr . EQ expr  (12)
-	expr : expr . NEQ expr  (13)
-	expr : expr . LT expr  (14)
-	expr : expr . LE expr  (15)
-	expr : expr . GT expr  (16)
-	expr : expr . GE expr  (17)
-	expr : expr . AND expr  (18)
-	expr : expr . OR expr  (19)
-	expr : expr . SEMICOLON expr  (20)
+	primitive_type : STRING .  (12)
 
-	PLUS  shift 12
-	MINUS  shift 13
-	DIV  shift 14
-	MULT  shift 15
-	MOD  shift 16
-	LSHIFT  shift 17
-	RSHIFT  shift 18
-	BITAND  shift 21
-	EQ  shift 22
-	NEQ  shift 23
-	LT  shift 24
-	LE  shift 25
-	GT  shift 26
-	GE  shift 27
-	BITXOR  reduce 9
-	BITOR  reduce 9
-	AND  reduce 9
-	OR  reduce 9
-	SEMICOLON  reduce 9
-	EOF  reduce 9
+	.  reduce 12
 
 
 state 41
-	expr : expr . PLUS expr  (2)
-	expr : expr . MINUS expr  (3)
-	expr : expr . MULT expr  (4)
-	expr : expr . DIV expr  (5)
-	expr : expr . MOD expr  (6)
-	expr : expr . LSHIFT expr  (7)
-	expr : expr . RSHIFT expr  (8)
-	expr : expr . BITXOR expr  (9)
-	expr : expr . BITOR expr  (10)
-	expr : expr BITOR expr .  (10)
-	expr : expr . BITAND expr  (11)
-	expr : expr . EQ expr  (12)
-	expr : expr . NEQ expr  (13)
-	expr : expr . LT expr  (14)
-	expr : expr . LE expr  (15)
-	expr : expr . GT expr  (16)
-	expr : expr . GE expr  (17)
-	expr : expr . AND expr  (18)
-	expr : expr . OR expr  (19)
-	expr : expr . SEMICOLON expr  (20)
+	primitive_type : U8 .  (13)
 
-	PLUS  shift 12
-	MINUS  shift 13
-	DIV  shift 14
-	MULT  shift 15
-	MOD  shift 16
-	LSHIFT  shift 17
-	RSHIFT  shift 18
-	BITXOR  shift 19
-	BITAND  shift 21
-	EQ  shift 22
-	NEQ  shift 23
-	LT  shift 24
-	LE  shift 25
-	GT  shift 26
-	GE  shift 27
-	BITOR  reduce 10
-	AND  reduce 10
-	OR  reduce 10
-	SEMICOLON  reduce 10
-	EOF  reduce 10
+	.  reduce 13
 
 
 state 42
-	expr : expr . PLUS expr  (2)
-	expr : expr . MINUS expr  (3)
-	expr : expr . MULT expr  (4)
-	expr : expr . DIV expr  (5)
-	expr : expr . MOD expr  (6)
-	expr : expr . LSHIFT expr  (7)
-	expr : expr . RSHIFT expr  (8)
-	expr : expr . BITXOR expr  (9)
-	expr : expr . BITOR expr  (10)
-	expr : expr . BITAND expr  (11)
-	expr : expr BITAND expr .  (11)
-	expr : expr . EQ expr  (12)
-	expr : expr . NEQ expr  (13)
-	expr : expr . LT expr  (14)
-	expr : expr . LE expr  (15)
-	expr : expr . GT expr  (16)
-	expr : expr . GE expr  (17)
-	expr : expr . AND expr  (18)
-	expr : expr . OR expr  (19)
-	expr : expr . SEMICOLON expr  (20)
+	primitive_type : U16 .  (14)
 
-	PLUS  shift 12
-	MINUS  shift 13
-	DIV  shift 14
-	MULT  shift 15
-	MOD  shift 16
-	LSHIFT  shift 17
-	RSHIFT  shift 18
-	EQ  shift 22
-	NEQ  shift 23
-	LT  shift 24
-	LE  shift 25
-	GT  shift 26
-	GE  shift 27
-	BITXOR  reduce 11
-	BITOR  reduce 11
-	BITAND  reduce 11
-	AND  reduce 11
-	OR  reduce 11
-	SEMICOLON  reduce 11
-	EOF  reduce 11
+	.  reduce 14
 
 
 state 43
-	expr : expr . PLUS expr  (2)
-	expr : expr . MINUS expr  (3)
-	expr : expr . MULT expr  (4)
-	expr : expr . DIV expr  (5)
-	expr : expr . MOD expr  (6)
-	expr : expr . LSHIFT expr  (7)
-	expr : expr . RSHIFT expr  (8)
-	expr : expr . BITXOR expr  (9)
-	expr : expr . BITOR expr  (10)
-	expr : expr . BITAND expr  (11)
-	expr : expr . EQ expr  (12)
-	expr : expr EQ expr .  (12)
-	expr : expr . NEQ expr  (13)
-	expr : expr . LT expr  (14)
-	expr : expr . LE expr  (15)
-	expr : expr . GT expr  (16)
-	expr : expr . GE expr  (17)
-	expr : expr . AND expr  (18)
-	expr : expr . OR expr  (19)
-	expr : expr . SEMICOLON expr  (20)
+	primitive_type : U32 .  (15)
 
-	PLUS  shift 12
-	MINUS  shift 13
-	DIV  shift 14
-	MULT  shift 15
-	MOD  shift 16
-	LSHIFT  shift 17
-	RSHIFT  shift 18
-	LT  shift 24
-	LE  shift 25
-	GT  shift 26
-	GE  shift 27
-	BITXOR  reduce 12
-	BITOR  reduce 12
-	BITAND  reduce 12
-	EQ  reduce 12
-	NEQ  reduce 12
-	AND  reduce 12
-	OR  reduce 12
-	SEMICOLON  reduce 12
-	EOF  reduce 12
+	.  reduce 15
 
 
 state 44
-	expr : expr . PLUS expr  (2)
-	expr : expr . MINUS expr  (3)
-	expr : expr . MULT expr  (4)
-	expr : expr . DIV expr  (5)
-	expr : expr . MOD expr  (6)
-	expr : expr . LSHIFT expr  (7)
-	expr : expr . RSHIFT expr  (8)
-	expr : expr . BITXOR expr  (9)
-	expr : expr . BITOR expr  (10)
-	expr : expr . BITAND expr  (11)
-	expr : expr . EQ expr  (12)
-	expr : expr . NEQ expr  (13)
-	expr : expr NEQ expr .  (13)
-	expr : expr . LT expr  (14)
-	expr : expr . LE expr  (15)
-	expr : expr . GT expr  (16)
-	expr : expr . GE expr  (17)
-	expr : expr . AND expr  (18)
-	expr : expr . OR expr  (19)
-	expr : expr . SEMICOLON expr  (20)
+	primitive_type : U64 .  (16)
 
-	PLUS  shift 12
-	MINUS  shift 13
-	DIV  shift 14
-	MULT  shift 15
-	MOD  shift 16
-	LSHIFT  shift 17
-	RSHIFT  shift 18
-	LT  shift 24
-	LE  shift 25
-	GT  shift 26
-	GE  shift 27
-	BITXOR  reduce 13
-	BITOR  reduce 13
-	BITAND  reduce 13
-	EQ  reduce 13
-	NEQ  reduce 13
-	AND  reduce 13
-	OR  reduce 13
-	SEMICOLON  reduce 13
-	EOF  reduce 13
+	.  reduce 16
 
 
 state 45
-	expr : expr . PLUS expr  (2)
-	expr : expr . MINUS expr  (3)
-	expr : expr . MULT expr  (4)
-	expr : expr . DIV expr  (5)
-	expr : expr . MOD expr  (6)
-	expr : expr . LSHIFT expr  (7)
-	expr : expr . RSHIFT expr  (8)
-	expr : expr . BITXOR expr  (9)
-	expr : expr . BITOR expr  (10)
-	expr : expr . BITAND expr  (11)
-	expr : expr . EQ expr  (12)
-	expr : expr . NEQ expr  (13)
-	expr : expr . LT expr  (14)
-	expr : expr LT expr .  (14)
-	expr : expr . LE expr  (15)
-	expr : expr . GT expr  (16)
-	expr : expr . GE expr  (17)
-	expr : expr . AND expr  (18)
-	expr : expr . OR expr  (19)
-	expr : expr . SEMICOLON expr  (20)
+	primitive_type : I8 .  (17)
 
-	PLUS  shift 12
-	MINUS  shift 13
-	DIV  shift 14
-	MULT  shift 15
-	MOD  shift 16
-	LSHIFT  shift 17
-	RSHIFT  shift 18
-	BITXOR  reduce 14
-	BITOR  reduce 14
-	BITAND  reduce 14
-	EQ  reduce 14
-	NEQ  reduce 14
-	LT  reduce 14
-	LE  reduce 14
-	GT  reduce 14
-	GE  reduce 14
-	AND  reduce 14
-	OR  reduce 14
-	SEMICOLON  reduce 14
-	EOF  reduce 14
+	.  reduce 17
 
 
 state 46
-	expr : expr . PLUS expr  (2)
-	expr : expr . MINUS expr  (3)
-	expr : expr . MULT expr  (4)
-	expr : expr . DIV expr  (5)
-	expr : expr . MOD expr  (6)
-	expr : expr . LSHIFT expr  (7)
-	expr : expr . RSHIFT expr  (8)
-	expr : expr . BITXOR expr  (9)
-	expr : expr . BITOR expr  (10)
-	expr : expr . BITAND expr  (11)
-	expr : expr . EQ expr  (12)
-	expr : expr . NEQ expr  (13)
-	expr : expr . LT expr  (14)
-	expr : expr . LE expr  (15)
-	expr : expr LE expr .  (15)
-	expr : expr . GT expr  (16)
-	expr : expr . GE expr  (17)
-	expr : expr . AND expr  (18)
-	expr : expr . OR expr  (19)
-	expr : expr . SEMICOLON expr  (20)
+	primitive_type : I16 .  (18)
 
-	PLUS  shift 12
-	MINUS  shift 13
-	DIV  shift 14
-	MULT  shift 15
-	MOD  shift 16
-	LSHIFT  shift 17
-	RSHIFT  shift 18
-	BITXOR  reduce 15
-	BITOR  reduce 15
-	BITAND  reduce 15
-	EQ  reduce 15
-	NEQ  reduce 15
-	LT  reduce 15
-	LE  reduce 15
-	GT  reduce 15
-	GE  reduce 15
-	AND  reduce 15
-	OR  reduce 15
-	SEMICOLON  reduce 15
-	EOF  reduce 15
+	.  reduce 18
 
 
 state 47
-	expr : expr . PLUS expr  (2)
-	expr : expr . MINUS expr  (3)
-	expr : expr . MULT expr  (4)
-	expr : expr . DIV expr  (5)
-	expr : expr . MOD expr  (6)
-	expr : expr . LSHIFT expr  (7)
-	expr : expr . RSHIFT expr  (8)
-	expr : expr . BITXOR expr  (9)
-	expr : expr . BITOR expr  (10)
-	expr : expr . BITAND expr  (11)
-	expr : expr . EQ expr  (12)
-	expr : expr . NEQ expr  (13)
-	expr : expr . LT expr  (14)
-	expr : expr . LE expr  (15)
-	expr : expr . GT expr  (16)
-	expr : expr GT expr .  (16)
-	expr : expr . GE expr  (17)
-	expr : expr . AND expr  (18)
-	expr : expr . OR expr  (19)
-	expr : expr . SEMICOLON expr  (20)
+	primitive_type : I32 .  (19)
 
-	PLUS  shift 12
-	MINUS  shift 13
-	DIV  shift 14
-	MULT  shift 15
-	MOD  shift 16
-	LSHIFT  shift 17
-	RSHIFT  shift 18
-	BITXOR  reduce 16
-	BITOR  reduce 16
-	BITAND  reduce 16
-	EQ  reduce 16
-	NEQ  reduce 16
-	LT  reduce 16
-	LE  reduce 16
-	GT  reduce 16
-	GE  reduce 16
-	AND  reduce 16
-	OR  reduce 16
-	SEMICOLON  reduce 16
-	EOF  reduce 16
+	.  reduce 19
 
 
 state 48
-	expr : expr . PLUS expr  (2)
-	expr : expr . MINUS expr  (3)
-	expr : expr . MULT expr  (4)
-	expr : expr . DIV expr  (5)
-	expr : expr . MOD expr  (6)
-	expr : expr . LSHIFT expr  (7)
-	expr : expr . RSHIFT expr  (8)
-	expr : expr . BITXOR expr  (9)
-	expr : expr . BITOR expr  (10)
-	expr : expr . BITAND expr  (11)
-	expr : expr . EQ expr  (12)
-	expr : expr . NEQ expr  (13)
-	expr : expr . LT expr  (14)
-	expr : expr . LE expr  (15)
-	expr : expr . GT expr  (16)
-	expr : expr . GE expr  (17)
-	expr : expr GE expr .  (17)
-	expr : expr . AND expr  (18)
-	expr : expr . OR expr  (19)
-	expr : expr . SEMICOLON expr  (20)
+	primitive_type : I64 .  (20)
 
-	PLUS  shift 12
-	MINUS  shift 13
-	DIV  shift 14
-	MULT  shift 15
-	MOD  shift 16
-	LSHIFT  shift 17
-	RSHIFT  shift 18
-	BITXOR  reduce 17
-	BITOR  reduce 17
-	BITAND  reduce 17
-	EQ  reduce 17
-	NEQ  reduce 17
-	LT  reduce 17
-	LE  reduce 17
-	GT  reduce 17
-	GE  reduce 17
-	AND  reduce 17
-	OR  reduce 17
-	SEMICOLON  reduce 17
-	EOF  reduce 17
+	.  reduce 20
 
 
 state 49
-	expr : expr . PLUS expr  (2)
-	expr : expr . MINUS expr  (3)
-	expr : expr . MULT expr  (4)
-	expr : expr . DIV expr  (5)
-	expr : expr . MOD expr  (6)
-	expr : expr . LSHIFT expr  (7)
-	expr : expr . RSHIFT expr  (8)
-	expr : expr . BITXOR expr  (9)
-	expr : expr . BITOR expr  (10)
-	expr : expr . BITAND expr  (11)
-	expr : expr . EQ expr  (12)
-	expr : expr . NEQ expr  (13)
-	expr : expr . LT expr  (14)
-	expr : expr . LE expr  (15)
-	expr : expr . GT expr  (16)
-	expr : expr . GE expr  (17)
-	expr : expr . AND expr  (18)
-	expr : expr AND expr .  (18)
-	expr : expr . OR expr  (19)
-	expr : expr . SEMICOLON expr  (20)
+	primitive_type : F16 .  (21)
 
-	PLUS  shift 12
-	MINUS  shift 13
-	DIV  shift 14
-	MULT  shift 15
-	MOD  shift 16
-	LSHIFT  shift 17
-	RSHIFT  shift 18
-	BITXOR  shift 19
-	BITOR  shift 20
-	BITAND  shift 21
-	EQ  shift 22
-	NEQ  shift 23
-	LT  shift 24
-	LE  shift 25
-	GT  shift 26
-	GE  shift 27
-	AND  reduce 18
-	OR  reduce 18
-	SEMICOLON  reduce 18
-	EOF  reduce 18
+	.  reduce 21
 
 
 state 50
-	expr : expr . PLUS expr  (2)
-	expr : expr . MINUS expr  (3)
-	expr : expr . MULT expr  (4)
-	expr : expr . DIV expr  (5)
-	expr : expr . MOD expr  (6)
-	expr : expr . LSHIFT expr  (7)
-	expr : expr . RSHIFT expr  (8)
-	expr : expr . BITXOR expr  (9)
-	expr : expr . BITOR expr  (10)
-	expr : expr . BITAND expr  (11)
-	expr : expr . EQ expr  (12)
-	expr : expr . NEQ expr  (13)
-	expr : expr . LT expr  (14)
-	expr : expr . LE expr  (15)
-	expr : expr . GT expr  (16)
-	expr : expr . GE expr  (17)
-	expr : expr . AND expr  (18)
-	expr : expr . OR expr  (19)
-	expr : expr OR expr .  (19)
-	expr : expr . SEMICOLON expr  (20)
+	primitive_type : F32 .  (22)
 
-	PLUS  shift 12
-	MINUS  shift 13
-	DIV  shift 14
-	MULT  shift 15
-	MOD  shift 16
-	LSHIFT  shift 17
-	RSHIFT  shift 18
-	BITXOR  shift 19
-	BITOR  shift 20
-	BITAND  shift 21
-	EQ  shift 22
-	NEQ  shift 23
-	LT  shift 24
-	LE  shift 25
-	GT  shift 26
-	GE  shift 27
-	AND  shift 28
-	OR  reduce 19
-	SEMICOLON  reduce 19
-	EOF  reduce 19
+	.  reduce 22
 
 
 state 51
-	expr : expr . PLUS expr  (2)
-	expr : expr . MINUS expr  (3)
-	expr : expr . MULT expr  (4)
-	expr : expr . DIV expr  (5)
-	expr : expr . MOD expr  (6)
-	expr : expr . LSHIFT expr  (7)
-	expr : expr . RSHIFT expr  (8)
-	expr : expr . BITXOR expr  (9)
-	expr : expr . BITOR expr  (10)
-	expr : expr . BITAND expr  (11)
-	expr : expr . EQ expr  (12)
-	expr : expr . NEQ expr  (13)
-	expr : expr . LT expr  (14)
-	expr : expr . LE expr  (15)
-	expr : expr . GT expr  (16)
-	expr : expr . GE expr  (17)
-	expr : expr . AND expr  (18)
-	expr : expr . OR expr  (19)
-	expr : expr . SEMICOLON expr  (20)
-	expr : expr SEMICOLON expr .  (20)
+	type_expr : LBRACKET . INT_LIT RBRACKET type_expr  (26)
+	type_expr : LBRACKET . RBRACKET type_expr  (27)
 
-	PLUS  shift 12
-	MINUS  shift 13
-	DIV  shift 14
-	MULT  shift 15
-	MOD  shift 16
-	LSHIFT  shift 17
-	RSHIFT  shift 18
-	BITXOR  shift 19
-	BITOR  shift 20
-	BITAND  shift 21
-	EQ  shift 22
-	NEQ  shift 23
-	LT  shift 24
-	LE  shift 25
-	GT  shift 26
-	GE  shift 27
-	AND  shift 28
-	OR  shift 29
-	SEMICOLON  reduce 20
-	EOF  reduce 20
+	RBRACKET  shift 80
+	INT_LIT  shift 81
+	.  error
 
 
-88 terminals, 4 nonterminals
-29 grammar rules, 52 states
+state 52
+	type_expr : IDENT .  (25)
+
+	.  reduce 25
+
+
+state 53
+	type_expr : primitive_type .  (24)
+
+	.  reduce 24
+
+
+state 54
+	type_decl : TYPE IDENT ASSIGN type_expr .  (40)
+
+	.  reduce 40
+
+
+state 55
+	expr : MAKE . LPAREN type_expr COMMA expr cap_opt RPAREN  (123)
+
+	LPAREN  shift 82
+	.  error
+
+
+state 56
+	literal : NULL .  (134)
+
+	.  reduce 134
+
+
+state 57
+	expr : MINUS . expr  (91)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 83
+	literal  goto 71
+
+
+state 58
+	expr : BITNOT . expr  (90)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 84
+	literal  goto 71
+
+
+state 59
+	expr : NOT . expr  (89)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 85
+	literal  goto 71
+
+
+state 60
+	expr : INC . expr  (92)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 86
+	literal  goto 71
+
+
+state 61
+	expr : DEC . expr  (93)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 87
+	literal  goto 71
+
+
+state 62
+	expr : LPAREN . expr RPAREN  (83)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 88
+	literal  goto 71
+
+
+63: shift/reduce conflict (shift 89, reduce 25) on LPAREN
+state 63
+	type_expr : IDENT .  (25)
+	expr : IDENT .  (82)
+	expr : IDENT . LPAREN arg_list RPAREN  (87)
+
+	LPAREN  shift 89
+	FUNC  reduce 82
+	TYPE  reduce 82
+	CONST  reduce 82
+	PLUS  reduce 82
+	MINUS  reduce 82
+	MULT  reduce 82
+	DIV  reduce 82
+	MOD  reduce 82
+	LSHIFT  reduce 82
+	RSHIFT  reduce 82
+	BITAND  reduce 82
+	BITXOR  reduce 82
+	BITOR  reduce 82
+	AND  reduce 82
+	OR  reduce 82
+	ASSIGN  reduce 82
+	PLUS_ASSIGN  reduce 82
+	MINUS_ASSIGN  reduce 82
+	TIMES_ASSIGN  reduce 82
+	DIV_ASSIGN  reduce 82
+	MOD_ASSIGN  reduce 82
+	LSHIFT_ASSIGN  reduce 82
+	RSHIFT_ASSIGN  reduce 82
+	BITAND_ASSIGN  reduce 82
+	BITXOR_ASSIGN  reduce 82
+	BITOR_ASSIGN  reduce 82
+	EQ  reduce 82
+	NEQ  reduce 82
+	LT  reduce 82
+	LE  reduce 82
+	GT  reduce 82
+	GE  reduce 82
+	RPAREN  reduce 82
+	LBRACE  reduce 82
+	LBRACKET  reduce 82
+	RBRACKET  reduce 82
+	SEMICOLON  reduce 82
+	COLON  reduce 82
+	COMMA  reduce 82
+	DOT  reduce 82
+	IDENT  reduce 82
+	EOF  reduce 82
+
+
+state 64
+	literal : INT_LIT .  (129)
+
+	.  reduce 129
+
+
+state 65
+	literal : FLOAT_LIT .  (130)
+
+	.  reduce 130
+
+
+state 66
+	literal : STRING_LIT .  (132)
+
+	.  reduce 132
+
+
+state 67
+	literal : CHAR_LIT .  (131)
+
+	.  reduce 131
+
+
+state 68
+	literal : BOOL_LIT .  (133)
+
+	.  reduce 133
+
+
+state 69
+	expr : type_expr . LPAREN expr RPAREN  (124)
+
+	LPAREN  shift 90
+	.  error
+
+
+state 70
+	global_decl : const_opt IDENT DECL_ASSIGN expr .  (44)
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	AND  shift 101
+	OR  shift 102
+	ASSIGN  shift 103
+	PLUS_ASSIGN  shift 104
+	MINUS_ASSIGN  shift 105
+	TIMES_ASSIGN  shift 106
+	DIV_ASSIGN  shift 107
+	MOD_ASSIGN  shift 108
+	LSHIFT_ASSIGN  shift 109
+	RSHIFT_ASSIGN  shift 110
+	BITAND_ASSIGN  shift 111
+	BITXOR_ASSIGN  shift 112
+	BITOR_ASSIGN  shift 113
+	EQ  shift 114
+	NEQ  shift 115
+	LT  shift 116
+	LE  shift 117
+	GT  shift 118
+	GE  shift 119
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 44
+	TYPE  reduce 44
+	CONST  reduce 44
+	IDENT  reduce 44
+	EOF  reduce 44
+
+
+state 71
+	expr : literal .  (81)
+
+	.  reduce 81
+
+
+state 72
+	type_ann_opt : COLON type_expr .  (46)
+
+	.  reduce 46
+
+
+state 73
+	global_decl : const_opt IDENT type_ann_opt ASSIGN . expr  (43)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 122
+	literal  goto 71
+
+
+state 74
+	struct_func_decl : FUNC LPAREN IDENT IDENT RPAREN . IDENT LPAREN param_list RPAREN return_types func_body  (58)
+
+	IDENT  shift 123
+	.  error
+
+
+state 75
+	param : IDENT type_expr .  (47)
+
+	.  reduce 47
+
+
+state 76
+	func_decl : FUNC IDENT LPAREN param_list RPAREN . return_types func_body  (57)
+	return_types : .  (51)
+
+	STRUCT  shift 37
+	ERROR  shift 38
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	LPAREN  shift 124
+	LBRACKET  shift 51
+	IDENT  shift 52
+	LBRACE  reduce 51
+
+	primitive_type  goto 53
+	type_expr  goto 125
+	return_types  goto 126
+
+
+state 77
+	param_list : param_list COMMA . param  (50)
+
+	IDENT  shift 33
+	.  error
+
+	param  goto 127
+
+
+state 78
+	field_list : field_list . field SEMICOLON  (38)
+	type_decl : TYPE IDENT STRUCT LBRACE field_list . RBRACE  (39)
+	modifier_opt : .  (29)
+
+	FINAL  shift 128
+	MUT  shift 129
+	LATE  shift 130
+	PRIVATE  shift 131
+	RBRACE  shift 132
+	IDENT  reduce 29
+
+	modifier_opt  goto 133
+	field  goto 134
+
+
+state 79
+	type_expr : STRUCT IDENT .  (28)
+
+	.  reduce 28
+
+
+state 80
+	type_expr : LBRACKET RBRACKET . type_expr  (27)
+
+	STRUCT  shift 37
+	ERROR  shift 38
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	LBRACKET  shift 51
+	IDENT  shift 52
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 135
+
+
+state 81
+	type_expr : LBRACKET INT_LIT . RBRACKET type_expr  (26)
+
+	RBRACKET  shift 136
+	.  error
+
+
+state 82
+	expr : MAKE LPAREN . type_expr COMMA expr cap_opt RPAREN  (123)
+
+	STRUCT  shift 37
+	ERROR  shift 38
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	LBRACKET  shift 51
+	IDENT  shift 52
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 137
+
+
+state 83
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : MINUS expr .  (91)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 91
+	TYPE  reduce 91
+	CONST  reduce 91
+	PLUS  reduce 91
+	MINUS  reduce 91
+	MULT  reduce 91
+	DIV  reduce 91
+	MOD  reduce 91
+	LSHIFT  reduce 91
+	RSHIFT  reduce 91
+	BITAND  reduce 91
+	BITXOR  reduce 91
+	BITOR  reduce 91
+	AND  reduce 91
+	OR  reduce 91
+	ASSIGN  reduce 91
+	PLUS_ASSIGN  reduce 91
+	MINUS_ASSIGN  reduce 91
+	TIMES_ASSIGN  reduce 91
+	DIV_ASSIGN  reduce 91
+	MOD_ASSIGN  reduce 91
+	LSHIFT_ASSIGN  reduce 91
+	RSHIFT_ASSIGN  reduce 91
+	BITAND_ASSIGN  reduce 91
+	BITXOR_ASSIGN  reduce 91
+	BITOR_ASSIGN  reduce 91
+	EQ  reduce 91
+	NEQ  reduce 91
+	LT  reduce 91
+	LE  reduce 91
+	GT  reduce 91
+	GE  reduce 91
+	RPAREN  reduce 91
+	LBRACE  reduce 91
+	RBRACKET  reduce 91
+	SEMICOLON  reduce 91
+	COLON  reduce 91
+	COMMA  reduce 91
+	IDENT  reduce 91
+	EOF  reduce 91
+
+
+state 84
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : BITNOT expr .  (90)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 90
+	TYPE  reduce 90
+	CONST  reduce 90
+	PLUS  reduce 90
+	MINUS  reduce 90
+	MULT  reduce 90
+	DIV  reduce 90
+	MOD  reduce 90
+	LSHIFT  reduce 90
+	RSHIFT  reduce 90
+	BITAND  reduce 90
+	BITXOR  reduce 90
+	BITOR  reduce 90
+	AND  reduce 90
+	OR  reduce 90
+	ASSIGN  reduce 90
+	PLUS_ASSIGN  reduce 90
+	MINUS_ASSIGN  reduce 90
+	TIMES_ASSIGN  reduce 90
+	DIV_ASSIGN  reduce 90
+	MOD_ASSIGN  reduce 90
+	LSHIFT_ASSIGN  reduce 90
+	RSHIFT_ASSIGN  reduce 90
+	BITAND_ASSIGN  reduce 90
+	BITXOR_ASSIGN  reduce 90
+	BITOR_ASSIGN  reduce 90
+	EQ  reduce 90
+	NEQ  reduce 90
+	LT  reduce 90
+	LE  reduce 90
+	GT  reduce 90
+	GE  reduce 90
+	RPAREN  reduce 90
+	LBRACE  reduce 90
+	RBRACKET  reduce 90
+	SEMICOLON  reduce 90
+	COLON  reduce 90
+	COMMA  reduce 90
+	IDENT  reduce 90
+	EOF  reduce 90
+
+
+state 85
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : NOT expr .  (89)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 89
+	TYPE  reduce 89
+	CONST  reduce 89
+	PLUS  reduce 89
+	MINUS  reduce 89
+	MULT  reduce 89
+	DIV  reduce 89
+	MOD  reduce 89
+	LSHIFT  reduce 89
+	RSHIFT  reduce 89
+	BITAND  reduce 89
+	BITXOR  reduce 89
+	BITOR  reduce 89
+	AND  reduce 89
+	OR  reduce 89
+	ASSIGN  reduce 89
+	PLUS_ASSIGN  reduce 89
+	MINUS_ASSIGN  reduce 89
+	TIMES_ASSIGN  reduce 89
+	DIV_ASSIGN  reduce 89
+	MOD_ASSIGN  reduce 89
+	LSHIFT_ASSIGN  reduce 89
+	RSHIFT_ASSIGN  reduce 89
+	BITAND_ASSIGN  reduce 89
+	BITXOR_ASSIGN  reduce 89
+	BITOR_ASSIGN  reduce 89
+	EQ  reduce 89
+	NEQ  reduce 89
+	LT  reduce 89
+	LE  reduce 89
+	GT  reduce 89
+	GE  reduce 89
+	RPAREN  reduce 89
+	LBRACE  reduce 89
+	RBRACKET  reduce 89
+	SEMICOLON  reduce 89
+	COLON  reduce 89
+	COMMA  reduce 89
+	IDENT  reduce 89
+	EOF  reduce 89
+
+
+state 86
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : INC expr .  (92)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 92
+	TYPE  reduce 92
+	CONST  reduce 92
+	PLUS  reduce 92
+	MINUS  reduce 92
+	MULT  reduce 92
+	DIV  reduce 92
+	MOD  reduce 92
+	LSHIFT  reduce 92
+	RSHIFT  reduce 92
+	BITAND  reduce 92
+	BITXOR  reduce 92
+	BITOR  reduce 92
+	AND  reduce 92
+	OR  reduce 92
+	ASSIGN  reduce 92
+	PLUS_ASSIGN  reduce 92
+	MINUS_ASSIGN  reduce 92
+	TIMES_ASSIGN  reduce 92
+	DIV_ASSIGN  reduce 92
+	MOD_ASSIGN  reduce 92
+	LSHIFT_ASSIGN  reduce 92
+	RSHIFT_ASSIGN  reduce 92
+	BITAND_ASSIGN  reduce 92
+	BITXOR_ASSIGN  reduce 92
+	BITOR_ASSIGN  reduce 92
+	EQ  reduce 92
+	NEQ  reduce 92
+	LT  reduce 92
+	LE  reduce 92
+	GT  reduce 92
+	GE  reduce 92
+	RPAREN  reduce 92
+	LBRACE  reduce 92
+	RBRACKET  reduce 92
+	SEMICOLON  reduce 92
+	COLON  reduce 92
+	COMMA  reduce 92
+	IDENT  reduce 92
+	EOF  reduce 92
+
+
+state 87
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : DEC expr .  (93)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 93
+	TYPE  reduce 93
+	CONST  reduce 93
+	PLUS  reduce 93
+	MINUS  reduce 93
+	MULT  reduce 93
+	DIV  reduce 93
+	MOD  reduce 93
+	LSHIFT  reduce 93
+	RSHIFT  reduce 93
+	BITAND  reduce 93
+	BITXOR  reduce 93
+	BITOR  reduce 93
+	AND  reduce 93
+	OR  reduce 93
+	ASSIGN  reduce 93
+	PLUS_ASSIGN  reduce 93
+	MINUS_ASSIGN  reduce 93
+	TIMES_ASSIGN  reduce 93
+	DIV_ASSIGN  reduce 93
+	MOD_ASSIGN  reduce 93
+	LSHIFT_ASSIGN  reduce 93
+	RSHIFT_ASSIGN  reduce 93
+	BITAND_ASSIGN  reduce 93
+	BITXOR_ASSIGN  reduce 93
+	BITOR_ASSIGN  reduce 93
+	EQ  reduce 93
+	NEQ  reduce 93
+	LT  reduce 93
+	LE  reduce 93
+	GT  reduce 93
+	GE  reduce 93
+	RPAREN  reduce 93
+	LBRACE  reduce 93
+	RBRACKET  reduce 93
+	SEMICOLON  reduce 93
+	COLON  reduce 93
+	COMMA  reduce 93
+	IDENT  reduce 93
+	EOF  reduce 93
+
+
+state 88
+	expr : LPAREN expr . RPAREN  (83)
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	AND  shift 101
+	OR  shift 102
+	ASSIGN  shift 103
+	PLUS_ASSIGN  shift 104
+	MINUS_ASSIGN  shift 105
+	TIMES_ASSIGN  shift 106
+	DIV_ASSIGN  shift 107
+	MOD_ASSIGN  shift 108
+	LSHIFT_ASSIGN  shift 109
+	RSHIFT_ASSIGN  shift 110
+	BITAND_ASSIGN  shift 111
+	BITXOR_ASSIGN  shift 112
+	BITOR_ASSIGN  shift 113
+	EQ  shift 114
+	NEQ  shift 115
+	LT  shift 116
+	LE  shift 117
+	GT  shift 118
+	GE  shift 119
+	RPAREN  shift 138
+	LBRACKET  shift 120
+	DOT  shift 121
+	.  error
+
+
+state 89
+	expr : IDENT LPAREN . arg_list RPAREN  (87)
+	arg_list : .  (125)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	RPAREN  reduce 125
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 139
+	expr_list  goto 140
+	literal  goto 71
+	arg_list  goto 141
+
+
+state 90
+	expr : type_expr LPAREN . expr RPAREN  (124)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 142
+	literal  goto 71
+
+
+state 91
+	expr : expr PLUS . expr  (94)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 143
+	literal  goto 71
+
+
+state 92
+	expr : expr MINUS . expr  (95)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 144
+	literal  goto 71
+
+
+state 93
+	expr : expr MULT . expr  (96)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 145
+	literal  goto 71
+
+
+state 94
+	expr : expr DIV . expr  (97)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 146
+	literal  goto 71
+
+
+state 95
+	expr : expr MOD . expr  (98)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 147
+	literal  goto 71
+
+
+state 96
+	expr : expr LSHIFT . expr  (99)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 148
+	literal  goto 71
+
+
+state 97
+	expr : expr RSHIFT . expr  (100)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 149
+	literal  goto 71
+
+
+state 98
+	expr : expr BITAND . expr  (101)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 150
+	literal  goto 71
+
+
+state 99
+	expr : expr BITXOR . expr  (102)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 151
+	literal  goto 71
+
+
+state 100
+	expr : expr BITOR . expr  (103)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 152
+	literal  goto 71
+
+
+state 101
+	expr : expr AND . expr  (104)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 153
+	literal  goto 71
+
+
+state 102
+	expr : expr OR . expr  (105)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 154
+	literal  goto 71
+
+
+state 103
+	expr : expr ASSIGN . expr  (112)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 155
+	literal  goto 71
+
+
+state 104
+	expr : expr PLUS_ASSIGN . expr  (113)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 156
+	literal  goto 71
+
+
+state 105
+	expr : expr MINUS_ASSIGN . expr  (114)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 157
+	literal  goto 71
+
+
+state 106
+	expr : expr TIMES_ASSIGN . expr  (115)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 158
+	literal  goto 71
+
+
+state 107
+	expr : expr DIV_ASSIGN . expr  (116)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 159
+	literal  goto 71
+
+
+state 108
+	expr : expr MOD_ASSIGN . expr  (117)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 160
+	literal  goto 71
+
+
+state 109
+	expr : expr LSHIFT_ASSIGN . expr  (118)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 161
+	literal  goto 71
+
+
+state 110
+	expr : expr RSHIFT_ASSIGN . expr  (119)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 162
+	literal  goto 71
+
+
+state 111
+	expr : expr BITAND_ASSIGN . expr  (120)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 163
+	literal  goto 71
+
+
+state 112
+	expr : expr BITXOR_ASSIGN . expr  (121)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 164
+	literal  goto 71
+
+
+state 113
+	expr : expr BITOR_ASSIGN . expr  (122)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 165
+	literal  goto 71
+
+
+state 114
+	expr : expr EQ . expr  (106)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 166
+	literal  goto 71
+
+
+state 115
+	expr : expr NEQ . expr  (107)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 167
+	literal  goto 71
+
+
+state 116
+	expr : expr LT . expr  (108)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 168
+	literal  goto 71
+
+
+state 117
+	expr : expr LE . expr  (109)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 169
+	literal  goto 71
+
+
+state 118
+	expr : expr GT . expr  (110)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 170
+	literal  goto 71
+
+
+state 119
+	expr : expr GE . expr  (111)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 171
+	literal  goto 71
+
+
+state 120
+	expr : expr LBRACKET . expr RBRACKET  (85)
+	expr : expr LBRACKET . expr_opt COLON expr_opt RBRACKET  (86)
+	expr_opt : .  (77)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	COLON  reduce 77
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 172
+	expr_opt  goto 173
+	literal  goto 71
+
+
+state 121
+	expr : expr DOT . IDENT  (84)
+	expr : expr DOT . IDENT LPAREN arg_list RPAREN  (88)
+
+	IDENT  shift 174
+	.  error
+
+
+state 122
+	global_decl : const_opt IDENT type_ann_opt ASSIGN expr .  (43)
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	AND  shift 101
+	OR  shift 102
+	ASSIGN  shift 103
+	PLUS_ASSIGN  shift 104
+	MINUS_ASSIGN  shift 105
+	TIMES_ASSIGN  shift 106
+	DIV_ASSIGN  shift 107
+	MOD_ASSIGN  shift 108
+	LSHIFT_ASSIGN  shift 109
+	RSHIFT_ASSIGN  shift 110
+	BITAND_ASSIGN  shift 111
+	BITXOR_ASSIGN  shift 112
+	BITOR_ASSIGN  shift 113
+	EQ  shift 114
+	NEQ  shift 115
+	LT  shift 116
+	LE  shift 117
+	GT  shift 118
+	GE  shift 119
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 43
+	TYPE  reduce 43
+	CONST  reduce 43
+	IDENT  reduce 43
+	EOF  reduce 43
+
+
+state 123
+	struct_func_decl : FUNC LPAREN IDENT IDENT RPAREN IDENT . LPAREN param_list RPAREN return_types func_body  (58)
+
+	LPAREN  shift 175
+	.  error
+
+
+state 124
+	return_types : LPAREN . type_expr_list RPAREN  (53)
+
+	STRUCT  shift 37
+	ERROR  shift 38
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	LBRACKET  shift 51
+	IDENT  shift 52
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 176
+	type_expr_list  goto 177
+
+
+state 125
+	return_types : type_expr .  (52)
+
+	.  reduce 52
+
+
+state 126
+	func_decl : FUNC IDENT LPAREN param_list RPAREN return_types . func_body  (57)
+
+	LBRACE  shift 178
+	.  error
+
+	func_body  goto 179
+	block  goto 180
+
+
+state 127
+	param_list : param_list COMMA param .  (50)
+
+	.  reduce 50
+
+
+state 128
+	modifier_opt : FINAL .  (32)
+
+	.  reduce 32
+
+
+state 129
+	modifier_opt : MUT .  (31)
+
+	.  reduce 31
+
+
+state 130
+	modifier_opt : LATE .  (33)
+
+	.  reduce 33
+
+
+state 131
+	modifier_opt : PRIVATE .  (30)
+
+	.  reduce 30
+
+
+state 132
+	type_decl : TYPE IDENT STRUCT LBRACE field_list RBRACE .  (39)
+
+	.  reduce 39
+
+
+state 133
+	field : modifier_opt . IDENT type_expr default_opt  (34)
+
+	IDENT  shift 181
+	.  error
+
+
+state 134
+	field_list : field_list field . SEMICOLON  (38)
+
+	SEMICOLON  shift 182
+	.  error
+
+
+state 135
+	type_expr : LBRACKET RBRACKET type_expr .  (27)
+
+	.  reduce 27
+
+
+state 136
+	type_expr : LBRACKET INT_LIT RBRACKET . type_expr  (26)
+
+	STRUCT  shift 37
+	ERROR  shift 38
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	LBRACKET  shift 51
+	IDENT  shift 52
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 183
+
+
+state 137
+	expr : MAKE LPAREN type_expr . COMMA expr cap_opt RPAREN  (123)
+
+	COMMA  shift 184
+	.  error
+
+
+state 138
+	expr : LPAREN expr RPAREN .  (83)
+
+	.  reduce 83
+
+
+state 139
+	expr_list : expr .  (74)
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	AND  shift 101
+	OR  shift 102
+	ASSIGN  shift 103
+	PLUS_ASSIGN  shift 104
+	MINUS_ASSIGN  shift 105
+	TIMES_ASSIGN  shift 106
+	DIV_ASSIGN  shift 107
+	MOD_ASSIGN  shift 108
+	LSHIFT_ASSIGN  shift 109
+	RSHIFT_ASSIGN  shift 110
+	BITAND_ASSIGN  shift 111
+	BITXOR_ASSIGN  shift 112
+	BITOR_ASSIGN  shift 113
+	EQ  shift 114
+	NEQ  shift 115
+	LT  shift 116
+	LE  shift 117
+	GT  shift 118
+	GE  shift 119
+	LBRACKET  shift 120
+	DOT  shift 121
+	RPAREN  reduce 74
+	SEMICOLON  reduce 74
+	COMMA  reduce 74
+
+
+state 140
+	expr_list : expr_list . COMMA expr  (75)
+	arg_list : expr_list .  (126)
+
+	COMMA  shift 185
+	RPAREN  reduce 126
+
+
+state 141
+	expr : IDENT LPAREN arg_list . RPAREN  (87)
+
+	RPAREN  shift 186
+	.  error
+
+
+state 142
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+	expr : type_expr LPAREN expr . RPAREN  (124)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	AND  shift 101
+	OR  shift 102
+	ASSIGN  shift 103
+	PLUS_ASSIGN  shift 104
+	MINUS_ASSIGN  shift 105
+	TIMES_ASSIGN  shift 106
+	DIV_ASSIGN  shift 107
+	MOD_ASSIGN  shift 108
+	LSHIFT_ASSIGN  shift 109
+	RSHIFT_ASSIGN  shift 110
+	BITAND_ASSIGN  shift 111
+	BITXOR_ASSIGN  shift 112
+	BITOR_ASSIGN  shift 113
+	EQ  shift 114
+	NEQ  shift 115
+	LT  shift 116
+	LE  shift 117
+	GT  shift 118
+	GE  shift 119
+	RPAREN  shift 187
+	LBRACKET  shift 120
+	DOT  shift 121
+	.  error
+
+
+state 143
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr PLUS expr .  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 94
+	TYPE  reduce 94
+	CONST  reduce 94
+	PLUS  reduce 94
+	MINUS  reduce 94
+	LSHIFT  reduce 94
+	RSHIFT  reduce 94
+	BITAND  reduce 94
+	BITXOR  reduce 94
+	BITOR  reduce 94
+	AND  reduce 94
+	OR  reduce 94
+	ASSIGN  reduce 94
+	PLUS_ASSIGN  reduce 94
+	MINUS_ASSIGN  reduce 94
+	TIMES_ASSIGN  reduce 94
+	DIV_ASSIGN  reduce 94
+	MOD_ASSIGN  reduce 94
+	LSHIFT_ASSIGN  reduce 94
+	RSHIFT_ASSIGN  reduce 94
+	BITAND_ASSIGN  reduce 94
+	BITXOR_ASSIGN  reduce 94
+	BITOR_ASSIGN  reduce 94
+	EQ  reduce 94
+	NEQ  reduce 94
+	LT  reduce 94
+	LE  reduce 94
+	GT  reduce 94
+	GE  reduce 94
+	RPAREN  reduce 94
+	LBRACE  reduce 94
+	RBRACKET  reduce 94
+	SEMICOLON  reduce 94
+	COLON  reduce 94
+	COMMA  reduce 94
+	IDENT  reduce 94
+	EOF  reduce 94
+
+
+state 144
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr MINUS expr .  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 95
+	TYPE  reduce 95
+	CONST  reduce 95
+	PLUS  reduce 95
+	MINUS  reduce 95
+	LSHIFT  reduce 95
+	RSHIFT  reduce 95
+	BITAND  reduce 95
+	BITXOR  reduce 95
+	BITOR  reduce 95
+	AND  reduce 95
+	OR  reduce 95
+	ASSIGN  reduce 95
+	PLUS_ASSIGN  reduce 95
+	MINUS_ASSIGN  reduce 95
+	TIMES_ASSIGN  reduce 95
+	DIV_ASSIGN  reduce 95
+	MOD_ASSIGN  reduce 95
+	LSHIFT_ASSIGN  reduce 95
+	RSHIFT_ASSIGN  reduce 95
+	BITAND_ASSIGN  reduce 95
+	BITXOR_ASSIGN  reduce 95
+	BITOR_ASSIGN  reduce 95
+	EQ  reduce 95
+	NEQ  reduce 95
+	LT  reduce 95
+	LE  reduce 95
+	GT  reduce 95
+	GE  reduce 95
+	RPAREN  reduce 95
+	LBRACE  reduce 95
+	RBRACKET  reduce 95
+	SEMICOLON  reduce 95
+	COLON  reduce 95
+	COMMA  reduce 95
+	IDENT  reduce 95
+	EOF  reduce 95
+
+
+state 145
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr MULT expr .  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 96
+	TYPE  reduce 96
+	CONST  reduce 96
+	PLUS  reduce 96
+	MINUS  reduce 96
+	MULT  reduce 96
+	DIV  reduce 96
+	MOD  reduce 96
+	LSHIFT  reduce 96
+	RSHIFT  reduce 96
+	BITAND  reduce 96
+	BITXOR  reduce 96
+	BITOR  reduce 96
+	AND  reduce 96
+	OR  reduce 96
+	ASSIGN  reduce 96
+	PLUS_ASSIGN  reduce 96
+	MINUS_ASSIGN  reduce 96
+	TIMES_ASSIGN  reduce 96
+	DIV_ASSIGN  reduce 96
+	MOD_ASSIGN  reduce 96
+	LSHIFT_ASSIGN  reduce 96
+	RSHIFT_ASSIGN  reduce 96
+	BITAND_ASSIGN  reduce 96
+	BITXOR_ASSIGN  reduce 96
+	BITOR_ASSIGN  reduce 96
+	EQ  reduce 96
+	NEQ  reduce 96
+	LT  reduce 96
+	LE  reduce 96
+	GT  reduce 96
+	GE  reduce 96
+	RPAREN  reduce 96
+	LBRACE  reduce 96
+	RBRACKET  reduce 96
+	SEMICOLON  reduce 96
+	COLON  reduce 96
+	COMMA  reduce 96
+	IDENT  reduce 96
+	EOF  reduce 96
+
+
+state 146
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr DIV expr .  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 97
+	TYPE  reduce 97
+	CONST  reduce 97
+	PLUS  reduce 97
+	MINUS  reduce 97
+	MULT  reduce 97
+	DIV  reduce 97
+	MOD  reduce 97
+	LSHIFT  reduce 97
+	RSHIFT  reduce 97
+	BITAND  reduce 97
+	BITXOR  reduce 97
+	BITOR  reduce 97
+	AND  reduce 97
+	OR  reduce 97
+	ASSIGN  reduce 97
+	PLUS_ASSIGN  reduce 97
+	MINUS_ASSIGN  reduce 97
+	TIMES_ASSIGN  reduce 97
+	DIV_ASSIGN  reduce 97
+	MOD_ASSIGN  reduce 97
+	LSHIFT_ASSIGN  reduce 97
+	RSHIFT_ASSIGN  reduce 97
+	BITAND_ASSIGN  reduce 97
+	BITXOR_ASSIGN  reduce 97
+	BITOR_ASSIGN  reduce 97
+	EQ  reduce 97
+	NEQ  reduce 97
+	LT  reduce 97
+	LE  reduce 97
+	GT  reduce 97
+	GE  reduce 97
+	RPAREN  reduce 97
+	LBRACE  reduce 97
+	RBRACKET  reduce 97
+	SEMICOLON  reduce 97
+	COLON  reduce 97
+	COMMA  reduce 97
+	IDENT  reduce 97
+	EOF  reduce 97
+
+
+state 147
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr MOD expr .  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 98
+	TYPE  reduce 98
+	CONST  reduce 98
+	PLUS  reduce 98
+	MINUS  reduce 98
+	MULT  reduce 98
+	DIV  reduce 98
+	MOD  reduce 98
+	LSHIFT  reduce 98
+	RSHIFT  reduce 98
+	BITAND  reduce 98
+	BITXOR  reduce 98
+	BITOR  reduce 98
+	AND  reduce 98
+	OR  reduce 98
+	ASSIGN  reduce 98
+	PLUS_ASSIGN  reduce 98
+	MINUS_ASSIGN  reduce 98
+	TIMES_ASSIGN  reduce 98
+	DIV_ASSIGN  reduce 98
+	MOD_ASSIGN  reduce 98
+	LSHIFT_ASSIGN  reduce 98
+	RSHIFT_ASSIGN  reduce 98
+	BITAND_ASSIGN  reduce 98
+	BITXOR_ASSIGN  reduce 98
+	BITOR_ASSIGN  reduce 98
+	EQ  reduce 98
+	NEQ  reduce 98
+	LT  reduce 98
+	LE  reduce 98
+	GT  reduce 98
+	GE  reduce 98
+	RPAREN  reduce 98
+	LBRACE  reduce 98
+	RBRACKET  reduce 98
+	SEMICOLON  reduce 98
+	COLON  reduce 98
+	COMMA  reduce 98
+	IDENT  reduce 98
+	EOF  reduce 98
+
+
+state 148
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr LSHIFT expr .  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 99
+	TYPE  reduce 99
+	CONST  reduce 99
+	LSHIFT  reduce 99
+	RSHIFT  reduce 99
+	BITAND  reduce 99
+	BITXOR  reduce 99
+	BITOR  reduce 99
+	AND  reduce 99
+	OR  reduce 99
+	ASSIGN  reduce 99
+	PLUS_ASSIGN  reduce 99
+	MINUS_ASSIGN  reduce 99
+	TIMES_ASSIGN  reduce 99
+	DIV_ASSIGN  reduce 99
+	MOD_ASSIGN  reduce 99
+	LSHIFT_ASSIGN  reduce 99
+	RSHIFT_ASSIGN  reduce 99
+	BITAND_ASSIGN  reduce 99
+	BITXOR_ASSIGN  reduce 99
+	BITOR_ASSIGN  reduce 99
+	EQ  reduce 99
+	NEQ  reduce 99
+	LT  reduce 99
+	LE  reduce 99
+	GT  reduce 99
+	GE  reduce 99
+	RPAREN  reduce 99
+	LBRACE  reduce 99
+	RBRACKET  reduce 99
+	SEMICOLON  reduce 99
+	COLON  reduce 99
+	COMMA  reduce 99
+	IDENT  reduce 99
+	EOF  reduce 99
+
+
+state 149
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr RSHIFT expr .  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 100
+	TYPE  reduce 100
+	CONST  reduce 100
+	LSHIFT  reduce 100
+	RSHIFT  reduce 100
+	BITAND  reduce 100
+	BITXOR  reduce 100
+	BITOR  reduce 100
+	AND  reduce 100
+	OR  reduce 100
+	ASSIGN  reduce 100
+	PLUS_ASSIGN  reduce 100
+	MINUS_ASSIGN  reduce 100
+	TIMES_ASSIGN  reduce 100
+	DIV_ASSIGN  reduce 100
+	MOD_ASSIGN  reduce 100
+	LSHIFT_ASSIGN  reduce 100
+	RSHIFT_ASSIGN  reduce 100
+	BITAND_ASSIGN  reduce 100
+	BITXOR_ASSIGN  reduce 100
+	BITOR_ASSIGN  reduce 100
+	EQ  reduce 100
+	NEQ  reduce 100
+	LT  reduce 100
+	LE  reduce 100
+	GT  reduce 100
+	GE  reduce 100
+	RPAREN  reduce 100
+	LBRACE  reduce 100
+	RBRACKET  reduce 100
+	SEMICOLON  reduce 100
+	COLON  reduce 100
+	COMMA  reduce 100
+	IDENT  reduce 100
+	EOF  reduce 100
+
+
+state 150
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr BITAND expr .  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 101
+	TYPE  reduce 101
+	CONST  reduce 101
+	BITAND  reduce 101
+	BITXOR  reduce 101
+	BITOR  reduce 101
+	AND  reduce 101
+	OR  reduce 101
+	ASSIGN  reduce 101
+	PLUS_ASSIGN  reduce 101
+	MINUS_ASSIGN  reduce 101
+	TIMES_ASSIGN  reduce 101
+	DIV_ASSIGN  reduce 101
+	MOD_ASSIGN  reduce 101
+	LSHIFT_ASSIGN  reduce 101
+	RSHIFT_ASSIGN  reduce 101
+	BITAND_ASSIGN  reduce 101
+	BITXOR_ASSIGN  reduce 101
+	BITOR_ASSIGN  reduce 101
+	EQ  reduce 101
+	NEQ  reduce 101
+	LT  reduce 101
+	LE  reduce 101
+	GT  reduce 101
+	GE  reduce 101
+	RPAREN  reduce 101
+	LBRACE  reduce 101
+	RBRACKET  reduce 101
+	SEMICOLON  reduce 101
+	COLON  reduce 101
+	COMMA  reduce 101
+	IDENT  reduce 101
+	EOF  reduce 101
+
+
+state 151
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr BITXOR expr .  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 102
+	TYPE  reduce 102
+	CONST  reduce 102
+	BITXOR  reduce 102
+	BITOR  reduce 102
+	AND  reduce 102
+	OR  reduce 102
+	ASSIGN  reduce 102
+	PLUS_ASSIGN  reduce 102
+	MINUS_ASSIGN  reduce 102
+	TIMES_ASSIGN  reduce 102
+	DIV_ASSIGN  reduce 102
+	MOD_ASSIGN  reduce 102
+	LSHIFT_ASSIGN  reduce 102
+	RSHIFT_ASSIGN  reduce 102
+	BITAND_ASSIGN  reduce 102
+	BITXOR_ASSIGN  reduce 102
+	BITOR_ASSIGN  reduce 102
+	EQ  reduce 102
+	NEQ  reduce 102
+	LT  reduce 102
+	LE  reduce 102
+	GT  reduce 102
+	GE  reduce 102
+	RPAREN  reduce 102
+	LBRACE  reduce 102
+	RBRACKET  reduce 102
+	SEMICOLON  reduce 102
+	COLON  reduce 102
+	COMMA  reduce 102
+	IDENT  reduce 102
+	EOF  reduce 102
+
+
+state 152
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr BITOR expr .  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 103
+	TYPE  reduce 103
+	CONST  reduce 103
+	BITOR  reduce 103
+	AND  reduce 103
+	OR  reduce 103
+	ASSIGN  reduce 103
+	PLUS_ASSIGN  reduce 103
+	MINUS_ASSIGN  reduce 103
+	TIMES_ASSIGN  reduce 103
+	DIV_ASSIGN  reduce 103
+	MOD_ASSIGN  reduce 103
+	LSHIFT_ASSIGN  reduce 103
+	RSHIFT_ASSIGN  reduce 103
+	BITAND_ASSIGN  reduce 103
+	BITXOR_ASSIGN  reduce 103
+	BITOR_ASSIGN  reduce 103
+	EQ  reduce 103
+	NEQ  reduce 103
+	LT  reduce 103
+	LE  reduce 103
+	GT  reduce 103
+	GE  reduce 103
+	RPAREN  reduce 103
+	LBRACE  reduce 103
+	RBRACKET  reduce 103
+	SEMICOLON  reduce 103
+	COLON  reduce 103
+	COMMA  reduce 103
+	IDENT  reduce 103
+	EOF  reduce 103
+
+
+state 153
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr AND expr .  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	EQ  shift 114
+	NEQ  shift 115
+	LT  shift 116
+	LE  shift 117
+	GT  shift 118
+	GE  shift 119
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 104
+	TYPE  reduce 104
+	CONST  reduce 104
+	AND  reduce 104
+	OR  reduce 104
+	ASSIGN  reduce 104
+	PLUS_ASSIGN  reduce 104
+	MINUS_ASSIGN  reduce 104
+	TIMES_ASSIGN  reduce 104
+	DIV_ASSIGN  reduce 104
+	MOD_ASSIGN  reduce 104
+	LSHIFT_ASSIGN  reduce 104
+	RSHIFT_ASSIGN  reduce 104
+	BITAND_ASSIGN  reduce 104
+	BITXOR_ASSIGN  reduce 104
+	BITOR_ASSIGN  reduce 104
+	RPAREN  reduce 104
+	LBRACE  reduce 104
+	RBRACKET  reduce 104
+	SEMICOLON  reduce 104
+	COLON  reduce 104
+	COMMA  reduce 104
+	IDENT  reduce 104
+	EOF  reduce 104
+
+
+state 154
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr OR expr .  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	AND  shift 101
+	EQ  shift 114
+	NEQ  shift 115
+	LT  shift 116
+	LE  shift 117
+	GT  shift 118
+	GE  shift 119
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 105
+	TYPE  reduce 105
+	CONST  reduce 105
+	OR  reduce 105
+	ASSIGN  reduce 105
+	PLUS_ASSIGN  reduce 105
+	MINUS_ASSIGN  reduce 105
+	TIMES_ASSIGN  reduce 105
+	DIV_ASSIGN  reduce 105
+	MOD_ASSIGN  reduce 105
+	LSHIFT_ASSIGN  reduce 105
+	RSHIFT_ASSIGN  reduce 105
+	BITAND_ASSIGN  reduce 105
+	BITXOR_ASSIGN  reduce 105
+	BITOR_ASSIGN  reduce 105
+	RPAREN  reduce 105
+	LBRACE  reduce 105
+	RBRACKET  reduce 105
+	SEMICOLON  reduce 105
+	COLON  reduce 105
+	COMMA  reduce 105
+	IDENT  reduce 105
+	EOF  reduce 105
+
+
+state 155
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr ASSIGN expr .  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	AND  shift 101
+	OR  shift 102
+	ASSIGN  shift 103
+	PLUS_ASSIGN  shift 104
+	MINUS_ASSIGN  shift 105
+	TIMES_ASSIGN  shift 106
+	DIV_ASSIGN  shift 107
+	MOD_ASSIGN  shift 108
+	LSHIFT_ASSIGN  shift 109
+	RSHIFT_ASSIGN  shift 110
+	BITAND_ASSIGN  shift 111
+	BITXOR_ASSIGN  shift 112
+	BITOR_ASSIGN  shift 113
+	EQ  shift 114
+	NEQ  shift 115
+	LT  shift 116
+	LE  shift 117
+	GT  shift 118
+	GE  shift 119
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 112
+	TYPE  reduce 112
+	CONST  reduce 112
+	RPAREN  reduce 112
+	LBRACE  reduce 112
+	RBRACKET  reduce 112
+	SEMICOLON  reduce 112
+	COLON  reduce 112
+	COMMA  reduce 112
+	IDENT  reduce 112
+	EOF  reduce 112
+
+
+state 156
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr PLUS_ASSIGN expr .  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	AND  shift 101
+	OR  shift 102
+	ASSIGN  shift 103
+	PLUS_ASSIGN  shift 104
+	MINUS_ASSIGN  shift 105
+	TIMES_ASSIGN  shift 106
+	DIV_ASSIGN  shift 107
+	MOD_ASSIGN  shift 108
+	LSHIFT_ASSIGN  shift 109
+	RSHIFT_ASSIGN  shift 110
+	BITAND_ASSIGN  shift 111
+	BITXOR_ASSIGN  shift 112
+	BITOR_ASSIGN  shift 113
+	EQ  shift 114
+	NEQ  shift 115
+	LT  shift 116
+	LE  shift 117
+	GT  shift 118
+	GE  shift 119
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 113
+	TYPE  reduce 113
+	CONST  reduce 113
+	RPAREN  reduce 113
+	LBRACE  reduce 113
+	RBRACKET  reduce 113
+	SEMICOLON  reduce 113
+	COLON  reduce 113
+	COMMA  reduce 113
+	IDENT  reduce 113
+	EOF  reduce 113
+
+
+state 157
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr MINUS_ASSIGN expr .  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	AND  shift 101
+	OR  shift 102
+	ASSIGN  shift 103
+	PLUS_ASSIGN  shift 104
+	MINUS_ASSIGN  shift 105
+	TIMES_ASSIGN  shift 106
+	DIV_ASSIGN  shift 107
+	MOD_ASSIGN  shift 108
+	LSHIFT_ASSIGN  shift 109
+	RSHIFT_ASSIGN  shift 110
+	BITAND_ASSIGN  shift 111
+	BITXOR_ASSIGN  shift 112
+	BITOR_ASSIGN  shift 113
+	EQ  shift 114
+	NEQ  shift 115
+	LT  shift 116
+	LE  shift 117
+	GT  shift 118
+	GE  shift 119
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 114
+	TYPE  reduce 114
+	CONST  reduce 114
+	RPAREN  reduce 114
+	LBRACE  reduce 114
+	RBRACKET  reduce 114
+	SEMICOLON  reduce 114
+	COLON  reduce 114
+	COMMA  reduce 114
+	IDENT  reduce 114
+	EOF  reduce 114
+
+
+state 158
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr TIMES_ASSIGN expr .  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	AND  shift 101
+	OR  shift 102
+	ASSIGN  shift 103
+	PLUS_ASSIGN  shift 104
+	MINUS_ASSIGN  shift 105
+	TIMES_ASSIGN  shift 106
+	DIV_ASSIGN  shift 107
+	MOD_ASSIGN  shift 108
+	LSHIFT_ASSIGN  shift 109
+	RSHIFT_ASSIGN  shift 110
+	BITAND_ASSIGN  shift 111
+	BITXOR_ASSIGN  shift 112
+	BITOR_ASSIGN  shift 113
+	EQ  shift 114
+	NEQ  shift 115
+	LT  shift 116
+	LE  shift 117
+	GT  shift 118
+	GE  shift 119
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 115
+	TYPE  reduce 115
+	CONST  reduce 115
+	RPAREN  reduce 115
+	LBRACE  reduce 115
+	RBRACKET  reduce 115
+	SEMICOLON  reduce 115
+	COLON  reduce 115
+	COMMA  reduce 115
+	IDENT  reduce 115
+	EOF  reduce 115
+
+
+state 159
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr DIV_ASSIGN expr .  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	AND  shift 101
+	OR  shift 102
+	ASSIGN  shift 103
+	PLUS_ASSIGN  shift 104
+	MINUS_ASSIGN  shift 105
+	TIMES_ASSIGN  shift 106
+	DIV_ASSIGN  shift 107
+	MOD_ASSIGN  shift 108
+	LSHIFT_ASSIGN  shift 109
+	RSHIFT_ASSIGN  shift 110
+	BITAND_ASSIGN  shift 111
+	BITXOR_ASSIGN  shift 112
+	BITOR_ASSIGN  shift 113
+	EQ  shift 114
+	NEQ  shift 115
+	LT  shift 116
+	LE  shift 117
+	GT  shift 118
+	GE  shift 119
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 116
+	TYPE  reduce 116
+	CONST  reduce 116
+	RPAREN  reduce 116
+	LBRACE  reduce 116
+	RBRACKET  reduce 116
+	SEMICOLON  reduce 116
+	COLON  reduce 116
+	COMMA  reduce 116
+	IDENT  reduce 116
+	EOF  reduce 116
+
+
+state 160
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr MOD_ASSIGN expr .  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	AND  shift 101
+	OR  shift 102
+	ASSIGN  shift 103
+	PLUS_ASSIGN  shift 104
+	MINUS_ASSIGN  shift 105
+	TIMES_ASSIGN  shift 106
+	DIV_ASSIGN  shift 107
+	MOD_ASSIGN  shift 108
+	LSHIFT_ASSIGN  shift 109
+	RSHIFT_ASSIGN  shift 110
+	BITAND_ASSIGN  shift 111
+	BITXOR_ASSIGN  shift 112
+	BITOR_ASSIGN  shift 113
+	EQ  shift 114
+	NEQ  shift 115
+	LT  shift 116
+	LE  shift 117
+	GT  shift 118
+	GE  shift 119
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 117
+	TYPE  reduce 117
+	CONST  reduce 117
+	RPAREN  reduce 117
+	LBRACE  reduce 117
+	RBRACKET  reduce 117
+	SEMICOLON  reduce 117
+	COLON  reduce 117
+	COMMA  reduce 117
+	IDENT  reduce 117
+	EOF  reduce 117
+
+
+state 161
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr LSHIFT_ASSIGN expr .  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	AND  shift 101
+	OR  shift 102
+	ASSIGN  shift 103
+	PLUS_ASSIGN  shift 104
+	MINUS_ASSIGN  shift 105
+	TIMES_ASSIGN  shift 106
+	DIV_ASSIGN  shift 107
+	MOD_ASSIGN  shift 108
+	LSHIFT_ASSIGN  shift 109
+	RSHIFT_ASSIGN  shift 110
+	BITAND_ASSIGN  shift 111
+	BITXOR_ASSIGN  shift 112
+	BITOR_ASSIGN  shift 113
+	EQ  shift 114
+	NEQ  shift 115
+	LT  shift 116
+	LE  shift 117
+	GT  shift 118
+	GE  shift 119
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 118
+	TYPE  reduce 118
+	CONST  reduce 118
+	RPAREN  reduce 118
+	LBRACE  reduce 118
+	RBRACKET  reduce 118
+	SEMICOLON  reduce 118
+	COLON  reduce 118
+	COMMA  reduce 118
+	IDENT  reduce 118
+	EOF  reduce 118
+
+
+state 162
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr RSHIFT_ASSIGN expr .  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	AND  shift 101
+	OR  shift 102
+	ASSIGN  shift 103
+	PLUS_ASSIGN  shift 104
+	MINUS_ASSIGN  shift 105
+	TIMES_ASSIGN  shift 106
+	DIV_ASSIGN  shift 107
+	MOD_ASSIGN  shift 108
+	LSHIFT_ASSIGN  shift 109
+	RSHIFT_ASSIGN  shift 110
+	BITAND_ASSIGN  shift 111
+	BITXOR_ASSIGN  shift 112
+	BITOR_ASSIGN  shift 113
+	EQ  shift 114
+	NEQ  shift 115
+	LT  shift 116
+	LE  shift 117
+	GT  shift 118
+	GE  shift 119
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 119
+	TYPE  reduce 119
+	CONST  reduce 119
+	RPAREN  reduce 119
+	LBRACE  reduce 119
+	RBRACKET  reduce 119
+	SEMICOLON  reduce 119
+	COLON  reduce 119
+	COMMA  reduce 119
+	IDENT  reduce 119
+	EOF  reduce 119
+
+
+state 163
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr BITAND_ASSIGN expr .  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	AND  shift 101
+	OR  shift 102
+	ASSIGN  shift 103
+	PLUS_ASSIGN  shift 104
+	MINUS_ASSIGN  shift 105
+	TIMES_ASSIGN  shift 106
+	DIV_ASSIGN  shift 107
+	MOD_ASSIGN  shift 108
+	LSHIFT_ASSIGN  shift 109
+	RSHIFT_ASSIGN  shift 110
+	BITAND_ASSIGN  shift 111
+	BITXOR_ASSIGN  shift 112
+	BITOR_ASSIGN  shift 113
+	EQ  shift 114
+	NEQ  shift 115
+	LT  shift 116
+	LE  shift 117
+	GT  shift 118
+	GE  shift 119
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 120
+	TYPE  reduce 120
+	CONST  reduce 120
+	RPAREN  reduce 120
+	LBRACE  reduce 120
+	RBRACKET  reduce 120
+	SEMICOLON  reduce 120
+	COLON  reduce 120
+	COMMA  reduce 120
+	IDENT  reduce 120
+	EOF  reduce 120
+
+
+state 164
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr BITXOR_ASSIGN expr .  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	AND  shift 101
+	OR  shift 102
+	ASSIGN  shift 103
+	PLUS_ASSIGN  shift 104
+	MINUS_ASSIGN  shift 105
+	TIMES_ASSIGN  shift 106
+	DIV_ASSIGN  shift 107
+	MOD_ASSIGN  shift 108
+	LSHIFT_ASSIGN  shift 109
+	RSHIFT_ASSIGN  shift 110
+	BITAND_ASSIGN  shift 111
+	BITXOR_ASSIGN  shift 112
+	BITOR_ASSIGN  shift 113
+	EQ  shift 114
+	NEQ  shift 115
+	LT  shift 116
+	LE  shift 117
+	GT  shift 118
+	GE  shift 119
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 121
+	TYPE  reduce 121
+	CONST  reduce 121
+	RPAREN  reduce 121
+	LBRACE  reduce 121
+	RBRACKET  reduce 121
+	SEMICOLON  reduce 121
+	COLON  reduce 121
+	COMMA  reduce 121
+	IDENT  reduce 121
+	EOF  reduce 121
+
+
+state 165
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+	expr : expr BITOR_ASSIGN expr .  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	AND  shift 101
+	OR  shift 102
+	ASSIGN  shift 103
+	PLUS_ASSIGN  shift 104
+	MINUS_ASSIGN  shift 105
+	TIMES_ASSIGN  shift 106
+	DIV_ASSIGN  shift 107
+	MOD_ASSIGN  shift 108
+	LSHIFT_ASSIGN  shift 109
+	RSHIFT_ASSIGN  shift 110
+	BITAND_ASSIGN  shift 111
+	BITXOR_ASSIGN  shift 112
+	BITOR_ASSIGN  shift 113
+	EQ  shift 114
+	NEQ  shift 115
+	LT  shift 116
+	LE  shift 117
+	GT  shift 118
+	GE  shift 119
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 122
+	TYPE  reduce 122
+	CONST  reduce 122
+	RPAREN  reduce 122
+	LBRACE  reduce 122
+	RBRACKET  reduce 122
+	SEMICOLON  reduce 122
+	COLON  reduce 122
+	COMMA  reduce 122
+	IDENT  reduce 122
+	EOF  reduce 122
+
+
+state 166
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr EQ expr .  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 106
+	TYPE  reduce 106
+	CONST  reduce 106
+	AND  reduce 106
+	OR  reduce 106
+	ASSIGN  reduce 106
+	PLUS_ASSIGN  reduce 106
+	MINUS_ASSIGN  reduce 106
+	TIMES_ASSIGN  reduce 106
+	DIV_ASSIGN  reduce 106
+	MOD_ASSIGN  reduce 106
+	LSHIFT_ASSIGN  reduce 106
+	RSHIFT_ASSIGN  reduce 106
+	BITAND_ASSIGN  reduce 106
+	BITXOR_ASSIGN  reduce 106
+	BITOR_ASSIGN  reduce 106
+	RPAREN  reduce 106
+	LBRACE  reduce 106
+	RBRACKET  reduce 106
+	SEMICOLON  reduce 106
+	COLON  reduce 106
+	COMMA  reduce 106
+	IDENT  reduce 106
+	EOF  reduce 106
+
+
+state 167
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr NEQ expr .  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 107
+	TYPE  reduce 107
+	CONST  reduce 107
+	AND  reduce 107
+	OR  reduce 107
+	ASSIGN  reduce 107
+	PLUS_ASSIGN  reduce 107
+	MINUS_ASSIGN  reduce 107
+	TIMES_ASSIGN  reduce 107
+	DIV_ASSIGN  reduce 107
+	MOD_ASSIGN  reduce 107
+	LSHIFT_ASSIGN  reduce 107
+	RSHIFT_ASSIGN  reduce 107
+	BITAND_ASSIGN  reduce 107
+	BITXOR_ASSIGN  reduce 107
+	BITOR_ASSIGN  reduce 107
+	RPAREN  reduce 107
+	LBRACE  reduce 107
+	RBRACKET  reduce 107
+	SEMICOLON  reduce 107
+	COLON  reduce 107
+	COMMA  reduce 107
+	IDENT  reduce 107
+	EOF  reduce 107
+
+
+state 168
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr LT expr .  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 108
+	TYPE  reduce 108
+	CONST  reduce 108
+	AND  reduce 108
+	OR  reduce 108
+	ASSIGN  reduce 108
+	PLUS_ASSIGN  reduce 108
+	MINUS_ASSIGN  reduce 108
+	TIMES_ASSIGN  reduce 108
+	DIV_ASSIGN  reduce 108
+	MOD_ASSIGN  reduce 108
+	LSHIFT_ASSIGN  reduce 108
+	RSHIFT_ASSIGN  reduce 108
+	BITAND_ASSIGN  reduce 108
+	BITXOR_ASSIGN  reduce 108
+	BITOR_ASSIGN  reduce 108
+	RPAREN  reduce 108
+	LBRACE  reduce 108
+	RBRACKET  reduce 108
+	SEMICOLON  reduce 108
+	COLON  reduce 108
+	COMMA  reduce 108
+	IDENT  reduce 108
+	EOF  reduce 108
+
+
+state 169
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr LE expr .  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 109
+	TYPE  reduce 109
+	CONST  reduce 109
+	AND  reduce 109
+	OR  reduce 109
+	ASSIGN  reduce 109
+	PLUS_ASSIGN  reduce 109
+	MINUS_ASSIGN  reduce 109
+	TIMES_ASSIGN  reduce 109
+	DIV_ASSIGN  reduce 109
+	MOD_ASSIGN  reduce 109
+	LSHIFT_ASSIGN  reduce 109
+	RSHIFT_ASSIGN  reduce 109
+	BITAND_ASSIGN  reduce 109
+	BITXOR_ASSIGN  reduce 109
+	BITOR_ASSIGN  reduce 109
+	RPAREN  reduce 109
+	LBRACE  reduce 109
+	RBRACKET  reduce 109
+	SEMICOLON  reduce 109
+	COLON  reduce 109
+	COMMA  reduce 109
+	IDENT  reduce 109
+	EOF  reduce 109
+
+
+state 170
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr GT expr .  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 110
+	TYPE  reduce 110
+	CONST  reduce 110
+	AND  reduce 110
+	OR  reduce 110
+	ASSIGN  reduce 110
+	PLUS_ASSIGN  reduce 110
+	MINUS_ASSIGN  reduce 110
+	TIMES_ASSIGN  reduce 110
+	DIV_ASSIGN  reduce 110
+	MOD_ASSIGN  reduce 110
+	LSHIFT_ASSIGN  reduce 110
+	RSHIFT_ASSIGN  reduce 110
+	BITAND_ASSIGN  reduce 110
+	BITXOR_ASSIGN  reduce 110
+	BITOR_ASSIGN  reduce 110
+	RPAREN  reduce 110
+	LBRACE  reduce 110
+	RBRACKET  reduce 110
+	SEMICOLON  reduce 110
+	COLON  reduce 110
+	COMMA  reduce 110
+	IDENT  reduce 110
+	EOF  reduce 110
+
+
+state 171
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr GE expr .  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	LBRACKET  shift 120
+	DOT  shift 121
+	FUNC  reduce 111
+	TYPE  reduce 111
+	CONST  reduce 111
+	AND  reduce 111
+	OR  reduce 111
+	ASSIGN  reduce 111
+	PLUS_ASSIGN  reduce 111
+	MINUS_ASSIGN  reduce 111
+	TIMES_ASSIGN  reduce 111
+	DIV_ASSIGN  reduce 111
+	MOD_ASSIGN  reduce 111
+	LSHIFT_ASSIGN  reduce 111
+	RSHIFT_ASSIGN  reduce 111
+	BITAND_ASSIGN  reduce 111
+	BITXOR_ASSIGN  reduce 111
+	BITOR_ASSIGN  reduce 111
+	RPAREN  reduce 111
+	LBRACE  reduce 111
+	RBRACKET  reduce 111
+	SEMICOLON  reduce 111
+	COLON  reduce 111
+	COMMA  reduce 111
+	IDENT  reduce 111
+	EOF  reduce 111
+
+
+state 172
+	expr_opt : expr .  (78)
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr LBRACKET expr . RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	AND  shift 101
+	OR  shift 102
+	ASSIGN  shift 103
+	PLUS_ASSIGN  shift 104
+	MINUS_ASSIGN  shift 105
+	TIMES_ASSIGN  shift 106
+	DIV_ASSIGN  shift 107
+	MOD_ASSIGN  shift 108
+	LSHIFT_ASSIGN  shift 109
+	RSHIFT_ASSIGN  shift 110
+	BITAND_ASSIGN  shift 111
+	BITXOR_ASSIGN  shift 112
+	BITOR_ASSIGN  shift 113
+	EQ  shift 114
+	NEQ  shift 115
+	LT  shift 116
+	LE  shift 117
+	GT  shift 118
+	GE  shift 119
+	LBRACKET  shift 120
+	RBRACKET  shift 188
+	DOT  shift 121
+	COLON  reduce 78
+
+
+state 173
+	expr : expr LBRACKET expr_opt . COLON expr_opt RBRACKET  (86)
+
+	COLON  shift 189
+	.  error
+
+
+state 174
+	expr : expr DOT IDENT .  (84)
+	expr : expr DOT IDENT . LPAREN arg_list RPAREN  (88)
+
+	LPAREN  shift 190
+	FUNC  reduce 84
+	TYPE  reduce 84
+	CONST  reduce 84
+	PLUS  reduce 84
+	MINUS  reduce 84
+	MULT  reduce 84
+	DIV  reduce 84
+	MOD  reduce 84
+	LSHIFT  reduce 84
+	RSHIFT  reduce 84
+	BITAND  reduce 84
+	BITXOR  reduce 84
+	BITOR  reduce 84
+	AND  reduce 84
+	OR  reduce 84
+	ASSIGN  reduce 84
+	PLUS_ASSIGN  reduce 84
+	MINUS_ASSIGN  reduce 84
+	TIMES_ASSIGN  reduce 84
+	DIV_ASSIGN  reduce 84
+	MOD_ASSIGN  reduce 84
+	LSHIFT_ASSIGN  reduce 84
+	RSHIFT_ASSIGN  reduce 84
+	BITAND_ASSIGN  reduce 84
+	BITXOR_ASSIGN  reduce 84
+	BITOR_ASSIGN  reduce 84
+	EQ  reduce 84
+	NEQ  reduce 84
+	LT  reduce 84
+	LE  reduce 84
+	GT  reduce 84
+	GE  reduce 84
+	RPAREN  reduce 84
+	LBRACE  reduce 84
+	LBRACKET  reduce 84
+	RBRACKET  reduce 84
+	SEMICOLON  reduce 84
+	COLON  reduce 84
+	COMMA  reduce 84
+	DOT  reduce 84
+	IDENT  reduce 84
+	EOF  reduce 84
+
+
+state 175
+	struct_func_decl : FUNC LPAREN IDENT IDENT RPAREN IDENT LPAREN . param_list RPAREN return_types func_body  (58)
+	param_list : .  (48)
+
+	IDENT  shift 33
+	RPAREN  reduce 48
+	COMMA  reduce 48
+
+	param  goto 34
+	param_list  goto 191
+
+
+state 176
+	type_expr_list : type_expr .  (54)
+
+	.  reduce 54
+
+
+state 177
+	return_types : LPAREN type_expr_list . RPAREN  (53)
+	type_expr_list : type_expr_list . COMMA type_expr  (55)
+
+	RPAREN  shift 192
+	COMMA  shift 193
+	.  error
+
+
+state 178
+	block : LBRACE . stmt_list RBRACE  (59)
+	stmt_list : .  (60)
+
+	.  reduce 60
+
+	stmt_list  goto 194
+
+
+state 179
+	func_decl : FUNC IDENT LPAREN param_list RPAREN return_types func_body .  (57)
+
+	.  reduce 57
+
+
+state 180
+	func_body : block .  (56)
+
+	.  reduce 56
+
+
+state 181
+	field : modifier_opt IDENT . type_expr default_opt  (34)
+
+	STRUCT  shift 37
+	ERROR  shift 38
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	LBRACKET  shift 51
+	IDENT  shift 52
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 195
+
+
+state 182
+	field_list : field_list field SEMICOLON .  (38)
+
+	.  reduce 38
+
+
+state 183
+	type_expr : LBRACKET INT_LIT RBRACKET type_expr .  (26)
+
+	.  reduce 26
+
+
+state 184
+	expr : MAKE LPAREN type_expr COMMA . expr cap_opt RPAREN  (123)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 196
+	literal  goto 71
+
+
+state 185
+	expr_list : expr_list COMMA . expr  (75)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 197
+	literal  goto 71
+
+
+state 186
+	expr : IDENT LPAREN arg_list RPAREN .  (87)
+
+	.  reduce 87
+
+
+state 187
+	expr : type_expr LPAREN expr RPAREN .  (124)
+
+	.  reduce 124
+
+
+state 188
+	expr : expr LBRACKET expr RBRACKET .  (85)
+
+	.  reduce 85
+
+
+state 189
+	expr : expr LBRACKET expr_opt COLON . expr_opt RBRACKET  (86)
+	expr_opt : .  (77)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	RBRACKET  reduce 77
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 198
+	expr_opt  goto 199
+	literal  goto 71
+
+
+state 190
+	expr : expr DOT IDENT LPAREN . arg_list RPAREN  (88)
+	arg_list : .  (125)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	RPAREN  reduce 125
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 139
+	expr_list  goto 140
+	literal  goto 71
+	arg_list  goto 200
+
+
+state 191
+	param_list : param_list . COMMA param  (50)
+	struct_func_decl : FUNC LPAREN IDENT IDENT RPAREN IDENT LPAREN param_list . RPAREN return_types func_body  (58)
+
+	RPAREN  shift 201
+	COMMA  shift 77
+	.  error
+
+
+state 192
+	return_types : LPAREN type_expr_list RPAREN .  (53)
+
+	.  reduce 53
+
+
+state 193
+	type_expr_list : type_expr_list COMMA . type_expr  (55)
+
+	STRUCT  shift 37
+	ERROR  shift 38
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	LBRACKET  shift 51
+	IDENT  shift 52
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 202
+
+
+194: shift/reduce conflict (shift 63, reduce 41) on IDENT
+state 194
+	block : LBRACE stmt_list . RBRACE  (59)
+	stmt_list : stmt_list . stmt  (61)
+	const_opt : .  (41)
+
+	STRUCT  shift 37
+	RETURN  shift 203
+	BREAK  shift 204
+	IF  shift 205
+	CONTINUE  shift 206
+	FOR  shift 207
+	WHILE  shift 208
+	CONST  shift 13
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACE  shift 178
+	RBRACE  shift 209
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 210
+	const_opt  goto 211
+	block  goto 212
+	stmt  goto 213
+	var_decl  goto 214
+	literal  goto 71
+
+
+state 195
+	field : modifier_opt IDENT type_expr . default_opt  (34)
+	default_opt : .  (35)
+
+	ASSIGN  shift 215
+	SEMICOLON  reduce 35
+
+	default_opt  goto 216
+
+
+state 196
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+	expr : MAKE LPAREN type_expr COMMA expr . cap_opt RPAREN  (123)
+	cap_opt : .  (127)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	AND  shift 101
+	OR  shift 102
+	ASSIGN  shift 103
+	PLUS_ASSIGN  shift 104
+	MINUS_ASSIGN  shift 105
+	TIMES_ASSIGN  shift 106
+	DIV_ASSIGN  shift 107
+	MOD_ASSIGN  shift 108
+	LSHIFT_ASSIGN  shift 109
+	RSHIFT_ASSIGN  shift 110
+	BITAND_ASSIGN  shift 111
+	BITXOR_ASSIGN  shift 112
+	BITOR_ASSIGN  shift 113
+	EQ  shift 114
+	NEQ  shift 115
+	LT  shift 116
+	LE  shift 117
+	GT  shift 118
+	GE  shift 119
+	LBRACKET  shift 120
+	COMMA  shift 217
+	DOT  shift 121
+	RPAREN  reduce 127
+
+	cap_opt  goto 218
+
+
+state 197
+	expr_list : expr_list COMMA expr .  (75)
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	AND  shift 101
+	OR  shift 102
+	ASSIGN  shift 103
+	PLUS_ASSIGN  shift 104
+	MINUS_ASSIGN  shift 105
+	TIMES_ASSIGN  shift 106
+	DIV_ASSIGN  shift 107
+	MOD_ASSIGN  shift 108
+	LSHIFT_ASSIGN  shift 109
+	RSHIFT_ASSIGN  shift 110
+	BITAND_ASSIGN  shift 111
+	BITXOR_ASSIGN  shift 112
+	BITOR_ASSIGN  shift 113
+	EQ  shift 114
+	NEQ  shift 115
+	LT  shift 116
+	LE  shift 117
+	GT  shift 118
+	GE  shift 119
+	LBRACKET  shift 120
+	DOT  shift 121
+	RPAREN  reduce 75
+	SEMICOLON  reduce 75
+	COMMA  reduce 75
+
+
+state 198
+	expr_opt : expr .  (78)
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	AND  shift 101
+	OR  shift 102
+	ASSIGN  shift 103
+	PLUS_ASSIGN  shift 104
+	MINUS_ASSIGN  shift 105
+	TIMES_ASSIGN  shift 106
+	DIV_ASSIGN  shift 107
+	MOD_ASSIGN  shift 108
+	LSHIFT_ASSIGN  shift 109
+	RSHIFT_ASSIGN  shift 110
+	BITAND_ASSIGN  shift 111
+	BITXOR_ASSIGN  shift 112
+	BITOR_ASSIGN  shift 113
+	EQ  shift 114
+	NEQ  shift 115
+	LT  shift 116
+	LE  shift 117
+	GT  shift 118
+	GE  shift 119
+	LBRACKET  shift 120
+	DOT  shift 121
+	LBRACE  reduce 78
+	RBRACKET  reduce 78
+	SEMICOLON  reduce 78
+
+
+state 199
+	expr : expr LBRACKET expr_opt COLON expr_opt . RBRACKET  (86)
+
+	RBRACKET  shift 219
+	.  error
+
+
+state 200
+	expr : expr DOT IDENT LPAREN arg_list . RPAREN  (88)
+
+	RPAREN  shift 220
+	.  error
+
+
+state 201
+	struct_func_decl : FUNC LPAREN IDENT IDENT RPAREN IDENT LPAREN param_list RPAREN . return_types func_body  (58)
+	return_types : .  (51)
+
+	STRUCT  shift 37
+	ERROR  shift 38
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	LPAREN  shift 124
+	LBRACKET  shift 51
+	IDENT  shift 52
+	LBRACE  reduce 51
+
+	primitive_type  goto 53
+	type_expr  goto 125
+	return_types  goto 221
+
+
+state 202
+	type_expr_list : type_expr_list COMMA type_expr .  (55)
+
+	.  reduce 55
+
+
+state 203
+	stmt : RETURN . ret_opt SEMICOLON  (69)
+	ret_opt : .  (72)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	SEMICOLON  reduce 72
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 139
+	ret_opt  goto 222
+	expr_list  goto 223
+	literal  goto 71
+
+
+state 204
+	stmt : BREAK . SEMICOLON  (70)
+
+	SEMICOLON  shift 224
+	.  error
+
+
+state 205
+	stmt : IF . expr block  (65)
+	stmt : IF . expr block ELSE stmt  (66)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 225
+	literal  goto 71
+
+
+state 206
+	stmt : CONTINUE . SEMICOLON  (71)
+
+	SEMICOLON  shift 226
+	.  error
+
+
+state 207
+	stmt : FOR . for_clause block  (68)
+	expr_opt : .  (77)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	SEMICOLON  reduce 77
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 198
+	for_clause  goto 227
+	expr_opt  goto 228
+	literal  goto 71
+
+
+state 208
+	stmt : WHILE . expr block  (67)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 229
+	literal  goto 71
+
+
+state 209
+	block : LBRACE stmt_list RBRACE .  (59)
+
+	.  reduce 59
+
+
+state 210
+	stmt : expr . SEMICOLON  (62)
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	AND  shift 101
+	OR  shift 102
+	ASSIGN  shift 103
+	PLUS_ASSIGN  shift 104
+	MINUS_ASSIGN  shift 105
+	TIMES_ASSIGN  shift 106
+	DIV_ASSIGN  shift 107
+	MOD_ASSIGN  shift 108
+	LSHIFT_ASSIGN  shift 109
+	RSHIFT_ASSIGN  shift 110
+	BITAND_ASSIGN  shift 111
+	BITXOR_ASSIGN  shift 112
+	BITOR_ASSIGN  shift 113
+	EQ  shift 114
+	NEQ  shift 115
+	LT  shift 116
+	LE  shift 117
+	GT  shift 118
+	GE  shift 119
+	LBRACKET  shift 120
+	SEMICOLON  shift 230
+	DOT  shift 121
+	.  error
+
+
+state 211
+	var_decl : const_opt . IDENT type_ann_opt ASSIGN expr  (79)
+	var_decl : const_opt . IDENT DECL_ASSIGN expr  (80)
+
+	IDENT  shift 231
+	.  error
+
+
+state 212
+	stmt : block .  (64)
+
+	.  reduce 64
+
+
+state 213
+	stmt_list : stmt_list stmt .  (61)
+
+	.  reduce 61
+
+
+state 214
+	stmt : var_decl . SEMICOLON  (63)
+
+	SEMICOLON  shift 232
+	.  error
+
+
+state 215
+	default_opt : ASSIGN . expr  (36)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 233
+	literal  goto 71
+
+
+state 216
+	field : modifier_opt IDENT type_expr default_opt .  (34)
+
+	.  reduce 34
+
+
+state 217
+	cap_opt : COMMA . expr  (128)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 234
+	literal  goto 71
+
+
+state 218
+	expr : MAKE LPAREN type_expr COMMA expr cap_opt . RPAREN  (123)
+
+	RPAREN  shift 235
+	.  error
+
+
+state 219
+	expr : expr LBRACKET expr_opt COLON expr_opt RBRACKET .  (86)
+
+	.  reduce 86
+
+
+state 220
+	expr : expr DOT IDENT LPAREN arg_list RPAREN .  (88)
+
+	.  reduce 88
+
+
+state 221
+	struct_func_decl : FUNC LPAREN IDENT IDENT RPAREN IDENT LPAREN param_list RPAREN return_types . func_body  (58)
+
+	LBRACE  shift 178
+	.  error
+
+	func_body  goto 236
+	block  goto 180
+
+
+state 222
+	stmt : RETURN ret_opt . SEMICOLON  (69)
+
+	SEMICOLON  shift 237
+	.  error
+
+
+state 223
+	ret_opt : expr_list .  (73)
+	expr_list : expr_list . COMMA expr  (75)
+
+	COMMA  shift 185
+	SEMICOLON  reduce 73
+
+
+state 224
+	stmt : BREAK SEMICOLON .  (70)
+
+	.  reduce 70
+
+
+state 225
+	stmt : IF expr . block  (65)
+	stmt : IF expr . block ELSE stmt  (66)
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	AND  shift 101
+	OR  shift 102
+	ASSIGN  shift 103
+	PLUS_ASSIGN  shift 104
+	MINUS_ASSIGN  shift 105
+	TIMES_ASSIGN  shift 106
+	DIV_ASSIGN  shift 107
+	MOD_ASSIGN  shift 108
+	LSHIFT_ASSIGN  shift 109
+	RSHIFT_ASSIGN  shift 110
+	BITAND_ASSIGN  shift 111
+	BITXOR_ASSIGN  shift 112
+	BITOR_ASSIGN  shift 113
+	EQ  shift 114
+	NEQ  shift 115
+	LT  shift 116
+	LE  shift 117
+	GT  shift 118
+	GE  shift 119
+	LBRACE  shift 178
+	LBRACKET  shift 120
+	DOT  shift 121
+	.  error
+
+	block  goto 238
+
+
+state 226
+	stmt : CONTINUE SEMICOLON .  (71)
+
+	.  reduce 71
+
+
+state 227
+	stmt : FOR for_clause . block  (68)
+
+	LBRACE  shift 178
+	.  error
+
+	block  goto 239
+
+
+state 228
+	for_clause : expr_opt . SEMICOLON expr_opt SEMICOLON expr_opt  (76)
+
+	SEMICOLON  shift 240
+	.  error
+
+
+state 229
+	stmt : WHILE expr . block  (67)
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	AND  shift 101
+	OR  shift 102
+	ASSIGN  shift 103
+	PLUS_ASSIGN  shift 104
+	MINUS_ASSIGN  shift 105
+	TIMES_ASSIGN  shift 106
+	DIV_ASSIGN  shift 107
+	MOD_ASSIGN  shift 108
+	LSHIFT_ASSIGN  shift 109
+	RSHIFT_ASSIGN  shift 110
+	BITAND_ASSIGN  shift 111
+	BITXOR_ASSIGN  shift 112
+	BITOR_ASSIGN  shift 113
+	EQ  shift 114
+	NEQ  shift 115
+	LT  shift 116
+	LE  shift 117
+	GT  shift 118
+	GE  shift 119
+	LBRACE  shift 178
+	LBRACKET  shift 120
+	DOT  shift 121
+	.  error
+
+	block  goto 241
+
+
+state 230
+	stmt : expr SEMICOLON .  (62)
+
+	.  reduce 62
+
+
+state 231
+	var_decl : const_opt IDENT . type_ann_opt ASSIGN expr  (79)
+	var_decl : const_opt IDENT . DECL_ASSIGN expr  (80)
+	type_ann_opt : .  (45)
+
+	DECL_ASSIGN  shift 242
+	COLON  shift 30
+	ASSIGN  reduce 45
+
+	type_ann_opt  goto 243
+
+
+state 232
+	stmt : var_decl SEMICOLON .  (63)
+
+	.  reduce 63
+
+
+state 233
+	default_opt : ASSIGN expr .  (36)
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	AND  shift 101
+	OR  shift 102
+	ASSIGN  shift 103
+	PLUS_ASSIGN  shift 104
+	MINUS_ASSIGN  shift 105
+	TIMES_ASSIGN  shift 106
+	DIV_ASSIGN  shift 107
+	MOD_ASSIGN  shift 108
+	LSHIFT_ASSIGN  shift 109
+	RSHIFT_ASSIGN  shift 110
+	BITAND_ASSIGN  shift 111
+	BITXOR_ASSIGN  shift 112
+	BITOR_ASSIGN  shift 113
+	EQ  shift 114
+	NEQ  shift 115
+	LT  shift 116
+	LE  shift 117
+	GT  shift 118
+	GE  shift 119
+	LBRACKET  shift 120
+	DOT  shift 121
+	SEMICOLON  reduce 36
+
+
+state 234
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+	cap_opt : COMMA expr .  (128)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	AND  shift 101
+	OR  shift 102
+	ASSIGN  shift 103
+	PLUS_ASSIGN  shift 104
+	MINUS_ASSIGN  shift 105
+	TIMES_ASSIGN  shift 106
+	DIV_ASSIGN  shift 107
+	MOD_ASSIGN  shift 108
+	LSHIFT_ASSIGN  shift 109
+	RSHIFT_ASSIGN  shift 110
+	BITAND_ASSIGN  shift 111
+	BITXOR_ASSIGN  shift 112
+	BITOR_ASSIGN  shift 113
+	EQ  shift 114
+	NEQ  shift 115
+	LT  shift 116
+	LE  shift 117
+	GT  shift 118
+	GE  shift 119
+	LBRACKET  shift 120
+	DOT  shift 121
+	RPAREN  reduce 128
+
+
+state 235
+	expr : MAKE LPAREN type_expr COMMA expr cap_opt RPAREN .  (123)
+
+	.  reduce 123
+
+
+state 236
+	struct_func_decl : FUNC LPAREN IDENT IDENT RPAREN IDENT LPAREN param_list RPAREN return_types func_body .  (58)
+
+	.  reduce 58
+
+
+state 237
+	stmt : RETURN ret_opt SEMICOLON .  (69)
+
+	.  reduce 69
+
+
+state 238
+	stmt : IF expr block .  (65)
+	stmt : IF expr block . ELSE stmt  (66)
+
+	ELSE  shift 244
+	STRUCT  reduce 65
+	RETURN  reduce 65
+	BREAK  reduce 65
+	IF  reduce 65
+	CONTINUE  reduce 65
+	FOR  reduce 65
+	WHILE  reduce 65
+	CONST  reduce 65
+	MAKE  reduce 65
+	ERROR  reduce 65
+	NULL  reduce 65
+	BOOL  reduce 65
+	STRING  reduce 65
+	U8  reduce 65
+	U16  reduce 65
+	U32  reduce 65
+	U64  reduce 65
+	I8  reduce 65
+	I16  reduce 65
+	I32  reduce 65
+	I64  reduce 65
+	F16  reduce 65
+	F32  reduce 65
+	MINUS  reduce 65
+	BITNOT  reduce 65
+	NOT  reduce 65
+	INC  reduce 65
+	DEC  reduce 65
+	LPAREN  reduce 65
+	LBRACE  reduce 65
+	RBRACE  reduce 65
+	LBRACKET  reduce 65
+	IDENT  reduce 65
+	INT_LIT  reduce 65
+	FLOAT_LIT  reduce 65
+	STRING_LIT  reduce 65
+	CHAR_LIT  reduce 65
+	BOOL_LIT  reduce 65
+
+
+state 239
+	stmt : FOR for_clause block .  (68)
+
+	.  reduce 68
+
+
+state 240
+	for_clause : expr_opt SEMICOLON . expr_opt SEMICOLON expr_opt  (76)
+	expr_opt : .  (77)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	SEMICOLON  reduce 77
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 198
+	expr_opt  goto 245
+	literal  goto 71
+
+
+state 241
+	stmt : WHILE expr block .  (67)
+
+	.  reduce 67
+
+
+state 242
+	var_decl : const_opt IDENT DECL_ASSIGN . expr  (80)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 246
+	literal  goto 71
+
+
+state 243
+	var_decl : const_opt IDENT type_ann_opt . ASSIGN expr  (79)
+
+	ASSIGN  shift 247
+	.  error
+
+
+244: shift/reduce conflict (shift 63, reduce 41) on IDENT
+state 244
+	stmt : IF expr block ELSE . stmt  (66)
+	const_opt : .  (41)
+
+	STRUCT  shift 37
+	RETURN  shift 203
+	BREAK  shift 204
+	IF  shift 205
+	CONTINUE  shift 206
+	FOR  shift 207
+	WHILE  shift 208
+	CONST  shift 13
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACE  shift 178
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 210
+	const_opt  goto 211
+	block  goto 212
+	stmt  goto 248
+	var_decl  goto 214
+	literal  goto 71
+
+
+state 245
+	for_clause : expr_opt SEMICOLON expr_opt . SEMICOLON expr_opt  (76)
+
+	SEMICOLON  shift 249
+	.  error
+
+
+state 246
+	var_decl : const_opt IDENT DECL_ASSIGN expr .  (80)
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	AND  shift 101
+	OR  shift 102
+	ASSIGN  shift 103
+	PLUS_ASSIGN  shift 104
+	MINUS_ASSIGN  shift 105
+	TIMES_ASSIGN  shift 106
+	DIV_ASSIGN  shift 107
+	MOD_ASSIGN  shift 108
+	LSHIFT_ASSIGN  shift 109
+	RSHIFT_ASSIGN  shift 110
+	BITAND_ASSIGN  shift 111
+	BITXOR_ASSIGN  shift 112
+	BITOR_ASSIGN  shift 113
+	EQ  shift 114
+	NEQ  shift 115
+	LT  shift 116
+	LE  shift 117
+	GT  shift 118
+	GE  shift 119
+	LBRACKET  shift 120
+	DOT  shift 121
+	SEMICOLON  reduce 80
+
+
+state 247
+	var_decl : const_opt IDENT type_ann_opt ASSIGN . expr  (79)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	.  error
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 250
+	literal  goto 71
+
+
+state 248
+	stmt : IF expr block ELSE stmt .  (66)
+
+	.  reduce 66
+
+
+state 249
+	for_clause : expr_opt SEMICOLON expr_opt SEMICOLON . expr_opt  (76)
+	expr_opt : .  (77)
+
+	STRUCT  shift 37
+	MAKE  shift 55
+	ERROR  shift 38
+	NULL  shift 56
+	BOOL  shift 39
+	STRING  shift 40
+	U8  shift 41
+	U16  shift 42
+	U32  shift 43
+	U64  shift 44
+	I8  shift 45
+	I16  shift 46
+	I32  shift 47
+	I64  shift 48
+	F16  shift 49
+	F32  shift 50
+	MINUS  shift 57
+	BITNOT  shift 58
+	NOT  shift 59
+	INC  shift 60
+	DEC  shift 61
+	LPAREN  shift 62
+	LBRACKET  shift 51
+	IDENT  shift 63
+	INT_LIT  shift 64
+	FLOAT_LIT  shift 65
+	STRING_LIT  shift 66
+	CHAR_LIT  shift 67
+	BOOL_LIT  shift 68
+	LBRACE  reduce 77
+
+	primitive_type  goto 53
+	type_expr  goto 69
+	expr  goto 198
+	expr_opt  goto 251
+	literal  goto 71
+
+
+state 250
+	var_decl : const_opt IDENT type_ann_opt ASSIGN expr .  (79)
+	expr : expr . DOT IDENT  (84)
+	expr : expr . LBRACKET expr RBRACKET  (85)
+	expr : expr . LBRACKET expr_opt COLON expr_opt RBRACKET  (86)
+	expr : expr . DOT IDENT LPAREN arg_list RPAREN  (88)
+	expr : expr . PLUS expr  (94)
+	expr : expr . MINUS expr  (95)
+	expr : expr . MULT expr  (96)
+	expr : expr . DIV expr  (97)
+	expr : expr . MOD expr  (98)
+	expr : expr . LSHIFT expr  (99)
+	expr : expr . RSHIFT expr  (100)
+	expr : expr . BITAND expr  (101)
+	expr : expr . BITXOR expr  (102)
+	expr : expr . BITOR expr  (103)
+	expr : expr . AND expr  (104)
+	expr : expr . OR expr  (105)
+	expr : expr . EQ expr  (106)
+	expr : expr . NEQ expr  (107)
+	expr : expr . LT expr  (108)
+	expr : expr . LE expr  (109)
+	expr : expr . GT expr  (110)
+	expr : expr . GE expr  (111)
+	expr : expr . ASSIGN expr  (112)
+	expr : expr . PLUS_ASSIGN expr  (113)
+	expr : expr . MINUS_ASSIGN expr  (114)
+	expr : expr . TIMES_ASSIGN expr  (115)
+	expr : expr . DIV_ASSIGN expr  (116)
+	expr : expr . MOD_ASSIGN expr  (117)
+	expr : expr . LSHIFT_ASSIGN expr  (118)
+	expr : expr . RSHIFT_ASSIGN expr  (119)
+	expr : expr . BITAND_ASSIGN expr  (120)
+	expr : expr . BITXOR_ASSIGN expr  (121)
+	expr : expr . BITOR_ASSIGN expr  (122)
+
+	PLUS  shift 91
+	MINUS  shift 92
+	MULT  shift 93
+	DIV  shift 94
+	MOD  shift 95
+	LSHIFT  shift 96
+	RSHIFT  shift 97
+	BITAND  shift 98
+	BITXOR  shift 99
+	BITOR  shift 100
+	AND  shift 101
+	OR  shift 102
+	ASSIGN  shift 103
+	PLUS_ASSIGN  shift 104
+	MINUS_ASSIGN  shift 105
+	TIMES_ASSIGN  shift 106
+	DIV_ASSIGN  shift 107
+	MOD_ASSIGN  shift 108
+	LSHIFT_ASSIGN  shift 109
+	RSHIFT_ASSIGN  shift 110
+	BITAND_ASSIGN  shift 111
+	BITXOR_ASSIGN  shift 112
+	BITOR_ASSIGN  shift 113
+	EQ  shift 114
+	NEQ  shift 115
+	LT  shift 116
+	LE  shift 117
+	GT  shift 118
+	GE  shift 119
+	LBRACKET  shift 120
+	DOT  shift 121
+	SEMICOLON  reduce 79
+
+
+state 251
+	for_clause : expr_opt SEMICOLON expr_opt SEMICOLON expr_opt .  (76)
+
+	.  reduce 76
+
+
+State 63 contains 1 shift/reduce conflict.
+State 194 contains 1 shift/reduce conflict.
+State 244 contains 1 shift/reduce conflict.
+
+
+91 terminals, 36 nonterminals
+136 grammar rules, 252 states
