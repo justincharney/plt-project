@@ -2,46 +2,12 @@
 
 open Ast
 
-(* TYPES *)
-type primitive_type =
-  | Bool
-  | String
-  | U8 | U16 | U32 | U64
-  | I8 | I16 | I32 | I64
-  | F32 | F64
-  | Error
-
 (* Represent the non-primitive types in our language *)
-type type_expr =
-  | Primitive of primitive_type
-  | Array of type_expr * int (* element type, length *)
-  | Slice of type_expr (* element type *)
-  | TypeName of string (* refer to Example 3.6 *)
-
-(* Modifiers *)
-type type_modifier =
-  | Private
-  | Mutable
-  | Final
-  | Late
-
-(* OPERATORS *)
-(* all binary operators in lang *)
-type biop =
-  | Plus | Minus | Div | Mult | Mod
-  | Lshift | Rshift | Bitxor | Bitor | Bitand
-  | Eq | Neq | Lt | Le | Gt | Ge | And | Or
-
-(* all unary operators in lang *)
-type unop =
-  | Bitnot | Not | Neg
-  | Inc | Dec
-
-(* compound operators in lang *)
-type assign_op =
-| RegAssign | DeclAssign
-| PlusAssign | MinusAssign | TimesAssign | DivAssign | ModAssign
-| LshiftAssign | RshiftAssign | BitandAssign | BitxorAssign | BitorAssign
+type stype_expr =
+  | SPrimitive of primitive_type
+  | SArray of stype_expr * int (* element type, length *)
+  | SSlice of stype_expr (* element type *)
+  | STypeName of string (* refer to Example 3.6 *)
 
 (* some basic expression in lang *)
 type sexpr =
@@ -53,9 +19,9 @@ type sexpr =
   | SCharLit of char
   | SFloatLit of float
   | SStringLit of string
-  | SArrayLit of sexpr * type_expr * sexpr list (* [3]i32{1, 2, 3} | The {...} is not in LRM *)
+  | SArrayLit of sexpr * stype_expr * sexpr list (* [3]i32{1, 2, 3} | The {...} is not in LRM *)
   | SStructLit of sexpr * (sexpr * sexpr) list (* e.g. goody{x:"funky supreme", y:1000} *)
-  | SSliceLit of type_expr * sexpr list (* []i32{1, 2, 3} | Not in LRM? *)
+  | SSliceLit of stype_expr * sexpr list (* []i32{1, 2, 3} | Not in LRM? *)
   | SNull (* For null literal *)
 
   (* Variables and Field/Index Access *)
@@ -70,7 +36,7 @@ type sexpr =
   | SAssignment of sexpr * assign_op * sexpr  (* For operations like x += y and x = y | NOT CORRECT?*)
 
   (* Error Expression and Casting *)
-  | SCast of type_expr * sexpr (* i64(x) | error("system fail") | f32(1.2) *)
+  | SCast of stype_expr * sexpr (* i64(x) | error("system fail") | f32(1.2) *)
 
   (* Function and Method Calls*)
   | SFunctionCall of string * sexpr list (* func_name(arg1, arg2) *)
@@ -83,7 +49,7 @@ type sexpr =
 (* Struct field definition *)
 type field = {
   name: string;
-  field_type: type_expr;
+  field_type: stype_expr;
   modifier: type_modifier option;
   default_value: sexpr option;
 }
@@ -91,21 +57,21 @@ type field = {
 (* Type declaration *)
 type type_decl =
   | TypeStruct of string * field list (* struct definition *)
-  | TypeAlias of string * type_expr (* type alias *)
+  | TypeAlias of string * stype_expr (* type alias *)
 
 (* Variable declaration *)
 type var_decl = (* x = i64(2) *)
   | InferType of {
     is_const: bool;
     name: string;
-    var_type: type_expr option;
+    var_type: stype_expr option;
     initializer_expr: sexpr;
   }
 
   | StrictType of { (* i64 x = 2 *)
     is_const: bool;
     name: string;
-    var_type: type_expr;
+    var_type: stype_expr;
     initializer_expr: sexpr;
   }
 
@@ -124,7 +90,7 @@ type sstmt =
 (* Function parameters *)
 type param = {
   name: string;
-  param_type: type_expr;
+  param_type: stype_expr;
   is_variadic: bool; (* in semantic checker must check that if param variadic also last param in the list *)
 }
 
@@ -132,7 +98,7 @@ type param = {
 type func_decl = {
   name: string;
   params: param list;
-  return_types: type_expr list;
+  return_types: stype_expr list;
   body: sstmt list;
 }
 
@@ -140,7 +106,7 @@ type struct_func = {
   name: string;
   struct_name: string;
   params: param list;
-  return_types: type_expr list;
+  return_types: stype_expr list;
   body: sstmt list;
 }
 
