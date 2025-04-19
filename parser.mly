@@ -6,15 +6,15 @@
 %token DOUBLECOLON EOF
 %token FUNC PACKAGE IMPORT TYPE STRUCT
 %token RETURN BREAK IF ELSE CONTINUE FOR WHILE
-%token CONST ERROR NULL 
+%token CONST ERROR NULL
 %token FINAL MUT LATE PRIVATE
 %token BOOL STRING U8 U16 U32 U64 I8 I16 I32 I64 F32 F64
-%token PLUS MINUS DIV MULT MOD 
+%token PLUS MINUS DIV MULT MOD
 %token LSHIFT RSHIFT BITXOR BITOR BITNOT BITAND
 %token ASSIGN PLUS_ASSIGN MINUS_ASSIGN TIMES_ASSIGN DIV_ASSIGN MOD_ASSIGN
 %token DECL_ASSIGN LSHIFT_ASSIGN RSHIFT_ASSIGN
 %token BITAND_ASSIGN BITXOR_ASSIGN BITOR_ASSIGN
-%token EQ NEQ LT LE GT GE AND OR NOT 
+%token EQ NEQ LT LE GT GE AND OR NOT
 %token INC DEC NEG
 %token LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET
 %token SEMICOLON COLON COMMA DOT TRIPLEDOT QUESTION
@@ -25,9 +25,10 @@
 %token <float> FLOAT_LIT
 %token <string> STRING_LIT
 %token <string> IDENT
+%token UMINUS
 
 %left COMMA
-%left SEMICOLON
+%right SEMICOLON
 %right BITAND_ASSIGN BITOR_ASSIGN BITXOR_ASSIGN LSHIFT_ASSIGN RSHIFT_ASSIGN TIMES_ASSIGN DIV_ASSIGN MOD_ASSIGN PLUS_ASSIGN MINUS_ASSIGN ASSIGN DECL_ASSIGN
 %left OR
 %left AND
@@ -39,8 +40,9 @@
 %left LSHIFT RSHIFT
 %left PLUS MINUS
 %left MULT DIV MOD
-%right NOT BITNOT INC DEC (* CAST *)
-%left DOT LBRACKET (* FUNCTION CALLS, ARRAY SUBSCRIPTING, INC, DEC *) 
+%right NOT BITNOT INC DEC
+%nonassoc UMINUS
+%left DOT LBRACKET
 %left LPAREN
 
 %start program
@@ -109,14 +111,14 @@ opt_default:
 
 var_decl:
    CONST type_expr_w_structs IDENT opt_assign /* const i64 x = 256 */
-  { StrictType { 
+  { StrictType {
     is_const =         true;
     name =             $3;
     var_type =         $2;
     initializer_expr = $4; }}
 
   | type_expr_w_structs IDENT opt_assign /* const i64 x = 256 */
-  { StrictType { 
+  { StrictType {
     is_const =         false;
     name =             $2;
     var_type =         $1;
@@ -124,14 +126,14 @@ var_decl:
   (*add the ident parts of these*)
 
   | CONST IDENT DECL_ASSIGN expr /* const x := 256 */
-  { InferType { 
+  { InferType {
     is_const =         true;
     name =             $2;
-    var_type =         None; 
+    var_type =         None;
     initializer_expr = $4; }}
 
   | IDENT DECL_ASSIGN expr /* const x := 256 */
-  { InferType { 
+  { InferType {
     is_const =         false;
     name =             $1;
     var_type =         None;
@@ -150,7 +152,7 @@ opt_assign:
 /********** FUNCTION DECLARATIONS **********/
 
 func_decl:
-  FUNC IDENT LPAREN params RPAREN return_types LBRACE stmts RBRACE 
+  FUNC IDENT LPAREN params RPAREN return_types LBRACE stmts RBRACE
   { { name =         $2;
       params =       $4;
       return_types = $6;
@@ -162,11 +164,11 @@ params:
   | param COMMA params { $1::$3 }
 
 param:
-  | IDENT type_expr { { 
+  | IDENT type_expr { {
     name =        $1;
     param_type =  $2;
     is_variadic = false; }}
-  
+
   | IDENT TRIPLEDOT type_expr { {
     name =        $1;
     param_type =  $3;
@@ -183,7 +185,7 @@ type_expr_list:
 /********** STRUCT-FUNC DECLARATION **********/
 
 struct_func_decl:
-  FUNC LPAREN IDENT type_expr RPAREN IDENT LPAREN params RPAREN return_types LBRACE stmts RBRACE 
+  FUNC LPAREN IDENT type_expr RPAREN IDENT LPAREN params RPAREN return_types LBRACE stmts RBRACE
   {{
   name:         $6;
   struct_name:  $3;
@@ -198,12 +200,17 @@ stmts:
   | stmt stmts    { $1 :: $2 }
 
 stmt:
-  | expr                                                                   { Expr ($1)                }
+  | expr SEMICOLON                                                                   { Expr ($1)                }
   | var_decl                                                               { VarDecl ($1)             }
   | IF expr LBRACE stmts RBRACE else_block                                 { IfStmt ($2, $4, $6)      }
   | FOR opt_stmt SEMICOLON opt_expr SEMICOLON opt_expr LBRACE stmts RBRACE { ForStmt ($2, $4, $6, $8) }
   | WHILE expr LBRACE stmts RBRACE                                         { WhileStmt ($2, $4)       }
-  | RETURN opt_expr_list                                                       { Return ($2)              } 
+  | RETURN rtn_opt SEMICOLON                                               { Return ($2)              }
+  | LBRACE stmts RBRACE                                                  { Block ($2)               }
+
+rtn_opt:
+    |   { None }
+    | opt_expr_list {Some $1}
 
 opt_expr_list:
   | expr {[$1]} (*also doesn't account for empty return*)
@@ -217,7 +224,7 @@ opt_stmt:
   | /* nothing */            { None                }
   | var_decl                 { Some (VarDecl ($1)) }
 
-opt_expr: 
+opt_expr:
   | /* nothing */            { None    }
   | expr                     { Some $1 }
 
@@ -262,6 +269,7 @@ expr:
 | NOT expr    { Unaop (Not, $2)    }
 | INC expr    { Unaop (Inc, $2)    }
 | DEC expr    { Unaop (Dec, $2)    }
+| MINUS expr %prec UMINUS { Unaop (Minus, $2) }
 
 | IDENT DOUBLECOLON IDENT                 { FieldAccess (Identifier($1), Identifier($3)) }
 | IDENT LBRACKET expr RBRACKET            { IndexAccess (Identifier($1), $3)             }
@@ -285,7 +293,7 @@ expr:
 | STRING_LIT                             { StringLit ($1)  }
 | NULL                                   { Null            }
 | BREAK                                  { Break           }
-| CONTINUE                               { Continue        }
+| CONTINUE                            { Continue        }
 
 type_expr:
   | primitive_type                   { Primitive $1   }

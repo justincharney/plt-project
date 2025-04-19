@@ -109,6 +109,7 @@ type token =
         string
 # 111 "parser.mli"
 )
+  | UMINUS
 
 val program :
   (Lexing.lexbuf  -> token) -> Lexing.lexbuf -> Ast.program
