@@ -135,23 +135,18 @@ type_decl:
     | TYPE IDENT ASSIGN type_expr
         { TypeAlias($2,$4) }
 
-/* ---------- tiny helper ------------------------------------------------- */
-const_opt:
-      /* empty */ { false }          /* no  const keyword */
-    | CONST       { true  }           /* saw const ⇒ is_const = true */
-
 /* ---------- Global var declarations ------------------------------------ */
 global_decl:
-      const_opt IDENT type_ann_opt ASSIGN expr
-        { { is_const= $1;
+      CONST IDENT type_ann_opt ASSIGN expr
+        { { is_const=true;
             name=$2;
             var_type=$3;
             initializer_expr=Some $5 } }
-    | const_opt IDENT DECL_ASSIGN expr
-        { { is_const=Option.is_some $1;
-            name=$2;
+    | IDENT DECL_ASSIGN expr
+        { { is_const=false;
+            name=$1;
             var_type=None;
-            initializer_expr=Some $4 } }
+            initializer_expr=Some $3 } }
 
 type_ann_opt:
       /* ε */         { None }
@@ -224,11 +219,14 @@ expr_opt:
       /* ε */ { None } | expr { Some $1 }
 
 /* ---------- Local variable decl (stmt) --------------------------------- */
+
+/*  A declaration must start with  CONST .
+    Otherwise the line is parsed as an expression / assignment statement.  */
 var_decl:
-      const_opt IDENT type_ann_opt ASSIGN expr
-        { VarDecl{is_const=$1; name=$2; var_type=$3; initializer_expr=Some $5} }
-    | const_opt IDENT DECL_ASSIGN expr
-        { VarDecl{is_const=$1; name=$2; var_type=None; initializer_expr=Some $4} }
+      CONST IDENT type_ann_opt ASSIGN expr
+        { VarDecl{is_const=true; name=$2; var_type=$3; initializer_expr=Some $5} }
+    | IDENT DECL_ASSIGN expr
+        { VarDecl{is_const=false; name=$1; var_type=None; initializer_expr=Some $3} }
 
 /* ---------- Expressions ------------------------------------------------- */
 expr:
@@ -283,18 +281,16 @@ expr:
     | expr BITXOR_ASSIGN expr          { CompoundAssign($1,BitxorAssign,$3) }
     | expr BITOR_ASSIGN expr           { CompoundAssign($1,BitorAssign,$3) }
 
-    /* make / cast */
+    /* make (slice constructor) */
     | MAKE LPAREN type_expr COMMA expr cap_opt RPAREN
         { Make($3,$5,$6) }
-    | type_expr LPAREN expr RPAREN
-        { Cast($1,$3) }
 
 arg_list:
-      /* ε */                { [] }
+      /* None */               { [] }
     | expr_list              { List.rev $1 }
 
 cap_opt:
-      /* ε */                { None }
+      /* None */                { None }
     | COMMA expr             { Some $2 }
 
 /* ---------- Literals ---------------------------------------------------- */
