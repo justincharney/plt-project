@@ -12,7 +12,6 @@ type primitive_type =
 (* Represent the non-primitive types in our language *)
 type type_expr =
   | Primitive of primitive_type
-  | Pointer of type_expr
   | Array of type_expr * int (* element type, length *)
   | Slice of type_expr (* element type *)
   | Struct of string (* struct name *)
@@ -38,7 +37,7 @@ type unop =
   | Inc | Dec
 
 (* compound operators in lang *)
-type compoud_op =
+type compound_op =
 | PlusAssign | MinusAssign | TimesAssign | DivAssign | ModAssign
 | LshiftAssign | RshiftAssign | BitandAssign | BitxorAssign | BitorAssign
 
@@ -65,10 +64,9 @@ type expr =
   | Binop of expr * biop * expr (* e.g. a + b *)
   | Unaop of unop * expr (* e.g. -x *)
   | SimpleAssign of expr * expr (* For basic assignment: x = y *)
-  | CompoundAssign of expr * compoud_op * expr  (* For operations like x += y *)
+  | CompoundAssign of expr * compound_op * expr  (* For operations like x += y *)
 
   | Sequence of expr * expr (* expr1; expr2 - Evaluates expr1, then expr2, returns value of expr2 *)
-  | ErrorExp of expr (* error("message") *)
 
   | FunctionCall of string * expr list (* func_name(arg1, arg2) *)
   | MethodCall of expr * string * expr list (* myStruct.someMethod(arg1, arg2) *)
@@ -122,6 +120,14 @@ type func_decl = {
   body: stmt list;
 }
 
+type struct_func = {
+  name: string;
+  struct_name: string;
+  params: param list;
+  return_types: type_expr list;
+  body: stmt list;
+}
+
 (* Type declaration *)
 type type_decl =
   | TypeStruct of string * field list (* struct definition *)
@@ -146,4 +152,5 @@ type program = {
   type_declarations: type_decl list;
   global_vars: global_decl list;
   functions: func_decl list; (* enforce main function inclusion during semantic analysis *)
+  struct_functions: struct_func list; (* enforce struct functions not overriding within each struct and struct actually exists *)
 }
