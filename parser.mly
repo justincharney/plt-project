@@ -9,7 +9,7 @@
 %token CONST ERROR NULL 
 %token FINAL MUT LATE PRIVATE
 %token BOOL STRING U8 U16 U32 U64 I8 I16 I32 I64 F32 F64
-%token PLUS MINUS DIV MULT MOD 
+%token PLUS MINUS DIV MULT MOD
 %token LSHIFT RSHIFT BITXOR BITOR BITNOT BITAND
 %token ASSIGN PLUS_ASSIGN MINUS_ASSIGN TIMES_ASSIGN DIV_ASSIGN MOD_ASSIGN
 %token DECL_ASSIGN LSHIFT_ASSIGN RSHIFT_ASSIGN
@@ -62,26 +62,26 @@ program:
 /********** IMPORTS **********/
 
 import_decls:
-    /* nothing */            { []       }
+    /* nothing */                  { []       }
   | IMPORT STRING_LIT import_decls { $2 :: $3 }
 
 /********** All Declarations *****************/
 
 all_decls:
-  /* nothing */ { [| [];[];[];[] |] }
-  | type_decl all_decls { [| $1::$2.(0); $2.(1); $2.(2); $2.(3) |] }
-  | var_decl all_decls  { [| $2.(0); $1::$2.(1); $2.(2); $2.(3) |] }
-  | func_decl all_decls { [| $2.(0); $2.(1); $1::$2.(2); $2.(3) |] }
+  /* nothing */                { [| [];[];[];[] |]                        }
+  | type_decl all_decls        { [| $1::$2.(0); $2.(1); $2.(2); $2.(3) |] }
+  | var_decl all_decls         { [| $2.(0); $1::$2.(1); $2.(2); $2.(3) |] }
+  | func_decl all_decls        { [| $2.(0); $2.(1); $1::$2.(2); $2.(3) |] }
   | struct_func_decl all_decls { [| $2.(0); $2.(1); $2.(2); $1::$2.(3) |] }
 
 /*** TYPE DECLARATION STRUCTS AND ALIAS ***/
 
 type_decl:
-  | TYPE IDENT STRUCT LBRACE field_list RBRACE { TypeStruct ($2, $5) } (* in semantic analysis the ident becomes global struct type identifier *)
-  | TYPE IDENT ASSIGN type_expr                { TypeAlias ($2, $4)  }
+  | TYPE IDENT STRUCT LBRACE field_list RBRACE { TypeStruct($2, $5) } (* in semantic analysis the ident becomes global struct type identifier *)
+  | TYPE IDENT ASSIGN type_expr                { TypeAlias($2, $4)  }
 
 field_list:
-   /* nothing */         { []         }
+   /* nothing */         { []        }
   | field_decl field_list{ $1 :: $2 }
 
 field_decl:
@@ -104,8 +104,6 @@ opt_default:
 
 /********** VARIABLE DECLARATIONS **********/
 (* type now required when inferring *)
-
-/* NEED CASE FOR DECLARATIONS LIKE: i64 x; */
 
 var_decl:
    CONST type_expr_w_structs IDENT opt_assign /* const i64 x = 256 */
@@ -138,10 +136,10 @@ var_decl:
     initializer_expr = $3; }}
 
 type_expr_w_structs:
-  | primitive_type                   { Primitive $1   }
-  | LBRACKET expr RBRACKET type_expr { Array ($4, $2) }
+  | primitive_type                   { Primitive($1)  }
+  | LBRACKET expr RBRACKET type_expr { Array($4, $2)  }
   | LBRACKET RBRACKET type_expr      { Slice($3)      }
-  | IDENT                            { TypeName($1) }
+  | IDENT                            { TypeName($1)   }
 
 opt_assign:
     /* nothing */ { None }
@@ -157,8 +155,8 @@ func_decl:
       body =         $8; }}
 
 params:
-    /* nothing */      { [] }
-  | param              { [$1] }
+    /* nothing */      { []     }
+  | param              { [$1]   }
   | param COMMA params { $1::$3 }
 
 param:
@@ -174,7 +172,7 @@ param:
 
 return_types:
    /* nothing */   { [] }
-  | type_expr_list  { $1 }
+  | type_expr_list { $1 }
 
 type_expr_list:
   | type_expr                      { [$1]     }
@@ -198,98 +196,98 @@ stmts:
   | stmt stmts    { $1 :: $2 }
 
 stmt:
-  | expr                                                                   { Expr ($1)                }
-  | var_decl                                                               { VarDecl ($1)             }
-  | IF expr LBRACE stmts RBRACE else_block                                 { IfStmt ($2, $4, $6)      }
-  | FOR opt_stmt SEMICOLON opt_expr SEMICOLON opt_expr LBRACE stmts RBRACE { ForStmt ($2, $4, $6, $8) }
-  | WHILE expr LBRACE stmts RBRACE                                         { WhileStmt ($2, $4)       }
-  | RETURN opt_expr_list                                                       { Return ($2)              } 
+  | expr                                                                   { Expr($1)                }
+  | var_decl                                                               { VarDecl($1)             }
+  | IF expr LBRACE stmts RBRACE else_block                                 { IfStmt($2, $4, $6)      }
+  | FOR opt_stmt SEMICOLON opt_expr SEMICOLON opt_expr LBRACE stmts RBRACE { ForStmt($2, $4, $6, $8) }
+  | WHILE expr LBRACE stmts RBRACE                                         { WhileStmt($2, $4)       }
+  | RETURN opt_expr_list                                                   { Return($2)              } 
+  | RETURN NULL                                                            { Return([])              }
 
 opt_expr_list:
-  | expr {[$1]} (*also doesn't account for empty return*)
-  | expr COMMA expr_list {$1::$3}
+  | expr                 { [$1]   } (*also doesn't account for empty return*)
+  | expr COMMA expr_list { $1::$3 }
 
 else_block:
   | ELSE LBRACE stmts RBRACE                    { $3                    }
   | ELSE IF expr LBRACE stmts RBRACE else_block { [IfStmt ($3, $5, $7)] }
 
 opt_stmt:
-  | /* nothing */            { None                }
-  | var_decl                 { Some (VarDecl ($1)) }
+  | /* nothing */ { None                }
+  | var_decl      { Some (VarDecl($1))  }
 
 opt_expr: 
-  | /* nothing */            { None    }
-  | expr                     { Some $1 }
+  | /* nothing */ { None    }
+  | expr          { Some $1 }
 
 expr_list:
-  | expr                     { [$1]     } (*this doesn't account for empty return since no empty expr*)
-  | expr COMMA expr_list     { $1 :: $3 }
+  | expr                 { [$1]     } (*this doesn't account for empty return since no empty expr*)
+  | expr COMMA expr_list { $1 :: $3 }
 
 expr:
-| expr PLUS   expr                    { Binop($1, Plus, $3)   }
-| expr MINUS  expr                    { Binop($1, Minus, $3)  }
-| expr MULT   expr                    { Binop($1, Mult, $3)   }
-| expr DIV    expr                    { Binop($1, Div, $3)    }
-| expr MOD    expr                    { Binop($1, Mod, $3)    }
-| expr LSHIFT expr                    { Binop($1, Lshift, $3) }
-| expr RSHIFT expr                    { Binop($1, Rshift, $3) }
-| expr BITXOR expr                    { Binop($1, Bitxor, $3) }
-| expr BITOR  expr                    { Binop($1, Bitor, $3)  }
-| expr BITAND expr                    { Binop($1, Bitand, $3) }
-| expr EQ     expr                    { Binop($1, Eq, $3)     }
-| expr NEQ    expr                    { Binop($1, Neq, $3)    }
-| expr LT     expr                    { Binop($1, Lt, $3)     }
-| expr LE     expr                    { Binop($1, Le, $3)     }
-| expr GT     expr                    { Binop($1, Gt, $3)     }
-| expr GE     expr                    { Binop($1, Ge, $3)     }
-| expr AND    expr                    { Binop($1, And, $3)    }
-| expr OR     expr                    { Binop($1, Or, $3)     }
+| expr PLUS   expr         { Binop($1, Plus, $3)   }
+| expr MINUS  expr         { Binop($1, Minus, $3)  }
+| expr MULT   expr         { Binop($1, Mult, $3)   }
+| expr DIV    expr         { Binop($1, Div, $3)    }
+| expr MOD    expr         { Binop($1, Mod, $3)    }
+| expr LSHIFT expr         { Binop($1, Lshift, $3) }
+| expr RSHIFT expr         { Binop($1, Rshift, $3) }
+| expr BITXOR expr         { Binop($1, Bitxor, $3) }
+| expr BITOR  expr         { Binop($1, Bitor, $3)  }
+| expr BITAND expr         { Binop($1, Bitand, $3) }
+| expr EQ     expr         { Binop($1, Eq, $3)     }
+| expr NEQ    expr         { Binop($1, Neq, $3)    }
+| expr LT     expr         { Binop($1, Lt, $3)     }
+| expr LE     expr         { Binop($1, Le, $3)     }
+| expr GT     expr         { Binop($1, Gt, $3)     }
+| expr GE     expr         { Binop($1, Ge, $3)     }
+| expr AND    expr         { Binop($1, And, $3)    }
+| expr OR     expr         { Binop($1, Or, $3)     }
 
-| expr ASSIGN expr                       { Assignment ($1, RegAssign, $3)    }
-// | expr DECL_ASSIGN expr                  { Assignment ($1, DeclAssign, $3)   } (* decl assign only used in variable declaration not as expression *)
-| expr PLUS_ASSIGN expr                  { Assignment ($1, PlusAssign, $3)   }
-| expr MINUS_ASSIGN expr                 { Assignment ($1, MinusAssign, $3)  }
-| expr TIMES_ASSIGN expr                 { Assignment ($1, TimesAssign, $3)  }
-| expr DIV_ASSIGN expr                   { Assignment ($1, DivAssign, $3)    }
-| expr MOD_ASSIGN expr                   { Assignment ($1, ModAssign, $3)    }
-| expr LSHIFT_ASSIGN expr                { Assignment ($1, LshiftAssign, $3) }
-| expr RSHIFT_ASSIGN expr                { Assignment ($1, RshiftAssign, $3) }
-| expr BITAND_ASSIGN expr                { Assignment ($1, BitandAssign, $3) }
-| expr BITXOR_ASSIGN expr                { Assignment ($1, BitxorAssign, $3) }
-| expr BITOR_ASSIGN expr                 { Assignment ($1, BitorAssign, $3)  }
+| expr ASSIGN expr         { Assignment($1, RegAssign, $3)    }
+| expr PLUS_ASSIGN expr    { Assignment($1, PlusAssign, $3)   }
+| expr MINUS_ASSIGN expr   { Assignment($1, MinusAssign, $3)  }
+| expr TIMES_ASSIGN expr   { Assignment($1, TimesAssign, $3)  }
+| expr DIV_ASSIGN expr     { Assignment($1, DivAssign, $3)    }
+| expr MOD_ASSIGN expr     { Assignment($1, ModAssign, $3)    }
+| expr LSHIFT_ASSIGN expr  { Assignment($1, LshiftAssign, $3) }
+| expr RSHIFT_ASSIGN expr  { Assignment($1, RshiftAssign, $3) }
+| expr BITAND_ASSIGN expr  { Assignment($1, BitandAssign, $3) }
+| expr BITXOR_ASSIGN expr  { Assignment($1, BitxorAssign, $3) }
+| expr BITOR_ASSIGN expr   { Assignment($1, BitorAssign, $3)  }
 
-| BITNOT expr { Unaop (Bitnot, $2) }
-| NOT expr    { Unaop (Not, $2)    }
-| INC expr    { Unaop (Inc, $2)    }
-| DEC expr    { Unaop (Dec, $2)    }
+| BITNOT expr              { Unaop(Bitnot, $2) }
+| NOT expr                 { Unaop(Not, $2)    }
+| INC expr                 { Unaop(Inc, $2)    }
+| DEC expr                 { Unaop(Dec, $2)    }
+| LPAREN MINUS expr RPAREN { Unaop(Neg, $3)    }
 
-| IDENT DOUBLECOLON IDENT                 { FieldAccess (Identifier($1), Identifier($3)) }
-| IDENT LBRACKET expr RBRACKET            { IndexAccess (Identifier($1), $3)             }
-| IDENT LBRACKET expr COLON expr RBRACKET { SliceExpr (Identifier($1), $3, Some $5)      }
-| IDENT LBRACKET expr COLON RBRACKET      { SliceExpr (Identifier($1), $3, None)         }
-| IDENT LPAREN expr_list RPAREN           { FunctionCall (Identifier($1), $3)            }
-| IDENT DOT IDENT LPAREN expr_list RPAREN { MethodCall (Identifier($1), Identifier($3), $5) }
-| primitive_type LPAREN expr RPAREN            { Cast (Primitive($1), $3) } (* doesn't allow for type cast with struct names *)
+| IDENT DOUBLECOLON IDENT                  { FieldAccess(Identifier($1), Identifier($3))    }
+| IDENT LBRACKET expr RBRACKET             { IndexAccess(Identifier($1), $3)                }
+| IDENT LBRACKET expr COLON expr RBRACKET  { SliceExpr(Identifier($1), $3, Some $5)         }
+| IDENT LBRACKET expr COLON RBRACKET       { SliceExpr(Identifier($1), $3, None)            }
+| IDENT LPAREN expr_list RPAREN            { FunctionCall(Identifier($1), $3)               }
+| IDENT DOT IDENT LPAREN expr_list RPAREN  { MethodCall(Identifier($1), Identifier($3), $5) }
+| primitive_type LPAREN expr RPAREN        { Cast(Primitive($1), $3)                        } (* doesn't allow for type cast with struct names *)
 
-| LBRACKET expr RBRACKET type_expr LBRACE expr_list RBRACE { ArrayLit ($2, $4, $6) }
+| LBRACKET expr RBRACKET type_expr LBRACE expr_list RBRACE { ArrayLit($2, $4, $6)           }
 | LBRACKET expr RBRACKET IDENT LBRACE expr_list RBRACE     { ArrayLit($2, TypeName($4), $6) }
-| IDENT LBRACE field_expr_list RBRACE                      { StructLit (TypeName($1), $3)    }
-| LBRACKET RBRACKET type_expr LBRACE expr_list RBRACE      { SliceLit ($3, $5)     }
-| LBRACKET RBRACKET IDENT LBRACE expr_list RBRACE          { SliceLit(TypeName($3), $5) }
+| IDENT LBRACE field_expr_list RBRACE                      { StructLit(TypeName($1), $3)    }
+| LBRACKET RBRACKET type_expr LBRACE expr_list RBRACE      { SliceLit($3, $5)               }
+| LBRACKET RBRACKET IDENT LBRACE expr_list RBRACE          { SliceLit(TypeName($3), $5)     }
 
-| LPAREN expr RPAREN                     { SubExpr $2      }
-| INT_LIT                                { IntLit ($1)     }
-| BOOL_LIT                               { BoolLit ($1)    }
-| CHAR_LIT                               { CharLit ($1)    }
-| FLOAT_LIT                              { FloatLit ($1)   }
-| STRING_LIT                             { StringLit ($1)  }
-| NULL                                   { Null            }
-| BREAK                                  { Break           }
-| CONTINUE                               { Continue        }
+| LPAREN expr RPAREN                     { SubExpr($2)   }
+| INT_LIT                                { IntLit($1)    }
+| BOOL_LIT                               { BoolLit($1)   }
+| CHAR_LIT                               { CharLit($1)   }
+| FLOAT_LIT                              { FloatLit($1)  }
+| STRING_LIT                             { StringLit($1) }
+| BREAK                                  { Break         }
+| CONTINUE                               { Continue      }
 
 type_expr:
-  | primitive_type                   { Primitive $1   }
-  | LBRACKET expr RBRACKET type_expr { Array ($4, $2) }
+  | primitive_type                   { Primitive($1)  }
+  | LBRACKET expr RBRACKET type_expr { Array($4, $2)  }
   | LBRACKET RBRACKET type_expr      { Slice($3)      }
 
 field_expr_list:
