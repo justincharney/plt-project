@@ -36,7 +36,7 @@ let interpret_char s =
 (* Keywords *)
 type token =
  | FUNC | PACKAGE | IMPORT | TYPE | STRUCT | RETURN | BREAK | IF | ELSE
- | CONTINUE | FOR | CONST | VAR | MAKE | WHILE
+ | CONTINUE | FOR | CONST | MAKE | WHILE
  | TRUE | FALSE | FINAL | MUT | LATE | PRIVATE | ERROR
  | NULL
 
@@ -136,7 +136,6 @@ rule token = parse
 
     (* Constants and Variables *)
     | "const"               { CONST }
-    | "var"                 { VAR }
     | "make"                { MAKE }
 
     (* Boolean Literals *)
