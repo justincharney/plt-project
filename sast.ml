@@ -1,4 +1,6 @@
-(* AST FOR P.A.T. *)
+(* SAST FOR P.A.T. *)
+
+open Ast
 
 (* TYPES *)
 type primitive_type =
@@ -42,48 +44,48 @@ type assign_op =
 | LshiftAssign | RshiftAssign | BitandAssign | BitxorAssign | BitorAssign
 
 (* some basic expression in lang *)
-type expr =
-  | SubExpr of expr (* ? for parentheses expressions like (1+2)? specifically for parser to parse into these expressions...unsure *)
+type sexpr =
+  | SSubExpr of sexpr (* ? for parentheses expressions like (1+2)? specifically for parser to parse into these expressions...unsure *)
   
   (* Literals *)
-  | IntLit of int
-  | BoolLit of bool
-  | CharLit of char
-  | FloatLit of float
-  | StringLit of string
-  | ArrayLit of expr * type_expr * expr list (* [3]i32{1, 2, 3} | The {...} is not in LRM *)
-  | StructLit of expr * (expr * expr) list (* e.g. goody{x:"funky supreme", y:1000} *)
-  | SliceLit of type_expr * expr list (* []i32{1, 2, 3} | Not in LRM? *)
-  | Null (* For null literal *)
+  | SIntLit of int
+  | SBoolLit of bool
+  | SCharLit of char
+  | SFloatLit of float
+  | SStringLit of string
+  | SArrayLit of sexpr * type_expr * sexpr list (* [3]i32{1, 2, 3} | The {...} is not in LRM *)
+  | SStructLit of sexpr * (sexpr * sexpr) list (* e.g. goody{x:"funky supreme", y:1000} *)
+  | SSliceLit of type_expr * sexpr list (* []i32{1, 2, 3} | Not in LRM? *)
+  | SNull (* For null literal *)
 
   (* Variables and Field/Index Access *)
-  | Identifier of string
-  | FieldAccess of expr * expr (* For struct.field | LRM says identifier . identifier *)
-  | IndexAccess of expr * expr (* array_or_slice_exp[index_exp] | LRM says identifier '[' expr ']' *)
-  | SliceExpr of expr * expr * expr option (* arr[start:end?]  | LRM says identifier '[' digit+ ':' (digit+)? ']' *)
+  | SIdentifier of string
+  | SFieldAccess of sexpr * sexpr (* For struct.field | LRM says identifier . identifier *)
+  | SIndexAccess of sexpr * sexpr (* array_or_slice_exp[index_exp] | LRM says identifier '[' expr ']' *)
+  | SSliceExpr of sexpr * sexpr * sexpr option (* arr[start:end?]  | LRM says identifier '[' digit+ ':' (digit+)? ']' *)
 
   (* Operations *)
-  | Binop of expr * biop * expr (* e.g. a + b *)
-  | Unaop of unop * expr (* e.g. -x *)
-  | Assignment of expr * assign_op * expr  (* For operations like x += y and x = y | NOT CORRECT?*)
+  | SBinop of sexpr * biop * sexpr (* e.g. a + b *)
+  | SUnaop of unop * sexpr (* e.g. -x *)
+  | SAssignment of sexpr * assign_op * sexpr  (* For operations like x += y and x = y | NOT CORRECT?*)
 
   (* Error Expression and Casting *)
-  | Cast of type_expr * expr (* i64(x) | error("system fail") | f32(1.2) *)
+  | SCast of type_expr * sexpr (* i64(x) | error("system fail") | f32(1.2) *)
 
   (* Function and Method Calls*)
-  | FunctionCall of string * expr list (* func_name(arg1, arg2) *)
-  | MethodCall of expr * expr * expr list (* myStruct.someMethod(arg1, arg2) *)
+  | SFunctionCall of string * sexpr list (* func_name(arg1, arg2) *)
+  | SMethodCall of sexpr * sexpr * sexpr list (* myStruct.someMethod(arg1, arg2) *)
 
   (* Loop Controls*)
-  | Continue
-  | Break 
+  | SContinue
+  | SBreak 
 
 (* Struct field definition *)
 type field = {
   name: string;
   field_type: type_expr;
   modifier: type_modifier option;
-  default_value: expr option;
+  default_value: sexpr option;
 }
 
 (* Type declaration *)
@@ -97,27 +99,27 @@ type var_decl = (* x = i64(2) *)
     is_const: bool;
     name: string;
     var_type: type_expr option;
-    initializer_expr: expr;
+    initializer_expr: sexpr;
   }
 
   | StrictType of { (* i64 x = 2 *)
     is_const: bool;
     name: string;
     var_type: type_expr;
-    initializer_expr: expr;
+    initializer_expr: sexpr;
   }
 
 (* Top level declarations *)
 (* statement in lang, only decl or expr *)
-type stmt =
-  | Expr of expr
-  | VarDecl of var_decl
+type sstmt =
+  | SExpr of sexpr
+  | SVarDecl of var_decl
 
   (* Control flow *)
-  | IfStmt of expr * stmt list * stmt list  (* condition, then_block, else_block (else can be Block or IfStmt for else if) *)
-  | ForStmt of stmt option * expr option * expr option * stmt list (* init; condition; update; body *)
-  | WhileStmt of expr * stmt list (* condition; body *)
-  | Return of expr list (* return val1, var2; or return; *)
+  | SIfStmt of sexpr * sstmt list * sstmt list  (* condition, then_block, else_block (else can be Block or IfStmt for else if) *)
+  | SForStmt of sstmt option * sexpr option * sexpr option * sstmt list (* init; condition; update; body *)
+  | SWhileStmt of sexpr * sstmt list (* condition; body *)
+  | SReturn of sexpr list (* return val1, var2; or return; *)
 
 (* Function parameters *)
 type param = {
@@ -131,7 +133,7 @@ type func_decl = {
   name: string;
   params: param list;
   return_types: type_expr list;
-  body: stmt list;
+  body: sstmt list;
 }
 
 type struct_func = {
@@ -139,7 +141,7 @@ type struct_func = {
   struct_name: string;
   params: param list;
   return_types: type_expr list;
-  body: stmt list;
+  body: sstmt list;
 }
 
 (* Package and import declarations *)
