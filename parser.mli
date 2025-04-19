@@ -1,5 +1,6 @@
 type token =
   | DOUBLECOLON
+  | EOF
   | FUNC
   | PACKAGE
   | IMPORT
@@ -81,32 +82,32 @@ type token =
   | INT_LIT of (
 # 22 "parser.mly"
         int
-# 85 "parser.mli"
+# 86 "parser.mli"
 )
   | BOOL_LIT of (
 # 23 "parser.mly"
         bool
-# 90 "parser.mli"
+# 91 "parser.mli"
 )
   | CHAR_LIT of (
 # 24 "parser.mly"
         char
-# 95 "parser.mli"
+# 96 "parser.mli"
 )
   | FLOAT_LIT of (
 # 25 "parser.mly"
         float
-# 100 "parser.mli"
+# 101 "parser.mli"
 )
   | STRING_LIT of (
 # 26 "parser.mly"
         string
-# 105 "parser.mli"
+# 106 "parser.mli"
 )
   | IDENT of (
 # 27 "parser.mly"
         string
-# 110 "parser.mli"
+# 111 "parser.mli"
 )
 
 val program :

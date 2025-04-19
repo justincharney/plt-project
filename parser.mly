@@ -3,7 +3,7 @@
 %{ open Ast %}
 
 (* included all necessary tokens *)
-%token DOUBLECOLON
+%token DOUBLECOLON EOF
 %token FUNC PACKAGE IMPORT TYPE STRUCT
 %token RETURN BREAK IF ELSE CONTINUE FOR WHILE
 %token CONST ERROR NULL 
@@ -49,43 +49,40 @@
 %%
 
 program:
-  package_decl import_decls type_decls var_decls func_decls struct_func_decls
-  { { package_name =      $1;
-      imports =           $2;
-      type_declarations = $3;
-      global_vars =       $4;
-      functions =         $5;
-      struct_functions =  $6; }
+  PACKAGE IDENT import_decls all_decls EOF
+  { { package_name =      $2;
+      imports =           $3;
+      type_declarations = $4.(0);
+      global_vars =       $4.(1);
+      functions =         $4.(2);
+      struct_functions =  $4.(3); }
   }
 
-/********** PACKAGE **********/
-
-package_decl:
-  | PACKAGE IDENT { $2 }
 
 /********** IMPORTS **********/
 
 import_decls:
-  | /* nothing */            { []       }
-  | import_decls import_decl { $1 :: $2 }
+    /* nothing */            { []       }
+  | IMPORT STRING_LIT import_decls { $2 :: $3 }
 
-import_decl:
-  | IMPORT STRING_LIT { $2 }
+/********** All Declarations *****************/
 
-/********** TYPE DECLARATIONS **********/
+all_decls:
+  /* nothing */ { [| [];[];[];[] |] }
+  | type_decl all_decls { [| $1::$2.(0); $2.(1); $2.(2); $2.(3) |] }
+  | var_decl all_decls  { [| $2.(0); $1::$2.(1); $2.(2); $2.(3) |] }
+  | func_decl all_decls { [| $2.(0); $2.(1); $1::$2.(2); $2.(3) |] }
+  | struct_func_decl all_decls { [| $2.(0); $2.(1); $2.(2); $1::$2.(3) |] }
 
-type_decls:
-  | type_decls type_decl { [$1] @ $2 }
-
-/*** STRUCTS AND ALIAS ***/
+/*** TYPE DECLARATION STRUCTS AND ALIAS ***/
 
 type_decl:
   | TYPE IDENT STRUCT LBRACE field_list RBRACE { TypeStruct ($2, $5) } (* in semantic analysis the ident becomes global struct type identifier *)
   | TYPE IDENT ASSIGN type_expr                { TypeAlias ($2, $4)  }
 
 field_list:
-  | /* nothing */         { []         }
-  | field_list field_decl { $1 :: [$2] }
+   /* nothing */         { []         }
+  | field_decl field_list{ $1 :: $2 }
 
 field_decl:
     modifier IDENT type_expr opt_default (* REMEMBER TO MAKE IT ACCEPT '\n' OR ';' *)
@@ -102,18 +99,16 @@ modifier:
   | LATE    { Late    }
 
 opt_default:
-  | /* nothing */ { []      }
+    /* nothing */ { []      }
   | ASSIGN expr   { Some $2 }
 
 /********** VARIABLE DECLARATIONS **********/
 (* type now required when inferring *)
 
 /* NEED CASE FOR DECLARATIONS LIKE: i64 x; */
-var_decls:
-  | var_decls var_decl { [$1] @ $2 }
 
 var_decl:
-  | CONST type_expr_w_structs IDENT opt_assign /* const i64 x = 256 */
+   CONST type_expr_w_structs IDENT opt_assign /* const i64 x = 256 */
   { StrictType { 
     is_const =         true;
     name =             $3;
@@ -128,52 +123,43 @@ var_decl:
     initializer_expr = $3; }}
   (*add the ident parts of these*)
 
-  | CONST IDENT req_decl_assign /* const x := 256 */
+  | CONST IDENT DECL_ASSIGN expr /* const x := 256 */
   { InferType { 
     is_const =         true;
     name =             $2;
     var_type =         None; 
-    initializer_expr = $3; }}
+    initializer_expr = $4; }}
 
-  | IDENT req_decl_assign /* const x := 256 */
+  | IDENT DECL_ASSIGN expr /* const x := 256 */
   { InferType { 
     is_const =         false;
     name =             $1;
     var_type =         None;
-    initializer_expr = $2; }}
+    initializer_expr = $3; }}
 
 type_expr_w_structs:
   | primitive_type                   { Primitive $1   }
   | LBRACKET expr RBRACKET type_expr { Array ($4, $2) }
   | LBRACKET RBRACKET type_expr      { Slice($3)      }
-  | IDENT                       { TypeName($1) }
+  | IDENT                            { TypeName($1) }
 
 opt_assign:
-  | /* nothing */ { None }
+    /* nothing */ { None }
   | ASSIGN expr   { Some $2 }
-
-req_decl_assign:
-  | DECL_ASSIGN expr { $2 }
 
 /********** FUNCTION DECLARATIONS **********/
 
-func_decls:
-  | func_decls func_decl { [$1] @ $2 }
-
 func_decl:
-  | FUNC IDENT LPAREN params RPAREN return_types LBRACE stmts RBRACE 
+  FUNC IDENT LPAREN params RPAREN return_types LBRACE stmts RBRACE 
   { { name =         $2;
       params =       $4;
       return_types = $6;
       body =         $8; }}
 
 params:
-  | /* nothing */ { [] }
-  | params_list   { $1 }
-
-params_list:
-  | params_list COMMA param { $1 :: $3 }
-  | param                   { [$1]     }
+    /* nothing */      { [] }
+  | param              { [$1] }
+  | param COMMA params { $1::$3 }
 
 param:
   | IDENT type_expr { { 
@@ -187,7 +173,7 @@ param:
     is_variadic = true; }}
 
 return_types:
-  | /* nothing */   { [] }
+   /* nothing */   { [] }
   | type_expr_list  { $1 }
 
 type_expr_list:
@@ -196,11 +182,8 @@ type_expr_list:
 
 /********** STRUCT-FUNC DECLARATION **********/
 
-struct_func_decls:
-  | struct_func_decls struct_func_decl { [$1] @ $2 }
-
 struct_func_decl:
-  | FUNC LPAREN IDENT type_expr RPAREN IDENT LPAREN params RPAREN return_types LBRACE stmts RBRACE 
+  FUNC LPAREN IDENT type_expr RPAREN IDENT LPAREN params RPAREN return_types LBRACE stmts RBRACE 
   {{
   name:         $6;
   struct_name:  $3;
@@ -211,8 +194,8 @@ struct_func_decl:
 /********** STATEMENTS **********/
 
 stmts:
-  | /* nothing */ { []       }
-  | stmts stmt    { $1 :: $2 }
+    /* nothing */ { []       }
+  | stmt stmts    { $1 :: $2 }
 
 stmt:
   | expr                                                                   { Expr ($1)                }
@@ -220,7 +203,11 @@ stmt:
   | IF expr LBRACE stmts RBRACE else_block                                 { IfStmt ($2, $4, $6)      }
   | FOR opt_stmt SEMICOLON opt_expr SEMICOLON opt_expr LBRACE stmts RBRACE { ForStmt ($2, $4, $6, $8) }
   | WHILE expr LBRACE stmts RBRACE                                         { WhileStmt ($2, $4)       }
-  | RETURN expr_list                                                       { Return ($2)              } 
+  | RETURN opt_expr_list                                                       { Return ($2)              } 
+
+opt_expr_list:
+  | expr {[$1]} (*also doesn't account for empty return*)
+  | expr COMMA expr_list {$1::$3}
 
 else_block:
   | ELSE LBRACE stmts RBRACE                    { $3                    }
@@ -235,8 +222,8 @@ opt_expr:
   | expr                     { Some $1 }
 
 expr_list:
-  | expr                     { $1         }
-  | expr COMMA expr_list     { $1 :: [$3] }
+  | expr                     { [$1]     } (*this doesn't account for empty return since no empty expr*)
+  | expr COMMA expr_list     { $1 :: $3 }
 
 expr:
 | expr PLUS   expr                    { Binop($1, Plus, $3)   }
@@ -282,7 +269,7 @@ expr:
 | IDENT LBRACKET expr COLON RBRACKET      { SliceExpr (Identifier($1), $3, None)         }
 | IDENT LPAREN expr_list RPAREN           { FunctionCall (Identifier($1), $3)            }
 | IDENT DOT IDENT LPAREN expr_list RPAREN { MethodCall (Identifier($1), Identifier($3), $5) }
-| type_expr LPAREN expr RPAREN            { Cast ($1, $3) } (* doesn't allow for type cast with struct names *)
+| primitive_type LPAREN expr RPAREN            { Cast (Primitive($1), $3) } (* doesn't allow for type cast with struct names *)
 
 | LBRACKET expr RBRACKET type_expr LBRACE expr_list RBRACE { ArrayLit ($2, $4, $6) }
 | LBRACKET expr RBRACKET IDENT LBRACE expr_list RBRACE     { ArrayLit($2, TypeName($4), $6) }
