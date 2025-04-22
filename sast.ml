@@ -10,9 +10,9 @@ type stype_expr =
   | STypeName of string (* refer to Example 3.6 *)
 
 (* some basic expression in lang *)
-type sexpr =
+type sexpr = stype_expr * sx
+and sx =
   | SSubExpr of sexpr (* ? for parentheses expressions like (1+2)? specifically for parser to parse into these expressions...unsure *)
-  
   (* Literals *)
   | SIntLit of int
   | SBoolLit of bool
@@ -47,39 +47,39 @@ type sexpr =
   | SBreak 
 
 (* Struct field definition *)
-type field = {
-  name: string;
-  field_type: stype_expr;
-  modifier: type_modifier option;
-  default_value: sexpr option;
+type sfield = {
+  sname: string;
+  sfield_type: stype_expr;
+  smodifier: type_modifier option;
+  sdefault_value: sexpr option;
 }
 
 (* Type declaration *)
-type type_decl =
-  | TypeStruct of string * field list (* struct definition *)
-  | TypeAlias of string * stype_expr (* type alias *)
+type stype_decl =
+  | STypeStruct of string * sfield list (* struct definition *)
+  | STypeAlias of string * stype_expr (* type alias *)
 
 (* Variable declaration *)
-type var_decl = (* x = i64(2) *)
-  | InferType of {
-    is_const: bool;
-    name: string;
-    var_type: stype_expr option;
-    initializer_expr: sexpr;
+type svar_decl = (* x = i64(2) *)
+  | SInferType of {
+    sis_const: bool;
+    sname: string;
+    svar_type: stype_expr option;
+    sinitializer_expr: sexpr;
   }
 
-  | StrictType of { (* i64 x = 2 *)
-    is_const: bool;
-    name: string;
-    var_type: stype_expr;
-    initializer_expr: sexpr;
+  | SStrictType of { (* i64 x = 2 *)
+    sis_const: bool;
+    sname: string;
+    svar_type: stype_expr;
+    sinitializer_expr: sexpr;
   }
 
 (* Top level declarations *)
 (* statement in lang, only decl or expr *)
 type sstmt =
   | SExpr of sexpr
-  | SVarDecl of var_decl
+  | SVarDecl of svar_decl
 
   (* Control flow *)
   | SIfStmt of sexpr * sstmt list * sstmt list  (* condition, then_block, else_block (else can be Block or IfStmt for else if) *)
@@ -88,38 +88,38 @@ type sstmt =
   | SReturn of sexpr list (* return val1, var2; or return; *)
 
 (* Function parameters *)
-type param = {
-  name: string;
-  param_type: stype_expr;
-  is_variadic: bool; (* in semantic checker must check that if param variadic also last param in the list *)
+type sparam = {
+  sname: string;
+  sparam_type: stype_expr;
+  sis_variadic: bool; (* in semantic checker must check that if param variadic also last param in the list *)
 }
 
 (* Function declaration *)
-type func_decl = {
-  name: string;
-  params: param list;
-  return_types: stype_expr list;
-  body: sstmt list;
+type sfunc_decl = {
+  sname: string;
+  sparams: sparam list;
+  sreturn_types: stype_expr list;
+  sbody: sstmt list;
 }
 
-type struct_func = {
-  name: string;
-  struct_name: string;
-  params: param list;
-  return_types: stype_expr list;
-  body: sstmt list;
+type sstruct_func = {
+  sname: string;
+  sstruct_name: string;
+  sparams: sparam list;
+  sreturn_types: stype_expr list;
+  sbody: sstmt list;
 }
 
 (* Package and import declarations *)
-type package_decl = string
-type import_decl = string
+type spackage_decl = string
+type simport_decl = string
 
 (* Overall program structure *)
-type program = {
-  package_name: package_decl;
-  imports: import_decl list;
-  type_declarations: type_decl list;
-  global_vars: var_decl list;
-  functions: func_decl list; (* enforce main function inclusion during semantic analysis *)
-  struct_functions: struct_func list; (* enforce struct functions not overriding within each struct and struct actually exists *)
+type sprogram = {
+  spackage_name: spackage_decl;
+  simports: simport_decl list;
+  stype_declarations: stype_decl list;
+  sglobal_vars: svar_decl list;
+  sfunctions: sfunc_decl list; (* enforce main function inclusion during semantic analysis *)
+  sstruct_functions: sstruct_func list; (* enforce struct functions not overriding within each struct and struct actually exists *)
 }
