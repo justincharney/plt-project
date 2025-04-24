@@ -50,7 +50,7 @@ and sx =
 type sfield = {
   sname: string;
   sfield_type: stype_expr;
-  smodifier: type_modifier option;
+  smodifier: type_modifier;
   sdefault_value: sexpr option;
 }
 
@@ -72,7 +72,7 @@ type svar_decl = (* x = i64(2) *)
     sis_const: bool;
     sname: string;
     svar_type: stype_expr;
-    sinitializer_expr: sexpr;
+    sinitializer_expr: sexpr option;
   }
 
 (* Top level declarations *)
