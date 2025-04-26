@@ -1,7 +1,9 @@
 # 3 "scanner.mll"
  
+  open Parser    (* bring Parser.token into scope *)
+  open Lexing    (* for lexbuf *)
 
-(* Any OCaml functions defined here will be subsequently available in the remainder of the lexer definition. *)
+  (* Any OCaml functions defined here will be subsequently available in the remainder of the lexer definition. *)
 
 let interpret_string s =
   let rec interp i acc =
@@ -32,63 +34,9 @@ let interpret_char s =
 
 (* Token type definition exposed to other modules *)
 
-(* Keywords *)
-type token =
- | FUNC | PACKAGE | IMPORT | TYPE | STRUCT | RETURN | BREAK | IF | ELSE
- | CONTINUE | FOR | CONST | WHILE
- | TRUE | FALSE | FINAL | MUT | LATE | PRIVATE | ERROR
- | NULL
- | DOUBLECOLON
-
- (* Built-in type keywords *)
- | BOOL
- | STRING
- | U8 | U16 | U32 | U64
- | I8 | I16 | I32 | I64
- | F32 | F64
-
- (* Identifiers *)
- | IDENT of string
-
- (* Literals *)
- | INT_LIT of int
- | FLOAT_LIT of float
- | BOOL_LIT of bool
- | STRING_LIT of string (* string literal *)
- | CHAR_LIT of char
 
 
- (* Operators *)
-
- (* Arithmetic *)
- | PLUS | MINUS | DIV | MOD | MULT
-
- (* Bitwise *)
- | LSHIFT | RSHIFT | BITXOR | BITOR | BITNOT | BITAND
-
- (* Assignment *)
- | ASSIGN | DECL_ASSIGN (* = vs := *)
- | PLUS_ASSIGN | MINUS_ASSIGN | TIMES_ASSIGN | DIV_ASSIGN | MOD_ASSIGN
- | LSHIFT_ASSIGN | RSHIFT_ASSIGN | BITAND_ASSIGN | BITXOR_ASSIGN | BITOR_ASSIGN
-
- (* Equivalence *)
- | EQ | NEQ | LT | LE | GT | GE
-
- (* Logical *)
- | AND | OR | NOT
-
- (* Unary *)
- | INC | DEC
-
- (* Separators *)
- | LPAREN | RPAREN | LBRACE | RBRACE | LBRACKET | RBRACKET
- | SEMICOLON | COLON | COMMA | DOT | TRIPLEDOT
-
- (* Special tokens *)
- | EOF     (* End of file *)
-
-
-# 92 "scanner.ml"
+# 40 "scanner.ml"
 let __ocaml_lex_tables = {
   Lexing.lex_base =
    "\000\000\166\255\167\255\079\000\172\255\174\255\175\255\176\255\
@@ -2504,459 +2452,459 @@ let rec token lexbuf =
 and __ocaml_lex_token_rec lexbuf __ocaml_lex_state =
   match Lexing.engine __ocaml_lex_tables __ocaml_lex_state lexbuf with
       | 0 ->
-# 111 "scanner.mll"
+# 59 "scanner.mll"
                             ( token lexbuf )
-# 2510 "scanner.ml"
+# 2458 "scanner.ml"
 
   | 1 ->
-# 112 "scanner.mll"
+# 60 "scanner.mll"
                             ( token lexbuf )
-# 2515 "scanner.ml"
+# 2463 "scanner.ml"
 
   | 2 ->
-# 115 "scanner.mll"
+# 63 "scanner.mll"
                             ( token lexbuf )
-# 2520 "scanner.ml"
+# 2468 "scanner.ml"
 
   | 3 ->
-# 116 "scanner.mll"
+# 64 "scanner.mll"
                             ( comment lexbuf )
-# 2525 "scanner.ml"
+# 2473 "scanner.ml"
 
   | 4 ->
-# 121 "scanner.mll"
+# 69 "scanner.mll"
                             ( FUNC )
-# 2530 "scanner.ml"
+# 2478 "scanner.ml"
 
   | 5 ->
-# 122 "scanner.mll"
+# 70 "scanner.mll"
                             ( PACKAGE )
-# 2535 "scanner.ml"
+# 2483 "scanner.ml"
 
   | 6 ->
-# 123 "scanner.mll"
+# 71 "scanner.mll"
                             ( IMPORT )
-# 2540 "scanner.ml"
+# 2488 "scanner.ml"
 
   | 7 ->
-# 126 "scanner.mll"
+# 74 "scanner.mll"
                             ( TYPE )
-# 2545 "scanner.ml"
+# 2493 "scanner.ml"
 
   | 8 ->
-# 127 "scanner.mll"
+# 75 "scanner.mll"
                             ( STRUCT )
-# 2550 "scanner.ml"
+# 2498 "scanner.ml"
 
   | 9 ->
-# 130 "scanner.mll"
+# 78 "scanner.mll"
                             ( RETURN )
-# 2555 "scanner.ml"
+# 2503 "scanner.ml"
 
   | 10 ->
-# 131 "scanner.mll"
+# 79 "scanner.mll"
                             ( BREAK )
-# 2560 "scanner.ml"
+# 2508 "scanner.ml"
 
   | 11 ->
-# 132 "scanner.mll"
+# 80 "scanner.mll"
                             ( IF )
-# 2565 "scanner.ml"
+# 2513 "scanner.ml"
 
   | 12 ->
-# 133 "scanner.mll"
+# 81 "scanner.mll"
                             ( ELSE )
-# 2570 "scanner.ml"
+# 2518 "scanner.ml"
 
   | 13 ->
-# 134 "scanner.mll"
+# 82 "scanner.mll"
                             ( CONTINUE )
-# 2575 "scanner.ml"
+# 2523 "scanner.ml"
 
   | 14 ->
-# 135 "scanner.mll"
+# 83 "scanner.mll"
                             ( FOR )
-# 2580 "scanner.ml"
+# 2528 "scanner.ml"
 
   | 15 ->
-# 136 "scanner.mll"
+# 84 "scanner.mll"
                             ( WHILE )
-# 2585 "scanner.ml"
+# 2533 "scanner.ml"
 
   | 16 ->
-# 139 "scanner.mll"
+# 87 "scanner.mll"
                             ( CONST )
-# 2590 "scanner.ml"
+# 2538 "scanner.ml"
 
   | 17 ->
-# 142 "scanner.mll"
+# 90 "scanner.mll"
                             ( BOOL_LIT(true) )
-# 2595 "scanner.ml"
+# 2543 "scanner.ml"
 
   | 18 ->
-# 143 "scanner.mll"
+# 91 "scanner.mll"
                             ( BOOL_LIT(false) )
-# 2600 "scanner.ml"
+# 2548 "scanner.ml"
 
   | 19 ->
-# 146 "scanner.mll"
+# 94 "scanner.mll"
                             ( ERROR )
-# 2605 "scanner.ml"
+# 2553 "scanner.ml"
 
   | 20 ->
-# 147 "scanner.mll"
+# 95 "scanner.mll"
                             ( NULL )
-# 2610 "scanner.ml"
+# 2558 "scanner.ml"
 
   | 21 ->
-# 150 "scanner.mll"
+# 98 "scanner.mll"
                             ( FINAL )
-# 2615 "scanner.ml"
+# 2563 "scanner.ml"
 
   | 22 ->
-# 151 "scanner.mll"
+# 99 "scanner.mll"
                             ( MUT )
-# 2620 "scanner.ml"
+# 2568 "scanner.ml"
 
   | 23 ->
-# 152 "scanner.mll"
+# 100 "scanner.mll"
                             ( LATE )
-# 2625 "scanner.ml"
+# 2573 "scanner.ml"
 
   | 24 ->
-# 153 "scanner.mll"
+# 101 "scanner.mll"
                             ( PRIVATE )
-# 2630 "scanner.ml"
+# 2578 "scanner.ml"
 
   | 25 ->
-# 156 "scanner.mll"
+# 104 "scanner.mll"
                            ( BOOL )
-# 2635 "scanner.ml"
+# 2583 "scanner.ml"
 
   | 26 ->
-# 157 "scanner.mll"
+# 105 "scanner.mll"
                            ( STRING )
-# 2640 "scanner.ml"
+# 2588 "scanner.ml"
 
   | 27 ->
-# 158 "scanner.mll"
+# 106 "scanner.mll"
                            ( U8 )
-# 2645 "scanner.ml"
+# 2593 "scanner.ml"
 
   | 28 ->
-# 159 "scanner.mll"
+# 107 "scanner.mll"
                            ( U16 )
-# 2650 "scanner.ml"
+# 2598 "scanner.ml"
 
   | 29 ->
-# 160 "scanner.mll"
+# 108 "scanner.mll"
                            ( U32 )
-# 2655 "scanner.ml"
+# 2603 "scanner.ml"
 
   | 30 ->
-# 161 "scanner.mll"
+# 109 "scanner.mll"
                            ( U64 )
-# 2660 "scanner.ml"
+# 2608 "scanner.ml"
 
   | 31 ->
-# 162 "scanner.mll"
+# 110 "scanner.mll"
                            ( I8 )
-# 2665 "scanner.ml"
+# 2613 "scanner.ml"
 
   | 32 ->
-# 163 "scanner.mll"
+# 111 "scanner.mll"
                            ( I16 )
-# 2670 "scanner.ml"
+# 2618 "scanner.ml"
 
   | 33 ->
-# 164 "scanner.mll"
+# 112 "scanner.mll"
                            ( I32 )
-# 2675 "scanner.ml"
+# 2623 "scanner.ml"
 
   | 34 ->
-# 165 "scanner.mll"
+# 113 "scanner.mll"
                            ( I64 )
-# 2680 "scanner.ml"
+# 2628 "scanner.ml"
 
   | 35 ->
-# 166 "scanner.mll"
+# 114 "scanner.mll"
                            ( F32 )
-# 2685 "scanner.ml"
+# 2633 "scanner.ml"
 
   | 36 ->
-# 167 "scanner.mll"
+# 115 "scanner.mll"
                            ( F64 )
-# 2690 "scanner.ml"
+# 2638 "scanner.ml"
 
   | 37 ->
-# 170 "scanner.mll"
+# 118 "scanner.mll"
                             ( INT_LIT (int_of_string (Lexing.lexeme lexbuf)) )
-# 2695 "scanner.ml"
+# 2643 "scanner.ml"
 
   | 38 ->
-# 171 "scanner.mll"
+# 119 "scanner.mll"
                             ( FLOAT_LIT (float_of_string (Lexing.lexeme lexbuf)) )
-# 2700 "scanner.ml"
+# 2648 "scanner.ml"
 
   | 39 ->
-# 172 "scanner.mll"
+# 120 "scanner.mll"
                             ( let s = Lexing.lexeme lexbuf in
                                 (* Remove the quotes *)
                                 let content = String.sub s 1 (String.length s - 2) in
                                 STRING_LIT (interpret_string content) )
-# 2708 "scanner.ml"
+# 2656 "scanner.ml"
 
   | 40 ->
-# 176 "scanner.mll"
+# 124 "scanner.mll"
                             ( let c = Lexing.lexeme lexbuf in
                                 let content = String.sub c 1 (String.length c - 2) in
                                 CHAR_LIT (interpret_char content))
-# 2715 "scanner.ml"
+# 2663 "scanner.ml"
 
   | 41 ->
-# 181 "scanner.mll"
+# 129 "scanner.mll"
                             ( PLUS )
-# 2720 "scanner.ml"
+# 2668 "scanner.ml"
 
   | 42 ->
-# 182 "scanner.mll"
+# 130 "scanner.mll"
                             ( MINUS )
-# 2725 "scanner.ml"
+# 2673 "scanner.ml"
 
   | 43 ->
-# 183 "scanner.mll"
+# 131 "scanner.mll"
                             ( DIV )
-# 2730 "scanner.ml"
+# 2678 "scanner.ml"
 
   | 44 ->
-# 184 "scanner.mll"
+# 132 "scanner.mll"
                             ( MOD )
-# 2735 "scanner.ml"
+# 2683 "scanner.ml"
 
   | 45 ->
-# 185 "scanner.mll"
+# 133 "scanner.mll"
                             ( MULT )
-# 2740 "scanner.ml"
+# 2688 "scanner.ml"
 
   | 46 ->
-# 188 "scanner.mll"
+# 136 "scanner.mll"
                             ( LSHIFT )
-# 2745 "scanner.ml"
+# 2693 "scanner.ml"
 
   | 47 ->
-# 189 "scanner.mll"
+# 137 "scanner.mll"
                             ( RSHIFT )
-# 2750 "scanner.ml"
+# 2698 "scanner.ml"
 
   | 48 ->
-# 190 "scanner.mll"
+# 138 "scanner.mll"
                             ( BITXOR )
-# 2755 "scanner.ml"
+# 2703 "scanner.ml"
 
   | 49 ->
-# 191 "scanner.mll"
+# 139 "scanner.mll"
                             ( BITOR )
-# 2760 "scanner.ml"
+# 2708 "scanner.ml"
 
   | 50 ->
-# 192 "scanner.mll"
+# 140 "scanner.mll"
                             ( BITNOT )
-# 2765 "scanner.ml"
+# 2713 "scanner.ml"
 
   | 51 ->
-# 193 "scanner.mll"
+# 141 "scanner.mll"
                             ( BITAND )
-# 2770 "scanner.ml"
+# 2718 "scanner.ml"
 
   | 52 ->
-# 196 "scanner.mll"
+# 144 "scanner.mll"
                             ( ASSIGN )
-# 2775 "scanner.ml"
+# 2723 "scanner.ml"
 
   | 53 ->
-# 197 "scanner.mll"
+# 145 "scanner.mll"
                             ( DECL_ASSIGN )
-# 2780 "scanner.ml"
+# 2728 "scanner.ml"
 
   | 54 ->
-# 198 "scanner.mll"
+# 146 "scanner.mll"
                             ( PLUS_ASSIGN )
-# 2785 "scanner.ml"
+# 2733 "scanner.ml"
 
   | 55 ->
-# 199 "scanner.mll"
+# 147 "scanner.mll"
                             ( MINUS_ASSIGN )
-# 2790 "scanner.ml"
+# 2738 "scanner.ml"
 
   | 56 ->
-# 200 "scanner.mll"
+# 148 "scanner.mll"
                             ( TIMES_ASSIGN )
-# 2795 "scanner.ml"
+# 2743 "scanner.ml"
 
   | 57 ->
-# 201 "scanner.mll"
+# 149 "scanner.mll"
                             ( DIV_ASSIGN )
-# 2800 "scanner.ml"
+# 2748 "scanner.ml"
 
   | 58 ->
-# 202 "scanner.mll"
+# 150 "scanner.mll"
                             ( MOD_ASSIGN )
-# 2805 "scanner.ml"
+# 2753 "scanner.ml"
 
   | 59 ->
-# 203 "scanner.mll"
+# 151 "scanner.mll"
                             ( LSHIFT_ASSIGN )
-# 2810 "scanner.ml"
+# 2758 "scanner.ml"
 
   | 60 ->
-# 204 "scanner.mll"
+# 152 "scanner.mll"
                             ( RSHIFT_ASSIGN )
-# 2815 "scanner.ml"
+# 2763 "scanner.ml"
 
   | 61 ->
-# 205 "scanner.mll"
+# 153 "scanner.mll"
                             ( BITAND_ASSIGN )
-# 2820 "scanner.ml"
+# 2768 "scanner.ml"
 
   | 62 ->
-# 206 "scanner.mll"
+# 154 "scanner.mll"
                             ( BITXOR_ASSIGN )
-# 2825 "scanner.ml"
+# 2773 "scanner.ml"
 
   | 63 ->
-# 207 "scanner.mll"
+# 155 "scanner.mll"
                             ( BITOR_ASSIGN )
-# 2830 "scanner.ml"
+# 2778 "scanner.ml"
 
   | 64 ->
-# 210 "scanner.mll"
+# 158 "scanner.mll"
                             ( EQ )
-# 2835 "scanner.ml"
+# 2783 "scanner.ml"
 
   | 65 ->
-# 211 "scanner.mll"
+# 159 "scanner.mll"
                             ( NEQ )
-# 2840 "scanner.ml"
+# 2788 "scanner.ml"
 
   | 66 ->
-# 212 "scanner.mll"
+# 160 "scanner.mll"
                             ( LT )
-# 2845 "scanner.ml"
+# 2793 "scanner.ml"
 
   | 67 ->
-# 213 "scanner.mll"
+# 161 "scanner.mll"
                             ( LE )
-# 2850 "scanner.ml"
+# 2798 "scanner.ml"
 
   | 68 ->
-# 214 "scanner.mll"
+# 162 "scanner.mll"
                             ( GT )
-# 2855 "scanner.ml"
+# 2803 "scanner.ml"
 
   | 69 ->
-# 215 "scanner.mll"
+# 163 "scanner.mll"
                             ( GE )
-# 2860 "scanner.ml"
+# 2808 "scanner.ml"
 
   | 70 ->
-# 218 "scanner.mll"
+# 166 "scanner.mll"
                             ( AND )
-# 2865 "scanner.ml"
+# 2813 "scanner.ml"
 
   | 71 ->
-# 219 "scanner.mll"
+# 167 "scanner.mll"
                             ( OR )
-# 2870 "scanner.ml"
+# 2818 "scanner.ml"
 
   | 72 ->
-# 220 "scanner.mll"
+# 168 "scanner.mll"
                             ( NOT )
-# 2875 "scanner.ml"
+# 2823 "scanner.ml"
 
   | 73 ->
-# 223 "scanner.mll"
+# 171 "scanner.mll"
                             ( INC )
-# 2880 "scanner.ml"
+# 2828 "scanner.ml"
 
   | 74 ->
-# 224 "scanner.mll"
+# 172 "scanner.mll"
                             ( DEC )
-# 2885 "scanner.ml"
+# 2833 "scanner.ml"
 
   | 75 ->
-# 227 "scanner.mll"
+# 175 "scanner.mll"
                             ( LPAREN )
-# 2890 "scanner.ml"
+# 2838 "scanner.ml"
 
   | 76 ->
-# 228 "scanner.mll"
+# 176 "scanner.mll"
                             ( RPAREN )
-# 2895 "scanner.ml"
+# 2843 "scanner.ml"
 
   | 77 ->
-# 229 "scanner.mll"
+# 177 "scanner.mll"
                             ( LBRACE )
-# 2900 "scanner.ml"
+# 2848 "scanner.ml"
 
   | 78 ->
-# 230 "scanner.mll"
+# 178 "scanner.mll"
                             ( RBRACE )
-# 2905 "scanner.ml"
+# 2853 "scanner.ml"
 
   | 79 ->
-# 231 "scanner.mll"
+# 179 "scanner.mll"
                             ( LBRACKET )
-# 2910 "scanner.ml"
+# 2858 "scanner.ml"
 
   | 80 ->
-# 232 "scanner.mll"
+# 180 "scanner.mll"
                             ( RBRACKET )
-# 2915 "scanner.ml"
+# 2863 "scanner.ml"
 
   | 81 ->
-# 233 "scanner.mll"
+# 181 "scanner.mll"
                             ( SEMICOLON )
-# 2920 "scanner.ml"
+# 2868 "scanner.ml"
 
   | 82 ->
-# 234 "scanner.mll"
+# 182 "scanner.mll"
                             ( COLON )
-# 2925 "scanner.ml"
+# 2873 "scanner.ml"
 
   | 83 ->
-# 235 "scanner.mll"
+# 183 "scanner.mll"
                             ( COMMA )
-# 2930 "scanner.ml"
+# 2878 "scanner.ml"
 
   | 84 ->
-# 236 "scanner.mll"
+# 184 "scanner.mll"
                             ( DOT )
-# 2935 "scanner.ml"
+# 2883 "scanner.ml"
 
   | 85 ->
-# 237 "scanner.mll"
+# 185 "scanner.mll"
                             ( TRIPLEDOT )
-# 2940 "scanner.ml"
+# 2888 "scanner.ml"
 
   | 86 ->
-# 238 "scanner.mll"
+# 186 "scanner.mll"
                             ( DOUBLECOLON )
-# 2945 "scanner.ml"
+# 2893 "scanner.ml"
 
   | 87 ->
-# 241 "scanner.mll"
+# 189 "scanner.mll"
                             ( IDENT (Lexing.lexeme lexbuf) )
-# 2950 "scanner.ml"
+# 2898 "scanner.ml"
 
   | 88 ->
-# 242 "scanner.mll"
+# 190 "scanner.mll"
                             ( EOF )
-# 2955 "scanner.ml"
+# 2903 "scanner.ml"
 
   | 89 ->
-# 243 "scanner.mll"
+# 191 "scanner.mll"
                             ( raise (Failure (Printf.sprintf "unrecognized token: %s" (Lexing.lexeme lexbuf))) )
-# 2960 "scanner.ml"
+# 2908 "scanner.ml"
 
   | __ocaml_lex_state -> lexbuf.Lexing.refill_buff lexbuf;
       __ocaml_lex_token_rec lexbuf __ocaml_lex_state
@@ -2966,14 +2914,14 @@ and comment lexbuf =
 and __ocaml_lex_comment_rec lexbuf __ocaml_lex_state =
   match Lexing.engine __ocaml_lex_tables __ocaml_lex_state lexbuf with
       | 0 ->
-# 246 "scanner.mll"
+# 194 "scanner.mll"
                 ( token lexbuf )
-# 2972 "scanner.ml"
+# 2920 "scanner.ml"
 
   | 1 ->
-# 247 "scanner.mll"
+# 195 "scanner.mll"
                 ( comment lexbuf )
-# 2977 "scanner.ml"
+# 2925 "scanner.ml"
 
   | __ocaml_lex_state -> lexbuf.Lexing.refill_buff lexbuf;
       __ocaml_lex_comment_rec lexbuf __ocaml_lex_state

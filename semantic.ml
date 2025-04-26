@@ -538,22 +538,33 @@ let rec build_stmt env stmt : env * sstmt =
            ) sexprs exps;
            (env, SReturn sexprs)
       )
-
 (* ------------------------------------------------------------------ *)
 (* T O P – L E V E L   C H E C K                                      *)
 (* ------------------------------------------------------------------ *)
 
 let analyze (prog : program) : sprogram =
+  (* Unpack AST fields so we don’t confuse functions vs. struct_methods *)
+  let { package_name
+      ; imports
+      ; type_declarations
+      ; global_vars
+      ; functions        = func_decls
+      ; struct_functions = method_decls
+      } = prog
+  in
+
+  (* 0. Start with an empty environment *)
   let env0 = initial_env () in
 
-  (* 1. Types *)
+  (* 1. Process type aliases and struct declarations *)
   let (env1, aliases, structs) =
     List.fold_left (fun (env, aacc, sacc) td ->
       match td with
       | TypeAlias (nm, te) ->
-          let te' = resolve_type env te in
+          let te'  = resolve_type env te in
           let env' = bind_alias env nm te' in
-          (env', (nm, te')::aacc, sacc)
+          (env', (nm, te') :: aacc, sacc)
+
       | TypeStruct (nm, fields) ->
           let fdefs =
             List.map (fun f ->
@@ -562,82 +573,105 @@ let analyze (prog : program) : sprogram =
             ) fields
           in
           let env' = bind_struct env nm fdefs in
-          (env', aacc, (nm, fdefs)::sacc)
-    ) (env0, [], []) prog.type_declarations
+          (env', aacc, (nm, fdefs) :: sacc)
+    ) (env0, [], []) type_declarations
   in
 
-  (* 2. Globals *)
+  (* 2. Process global variable declarations *)
   let (env2, globals) =
     List.fold_left (fun (env, gacc) vd ->
       match vd with
       | StrictType { name; var_type; initializer_expr; _ } ->
           let t = resolve_type env var_type in
-          let _ =
-            match initializer_expr with
-            | Some e ->
-                let (t', _) = build_expr env e in
-                if not (type_equal env t t') then
-                  error ("Global init "^name^" wrong type")
-            | None -> ()
-          in
+          (match initializer_expr with
+           | Some e ->
+               let (t', _) = build_expr env e in
+               if not (type_equal env t t') then
+                 error ("Global init " ^ name ^ " wrong type")
+           | None -> ());
           let env' = bind_global env name t in
-          (env', (name, t)::gacc)
+          (env', (name, t) :: gacc)
 
       | InferType { name; initializer_expr; _ } ->
           let (t, _) = build_expr env initializer_expr in
           let env' = bind_global env name t in
-          (env', (name, t)::gacc)
-    ) (env1, []) prog.global_vars
+          (env', (name, t) :: gacc)
+    ) (env1, []) global_vars
   in
 
-  (* 3. Functions *)
+  (* 3. Process free functions *)
   let (env3, sfuncs) =
-    List.fold_left (fun (env, facc) fdecl ->
+    List.fold_left (fun (env, facc) (fdecl : func_decl) ->
+      (* Register signature *)
       let param_sigs = List.map (fun p ->
         let tp = resolve_type env p.param_type in
         (tp, p.is_variadic)
       ) fdecl.params in
-      let ret_ts     = List.map (resolve_type env) fdecl.return_types in
-      let env'       = bind_function env fdecl.name (param_sigs, ret_ts) in
-      let env''      = { env' with current_returns = Some ret_ts } in
-      let env_par    = push_scope env'' in
-      let sparams    = List.map (fun p ->
+      let ret_ts = List.map (resolve_type env) fdecl.return_types in
+      let env' = bind_function env fdecl.name (param_sigs, ret_ts) in
+
+      (* New scope with return types known *)
+      let env'' = { env' with current_returns = Some ret_ts } in
+      let env_par = push_scope env'' in
+
+      (* Bind parameters locally *)
+      let sparams = List.map (fun p ->
         let tp = resolve_type env p.param_type in
         let env_par = bind_local env_par p.name tp in
         { sp_name = p.name; sp_type = tp; sp_is_variadic = p.is_variadic }
       ) fdecl.params in
+
+      (* Build body statements *)
       let body_stmts = List.map (fun s -> snd (build_stmt env_par s)) fdecl.body in
-      let sf = { sf_name         = fdecl.name;
-                 sf_params       = sparams;
-                 sf_return_types = ret_ts;
-                 sf_body         = body_stmts } in
-      (env', sf::facc)
-    ) (env2, []) prog.functions
+
+      let sf = {
+        sf_name         = fdecl.name;
+        sf_params       = sparams;
+        sf_return_types = ret_ts;
+        sf_body         = body_stmts;
+      } in
+
+      (env', sf :: facc)
+    ) (env2, []) func_decls
   in
 
-  (* 4. Struct methods *)
+  (* 4. Process struct methods *)
   let (env4, sstructs) =
-    List.fold_left (fun (env, macc) mdecl ->
-      if not (StringMap.mem mdecl.struct_name env.types.structs)
-      then error ("Method for unknown struct " ^ mdecl.struct_name);
-      let recv = (TypeName mdecl.struct_name, false) in
-      let param_sigs = recv ::
+    List.fold_left (fun (env, macc) (mdecl : struct_func) ->
+      (* Ensure struct exists *)
+      if not (StringMap.mem mdecl.struct_name env.types.structs) then
+        error ("Method for unknown struct " ^ mdecl.struct_name);
+
+      (* Synthetic receiver signature *)
+      let recv_sig = (TypeName mdecl.struct_name, false) in
+
+      (* Parameter signatures include receiver *)
+      let param_sigs = recv_sig ::
         List.map (fun p ->
           let tp = resolve_type env p.param_type in
           (tp, p.is_variadic)
         ) mdecl.params
       in
+
       let ret_ts = List.map (resolve_type env) mdecl.return_types in
+
+      (* Register method *)
       let env' = bind_method env mdecl.struct_name mdecl.name (param_sigs, ret_ts) in
+
+      (* New scope with return types known *)
       let env'' = { env' with current_returns = Some ret_ts } in
       let env_par = push_scope env'' in
-      (* bind only the actual parameters (skip the synthetic recv) *)
+
+      (* Bind real parameters (skip synthetic recv) *)
       let sparams = List.map (fun p ->
         let tp = resolve_type env p.param_type in
         let env_par = bind_local env_par p.name tp in
         { sp_name = p.name; sp_type = tp; sp_is_variadic = p.is_variadic }
       ) mdecl.params in
+
+      (* Build body statements *)
       let body_stmts = List.map (fun s -> snd (build_stmt env_par s)) mdecl.body in
+
       let sm = {
         ss_struct       = mdecl.struct_name;
         ss_name         = mdecl.name;
@@ -645,20 +679,24 @@ let analyze (prog : program) : sprogram =
         ss_return_types = ret_ts;
         ss_body         = body_stmts;
       } in
-      (env', sm::macc)
-    ) (env3, []) prog.struct_functions
+
+      (env', sm :: macc)
+    ) (env3, []) method_decls
   in
 
-  (* 5. Entry point *)
+  (* 5. Ensure entry point ‘main’ exists *)
   if not (StringMap.mem "main" env4.funcs) then
     error "Missing entry point: main";
 
+  (* 6. Assemble final SAST program *)
   {
-    sp_package          = prog.package_name;
-    sp_imports          = prog.imports;
+    sp_package          = package_name;
+    sp_imports          = imports;
     sp_type_aliases     = List.rev aliases;
     sp_structs          = List.rev structs;
     sp_globals          = List.rev globals;
     sp_functions        = List.rev sfuncs;
     sp_struct_functions = List.rev sstructs;
   }
+
+
