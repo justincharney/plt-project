@@ -89,10 +89,33 @@ type token =
 
 (* ------------------------------------------------------------------ *)
 (*  Automatic-semicolon-insertion (ASI) state                         *)
+(* This lexer implements automatic semicolon insertion similar to Go. *)
+(* The core idea is that a newline character can implicitly act as a  *)
+(* semicolon, terminating a statement, but only under specific        *)
+(* conditions.                                                        *)
 
-let need_semi   = ref false   (* true ⇒ a newline can end the stmt   *)
-let paren_depth = ref 0       (* nesting of () and []               *)
+let need_semi   = ref false
+(* Purpose: Tracks whether the immediately preceding token emitted  *)
+(*          was one that could legally end a statement (as defined  *)
+(*          by the `ends_stmt` function).                           *)
+(* Set by: `emit` function sets this to true after emitting a token *)
+(*         that matches `ends_stmt`.                                 *)
+(* Reset by: Set to `false` when an explicit `;` is processed, OR    *)
+(*           when ASI successfully inserts a semicolon on a newline. *)
+(*           Also implicitly `false` after tokens not in `ends_stmt`.*)
 
+
+let paren_depth = ref 0
+(* Purpose: Tracks the nesting level of parentheses `()` and        *)
+(*          square brackets `[]`.                                   *)
+(* Logic: ASI is disabled (newlines are always treated as          *)
+(*        whitespace) whenever `paren_depth` is greater than 0.     *)
+(* Updated by: `update_nesting` (called by `emit`) increments for   *)
+(*             `LPAREN`, `LBRACKET` and decrements for `RPAREN`,     *)
+(*             `RBRACKET`.                                           *)
+
+(* The `ends_stmt` function below lists tokens that can end a statement *)
+(* if followed by a newline (outside parentheses/brackets).            *)
 let ends_stmt = function
   | IDENT _ | INT_LIT _ | FLOAT_LIT _ | STRING_LIT _ | CHAR_LIT _
   | BOOL_LIT _ | NULL
@@ -100,12 +123,14 @@ let ends_stmt = function
   | RPAREN | RBRACKET | RBRACE                       -> true
   | _                                               -> false
 
+(* The `update_nesting` function updates `paren_depth`. *)
 let update_nesting = function
   | LPAREN  -> incr paren_depth | RPAREN  -> decr paren_depth
   | LBRACKET-> incr paren_depth | RBRACKET-> decr paren_depth
   | _ -> ()
 
-let emit tok =            (* update flags, then return tok *)
+(* The `emit` function is a wrapper to update state before returning a token. *)
+let emit tok =
   update_nesting tok;
   need_semi := ends_stmt tok;
   tok
