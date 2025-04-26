@@ -257,15 +257,15 @@ rule token = parse
     | "}"                   { emit RBRACE }
     | "["                   { emit LBRACKET }
     | "]"                   { emit RBRACKET }
-    | ";"                   { emit SEMICOLON }
+    | ";"                   { need_semi := false; emit SEMICOLON }
     | ":"                   { emit COLON }
     | ","                   { emit COMMA }
     | "."                   { emit DOT }
 
     (* Ocamllex checks rules in order, so this is after keywords *)
-    | identifier            { IDENT (Lexing.lexeme lexbuf) }
+    | identifier            { emit (IDENT (Lexing.lexeme lexbuf)) }
     | eof                   { EOF }
-    | _ as c                    { raise (Failure (Printf.sprintf "Lexing bad char: '%c'" c)) }
+    | _ as c                { raise (Failure (Printf.sprintf "Lexing bad char: '%c'" c)) }
 
 and comment = parse
     | "*/"      { token lexbuf }

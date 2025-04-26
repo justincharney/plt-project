@@ -61,13 +61,13 @@ let scanner_tests = "test suite for scanner" >::: [
 
   "automatic semicolon insertion - basic" >:: (fun _ ->
     assert_equal
-      [IDENT "x"; ASSIGN; INT_LIT 5; SEMICOLON; IDENT "y"; ASSIGN; INT_LIT 6;]
-      (get_all_tokens "x = 5 \n y = 6"));
+      [IDENT "x"; ASSIGN; INT_LIT 5; SEMICOLON; IDENT "y"; ASSIGN; INT_LIT 6]
+      (get_all_tokens "x = 5\ny = 6"));
 
-  (* "automatic semicolon insertion - after statement-ending tokens" >:: (fun _ ->
-    assert_equal
-      [IDENT "x"; INC; SEMICOLON; IDENT "y"; ASSIGN; INT_LIT 10; SEMICOLON; RETURN; SEMICOLON; BREAK; SEMICOLON]
-      (get_all_tokens "x++\ny = 10\nreturn\nbreak"));
+  "automatic semicolon insertion - after statement-ending tokens" >:: (fun _ ->
+      assert_equal
+        [IDENT "x"; INC; SEMICOLON; IDENT "y"; ASSIGN; INT_LIT 10; SEMICOLON; RETURN; SEMICOLON; BREAK]
+        (get_all_tokens "x++\ny = 10\nreturn\nbreak"));
 
   "automatic semicolon insertion - not inside parentheses" >:: (fun _ ->
     assert_equal
@@ -93,7 +93,7 @@ let scanner_tests = "test suite for scanner" >::: [
     assert_equal
       [IF; IDENT "x"; LBRACE; IDENT "y"; ASSIGN; INT_LIT 5; SEMICOLON;
        IF; IDENT "z"; LBRACE; IDENT "a"; ASSIGN; INT_LIT 10; SEMICOLON;
-       RBRACE; SEMICOLON; IDENT "b"; ASSIGN; INT_LIT 15; SEMICOLON; RBRACE; SEMICOLON]
+       RBRACE; SEMICOLON; IDENT "b"; ASSIGN; INT_LIT 15; SEMICOLON; RBRACE]
       (get_all_tokens "if x {\n  y = 5\n  if z {\n    a = 10\n  }\n  b = 15\n}"));
 
   "nested comments" >:: (fun _ ->
@@ -104,7 +104,7 @@ let scanner_tests = "test suite for scanner" >::: [
   "deeply nested comments" >:: (fun _ ->
     assert_equal
       [IDENT "x"; ASSIGN; INT_LIT 5]
-      (get_all_tokens "/* L1 /* L2 /* L3 */ L2 cont */ L1 cont */ x = 5")); *)
+      (get_all_tokens "/* L1 /* L2 /* L3 */ L2 cont */ L1 cont */ x = 5"));
 
 ]
 
