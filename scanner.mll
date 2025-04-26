@@ -144,123 +144,123 @@ rule token = parse
     (*************** KEYWORDS ***************)
 
     (* Functions and Packages *)
-    | "func"                { FUNC }
-    | "package"             { PACKAGE }
-    | "import"              { IMPORT }
+    | "func"                { emit FUNC }
+    | "package"             { emit PACKAGE }
+    | "import"              { emit IMPORT }
 
     (* Types and Structs *)
-    | "type"                { TYPE }
-    | "struct"              { STRUCT }
+    | "type"                { emit TYPE }
+    | "struct"              { emit STRUCT }
 
     (* Control Flow *)
-    | "return"              { RETURN }
-    | "break"               { BREAK }
-    | "if"                  { IF }
-    | "else"                { ELSE }
-    | "continue"            { CONTINUE }
-    | "for"                 { FOR }
-    | "while"               { WHILE }
+    | "return"              { emit RETURN }
+    | "break"               { emit BREAK }
+    | "if"                  { emit IF }
+    | "else"                { emit ELSE }
+    | "continue"            { emit CONTINUE }
+    | "for"                 { emit FOR }
+    | "while"               { emit WHILE }
 
     (* Constants and Variables *)
-    | "const"               { CONST }
-    | "make"                { MAKE }
+    | "const"               { emit CONST }
+    | "make"                { emit MAKE }
 
     (* Boolean Literals *)
-    | "true"                { BOOL_LIT(true) }
-    | "false"               { BOOL_LIT(false) }
+    | "true"                { emit (BOOL_LIT(true)) }
+    | "false"               { emit (BOOL_LIT(false)) }
 
     (* Data Types *)
-    | "error"               { ERROR }
-    | "null"                { NULL }
+    | "error"               { emit ERROR }
+    | "null"                { emit NULL }
 
     (* Modifiers *)
-    | "final"               { FINAL }
-    | "mut"                 { MUT }
-    | "late"                { LATE }
-    | "private"             { PRIVATE }
+    | "final"               { emit FINAL }
+    | "mut"                 { emit MUT }
+    | "late"                { emit LATE }
+    | "private"             { emit PRIVATE }
 
     (* Built-in types *)
-    | "bool"               { BOOL }
-    | "string"             { STRING }
-    | "u8"                 { U8 }
-    | "u16"                { U16 }
-    | "u32"                { U32 }
-    | "u64"                { U64 }
-    | "i8"                 { I8 }
-    | "i16"                { I16 }
-    | "i32"                { I32 }
-    | "i64"                { I64 }
-    | "f16"                { F16 }
-    | "f32"                { F32 }
+    | "bool"               { emit BOOL }
+    | "string"             { emit STRING }
+    | "u8"                 { emit U8 }
+    | "u16"                { emit U16 }
+    | "u32"                { emit U32 }
+    | "u64"                { emit U64 }
+    | "i8"                 { emit I8 }
+    | "i16"                { emit I16 }
+    | "i32"                { emit I32 }
+    | "i64"                { emit I64 }
+    | "f16"                { emit F16 }
+    | "f32"                { emit F32 }
 
     (* Literals *)
-    | int_lit               { INT_LIT (int_of_string (Lexing.lexeme lexbuf)) }
-    | float_lit             { FLOAT_LIT (float_of_string (Lexing.lexeme lexbuf)) }
+    | int_lit               { emit(INT_LIT (int_of_string (Lexing.lexeme lexbuf))) }
+    | float_lit             { emit(FLOAT_LIT (float_of_string (Lexing.lexeme lexbuf))) }
     | string_lit            { let s = Lexing.lexeme lexbuf in
                                 (* Remove the quotes *)
                                 let content = String.sub s 1 (String.length s - 2) in
-                                STRING_LIT (interpret_string content) }
+                                emit(STRING_LIT (interpret_string content)) }
     | char_lit              { let c = Lexing.lexeme lexbuf in
                                 let content = String.sub c 1 (String.length c - 2) in
-                                CHAR_LIT (interpret_char content)}
+                                emit(CHAR_LIT (interpret_char content))}
 
     (* Arithmetic *)
-    | "+"                   { PLUS }
-    | "-"                   { MINUS }
-    | "/"                   { DIV }
-    | "%"                   { MOD }
-    | "*"                   { MULT }
+    | "+"                   { emit PLUS }
+    | "-"                   { emit MINUS }
+    | "/"                   { emit DIV }
+    | "%"                   { emit MOD }
+    | "*"                   { emit MULT }
 
     (* Bitwise *)
-    | "<<"                  { LSHIFT }
-    | ">>"                  { RSHIFT }
-    | "^"                   { BITXOR }
-    | "|"                   { BITOR }
-    | "~"                   { BITNOT }
-    | "&"                   { BITAND }
+    | "<<"                  { emit LSHIFT }
+    | ">>"                  { emit RSHIFT }
+    | "^"                   { emit BITXOR }
+    | "|"                   { emit BITOR }
+    | "~"                   { emit BITNOT }
+    | "&"                   { emit BITAND }
 
     (* Assignment *)
-    | "="                   { ASSIGN }
-    | ":="                  { DECL_ASSIGN }
-    | "+="                  { PLUS_ASSIGN }
-    | "-="                  { MINUS_ASSIGN }
-    | "*="                  { TIMES_ASSIGN }
-    | "/="                  { DIV_ASSIGN }
-    | "%="                  { MOD_ASSIGN }
-    | "<<="                 { LSHIFT_ASSIGN }
-    | ">>="                 { RSHIFT_ASSIGN }
-    | "&="                  { BITAND_ASSIGN }
-    | "^="                  { BITXOR_ASSIGN }
-    | "|="                  { BITOR_ASSIGN }
+    | "="                   { emit ASSIGN }
+    | ":="                  { emit DECL_ASSIGN }
+    | "+="                  { emit PLUS_ASSIGN }
+    | "-="                  { emit MINUS_ASSIGN }
+    | "*="                  { emit TIMES_ASSIGN }
+    | "/="                  { emit DIV_ASSIGN }
+    | "%="                  { emit MOD_ASSIGN }
+    | "<<="                 { emit LSHIFT_ASSIGN }
+    | ">>="                 { emit RSHIFT_ASSIGN }
+    | "&="                  { emit BITAND_ASSIGN }
+    | "^="                  { emit BITXOR_ASSIGN }
+    | "|="                  { emit BITOR_ASSIGN }
 
     (* Equivalence *)
-    | "=="                  { EQ }
-    | "!="                  { NEQ }
-    | "<"                   { LT }
-    | "<="                  { LE }
-    | ">"                   { GT }
-    | ">="                  { GE }
+    | "=="                  { emit EQ }
+    | "!="                  { emit NEQ }
+    | "<"                   { emit LT }
+    | "<="                  { emit LE }
+    | ">"                   { emit GT }
+    | ">="                  { emit GE }
 
     (* Logical *)
-    | "&&"                  { AND }
-    | "||"                  { OR }
-    | "!"                   { NOT }
+    | "&&"                  { emit AND }
+    | "||"                  { emit OR }
+    | "!"                   { emit NOT }
 
     (* Unary *)
-    | "++"                  { INC }
-    | "--"                  { DEC }
+    | "++"                  { emit INC }
+    | "--"                  { emit DEC }
 
     (* Separators *)
-    | "("                   { LPAREN }
-    | ")"                   { RPAREN }
-    | "{"                   { LBRACE }
-    | "}"                   { RBRACE }
-    | "["                   { LBRACKET }
-    | "]"                   { RBRACKET }
-    | ";"                   { SEMICOLON }
-    | ":"                   { COLON }
-    | ","                   { COMMA }
-    | "."                   { DOT }
+    | "("                   { emit LPAREN }
+    | ")"                   { emit RPAREN }
+    | "{"                   { emit LBRACE }
+    | "}"                   { emit RBRACE }
+    | "["                   { emit LBRACKET }
+    | "]"                   { emit RBRACKET }
+    | ";"                   { emit SEMICOLON }
+    | ":"                   { emit COLON }
+    | ","                   { emit COMMA }
+    | "."                   { emit DOT }
 
     (* Ocamllex checks rules in order, so this is after keywords *)
     | identifier            { IDENT (Lexing.lexeme lexbuf) }
