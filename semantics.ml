@@ -6,17 +6,32 @@ open Sast
 module StringMap = Map.Make(String)
 
 (* Semantic checking of the AST. Returns an SAST if successful,
- * throws an exception if something is wrong.
- * Check each global variable, then check each function *)
+ * throws an exception if something is wrong. *)
 
 let check sprogram = 
 
   let rec cexpr = function
     | SubExpr expr -> let (typ, expr') = cexpr expr in (typ, SSubExpr expr')
+    | IntLit int -> (Int, SIntLit int)
     | BoolLit bool -> (Bool, SBoolLit bool)
-    | StringLit string -> (String, SStringLit string)
-    in
-
+    | FloatLit float -> (Float, SFloatLit float)
+    | StringList str -> (String, SStringLit str)
+    | ArrayLit (expr, typ, exprs) -> 
+      let (typ', expr') = cexpr expr in
+      let exprs' = List.map cexpr exprs in
+      if typ' = typ then (Array (typ, List.length exprs), SArrayLit (expr', typ, exprs'))
+      else raise (Failure ("type mismatch in array literal: " ^ string_of_type typ' ^ " vs " ^ string_of_type typ))
+    
+    | StructLit (expr, fields) ->
+      let (typ, expr') = cexpr expr in
+      let fields' = List.map (fun (f1, f2) -> (cexpr f1, cexpr f2)) fields in
+      (typ, SStructLit (expr', fields'))
+    
+    | SliceLit (typ, exprs) ->
+      let exprs' = List.map cexpr exprs in
+      (Slice typ, SSliceLit (typ, exprs'))
+    
+  in
 (* function for checking boolean expressions *)
   let cboolexpr expr = 
     let (typ, expr') = cexpr expr in

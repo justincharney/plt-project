@@ -16,7 +16,7 @@ and sx =
   (* Literals *)
   | SIntLit of int
   | SBoolLit of bool
-  | SCharLit of char
+  | SCharLit of char (* does this even exist in the language? *)
   | SFloatLit of float
   | SStringLit of string
   | SArrayLit of sexpr * stype_expr * sexpr list (* [3]i32{1, 2, 3} | The {...} is not in LRM *)
