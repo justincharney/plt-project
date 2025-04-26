@@ -32,8 +32,8 @@ let scanner_tests = "test suite for scanner" >::: [
 
   "variable declaration" >:: (fun _ ->
     assert_equal
-      [VAR; IDENT "x"; DECL_ASSIGN; INT_LIT 10]
-      (get_all_tokens "var x := 10"));
+      [IDENT "x"; DECL_ASSIGN; INT_LIT 10]
+      (get_all_tokens "x := 10"));
 
   "function declaration" >:: (fun _ ->
     assert_equal

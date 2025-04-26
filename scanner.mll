@@ -87,13 +87,35 @@ type token =
  (* Special tokens *)
  | EOF     (* End of file *)
 
+(* ------------------------------------------------------------------ *)
+(*  Automatic-semicolon-insertion (ASI) state                         *)
+
+let need_semi   = ref false   (* true ⇒ a newline can end the stmt   *)
+let paren_depth = ref 0       (* nesting of () and []               *)
+
+let ends_stmt = function
+  | IDENT _ | INT_LIT _ | FLOAT_LIT _ | STRING_LIT _ | CHAR_LIT _
+  | BOOL_LIT _ | NULL
+  | RETURN | BREAK | CONTINUE | INC | DEC
+  | RPAREN | RBRACKET | RBRACE                       -> true
+  | _                                               -> false
+
+let update_nesting = function
+  | LPAREN  -> incr paren_depth | RPAREN  -> decr paren_depth
+  | LBRACKET-> incr paren_depth | RBRACKET-> decr paren_depth
+  | _ -> ()
+
+let emit tok =            (* update flags, then return tok *)
+  update_nesting tok;
+  need_semi := ends_stmt tok;
+  tok
+
 }
 
 (* Regular expressions for token components *)
 let digit      = ['0'-'9']
 let alpha      = ['a'-'z' 'A'-'Z']
-let whitespace = [' ' '\t']
-let newline    = '\n' | '\r' | "\r\n"
+let whitespace = [' ' '\t' '\r']
 let identifier = alpha (alpha | digit | '_')*
 
 (* Literals *)
@@ -108,7 +130,12 @@ rule token = parse
 
     (* Whitespace *)
     | whitespace            { token lexbuf }
-    | newline               { token lexbuf }
+    | '\n'                  { Lexing.new_line lexbuf;
+                                if !need_semi && !paren_depth = 0 then
+                                    (need_semi := false; SEMICOLON)
+                                else
+                                    token lexbuf }
+
 
     (* Comments *)
     | "//" [^ '\n']*        { token lexbuf }
@@ -238,8 +265,11 @@ rule token = parse
     (* Ocamllex checks rules in order, so this is after keywords *)
     | identifier            { IDENT (Lexing.lexeme lexbuf) }
     | eof                   { EOF }
-    | _                     { raise (Failure (Printf.sprintf "unrecognized token: %s" (Lexing.lexeme lexbuf))) }
+    | _ as c                    { raise (Failure (Printf.sprintf "Lexing bad char: '%c'" c)) }
 
 and comment = parse
     | "*/"      { token lexbuf }
+    | '\n'      { Lexing.new_line lexbuf; comment lexbuf }
+    | "/*"      { ignore (comment lexbuf); comment lexbuf }
+    | eof       { failwith "unterminated comment" }
     | _         { comment lexbuf }
