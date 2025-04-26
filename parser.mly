@@ -196,9 +196,9 @@ struct_func_decl:
 /********** STATEMENTS **********/
 
 stmts:
-    /* nothing */ { []       }
-  | stmt stmts    { $1 :: $2 }
-
+    /* nothing */           { []     }
+  | stmt SEMICOLON stmts    { $1 :: $3 }
+  
 stmt:
   | expr                                                                   { Expr($1)                }
   | var_decl                                                               { VarDecl($1)             }

@@ -1,18 +1,15 @@
 (* main.ml *)
-open Ast
+
+open Lexing
+open Parser
 open Semantic
 
-
 let () =
-  let lexbuf = Lexing.from_channel stdin in
+  Printexc.record_backtrace true;
+  let lexbuf = from_channel stdin in
   try
-    (* 1. Lex & parse *)
-    let ast = Parser.program Scanner.token lexbuf in
-
-    (* 2. Semantic check & build SAST *)
+    let ast  = program Scanner.token lexbuf in
     let sast = analyze ast in
-
-    (* 3. Pretty-print the SAST (you’ll need to write your own printer) *)
     Pat_sast.pp_program sast;
     exit 0
 
@@ -22,9 +19,17 @@ let () =
       exit 1
 
   | Failure msg ->
-    prerr_endline ("Lexing error: " ^ msg);
-    exit 1
+      prerr_endline ("Lexing error: " ^ msg);
+      exit 1
 
   | _ ->
-      prerr_endline "Parsing error";
+      let pos  = lexbuf.lex_curr_p in
+      let line = pos.pos_lnum in
+      let col  = pos.pos_cnum - pos.pos_bol in
+      let tok  = Lexing.lexeme lexbuf in
+      prerr_endline (
+        Printf.sprintf
+          "Parse error at line %d, column %d: unexpected token %S"
+          line col tok
+      );
       exit 1
