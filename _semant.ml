@@ -58,8 +58,14 @@ module StringMap = Map.Make(String)
       | TyArray (et1, n1), TyArray (et2, n2) -> n1 = n2 && ty_equal et1 et2
       | TySlice et1, TySlice et2 -> ty_equal et1, et2
       | TyStruct s1, TyStruct s2 -> s1 = s2
-      | TyError, _ | _, TyError -> true (* allow error propagation*)
+      | TyError, _
+      | _, TyError -> true (* allow error propagation*)
       | _ -> false
+
+    let ensure_numeric ty ctx =
+      match ty with
+      | TyPrim((U8|U16|U32|U64|I8|I16|I32|I64|F16|F32)) -> ()
+      | _ -> raise (Semantic_error (ctx ^ ": numeric type required"))
 
     let rec resolve_type_expr env (t: type_expr) : ty =
       match t with
@@ -122,13 +128,57 @@ module StringMap = Map.Make(String)
         let sfield_inits = List.map check_field field_inits in
         (TyStruct name, SStructLit (name, sfield_inits))
 
-      | SliceLit
+      | SliceLit (te, elems) ->
+        let elt_ty = resolve_type_expr env te in
+        let selems = List.map (check_expr env) elems in
+        List.iter (fun (t, _) -> if not (ty_equal t elt_ty) then raise (Semantic_error "Slice literal element type mismatch")) selems;
+        (TySlice elt_ty, SSliceLit (elt_ty, selems))
 
       | Identifier id ->
         begin match find_value id env with
           | VVar t -> (t, SIdentifier id)
           | VFunc _ -> raise (Semantic_error (id ^ " is a function, not a variable"))
           end
+
+      | FieldAccess (e, fname) ->
+        let se = check_expr env e in
+        let recv_ty = fst se in
+        let fty =
+          match recv_ty with
+          | TyStruct sname ->
+            let sfields = find_struct sname env in
+            begin match List.find_opt(fun f -> f.name = fname) sfields with
+            | None -> raise (Semantic_error (Printf.sprintf "Field %s not found in struct %s" fname sname))
+            | Some f -> f.field_type
+            end
+          | _ -> raise (Semantic_error "Field access on non-struct type")
+        in
+        (fty, SFieldAccess (se, fname))
+
+      | IndexAccess (arr, idx) ->
+        let sarr = check_expr env arr in
+        let sidx = check_expr env idx in
+        ensure_numeric (fst sidx) "Index";
+        let elt_ty =
+          match fst sarr with
+          | TyArray (t, _) | TySlice t -> t
+          | _ -> raise (Semantic_error "Index access on non-array/slice type")
+        in
+        (elt_ty, SIndexAccess (sarr, sidx))
+
+      | SliceExpr (arr, lo, hi) ->
+        let sarr = check_expr env arr in
+        let check_opt = Option.map(check_expr env) in
+        let slo = check_opt lo in
+        let shi = check_opt hi in
+        Option.iter (fun (t,_) -> ensure_numeric t "slice index") slo;
+        Option.iter (fun (t,_) -> ensure_numeric t "slice index") shi;
+        let elt_ty =
+          match fst sarr with
+          | TyArray (t, _) | TySlice t -> t
+          | _ -> raise (Semantic_error "Slice on non-array/slice type")
+        in
+        (TySlice elt_ty, SSliceExpr (sarr, slo, shi))
 
       | Binop (e1, op, e2) ->
         let se1 = check_expr env e1 in
@@ -155,83 +205,248 @@ module StringMap = Map.Make(String)
           raise (Semantic_error "Assignment type mismatch")
         else (fst, slhs, SimpleAssign(slhs, srhs))
 
-      | CompoundAssign (lhs, op, rhs) ->
-        let (t1, slhs) = check_expr env lhs in
-        let (t2, srhs) = check_expr env rhs in
-        if not (ty_equal t1 t2) then raise (Semantic_error "Compound assignment type mismatch");
-        ensure_numeric t1;
-        (t1, SCompoundAssign (slhs, op, srhs))
+      | CompoundAssign (lhs, cop, rhs) ->
+        (* Convert compond op to equivalent binop *)
+        let binop_of_comp = function
+          | PlusAssign -> Plus
+          | MinusAssign -> Minus
+          | TimesAssign -> Times
+          | DivAssign -> Div
+          | ModAssign -> Mod
+          | LshiftAssign -> Lshift
+          | RshiftAssign -> Rshift
+          | BitndAssign -> Bitand
+          | BitorAssign -> Bitor
+          | BitxorAssign -> Bitxor
+        in
+        let slhs = check_expr env lhs in
+        let srhs = check_expr env rhs in
+        let _ = check_binop (fst slhs) (binop_of_comp cop) (fst srhs) in
+        if not (ty_equal (fst slhs) (fst srhs)) then
+          raise (Semantic_error "Compound assignment type mismatch")
+        (fst, slhs, SCompoundAssign(slhs, cop, srhs))
 
       | Sequence (e1, e2) ->
         let se1 = check_expr env e1 in
         let se2 = check_expr env e2 in
         (fst se2, SSequence (se1, se2))
 
+      | FunctionCall (fname, args) ->
+        begin match find_value fname env with
+        | VVar fsig ->
+          if List.length args <> List.length fsig.params then
+            raise (Semantic_error (Printf.sprintf "Function %s expects %d args" fname (List.length fsig.params)));
+            let sargs = List.map (check_expr env) args in
+            List.iter2 (fun (a_ty, _) p_ty -> if not (ty_equal a_ty p_ty) then raise (Semantic_error ("argument type mismatch in call to " ^ fname))) sargs fsig.params;
+            let ret_ty = match fsig.returns with [] -> TyPrim Bool | [t] -> t | _ -> TyError in
+            (ret_ty, SFunctionCall(fname, sargs))
+          | _ -> raise (Semantic_error (fname ^ " is not a function"))
+          end
+
+      | MethodCall (recv, mname, args) ->
+        (* Minimal support: treat struct methods as free functions structName$method(recv, ...) already collected later *)
+        let srecv = check_expr env recv in
+        let recv_ty = fst srecv in
+        begin match recv_ty with
+        | TyStruct sname ->
+            (* search for a function named sname$mname *)
+            let mangled = sname ^ "$" ^ mname in
+            begin match find_value mangled env with
+            | VFunc fsig ->
+                if List.length args <> List.length fsig.params - 1 then
+                  raise (Semantic_error "method call arg count");
+                let sargs = List.map (check_expr env) args in
+                (* compare receiver type *)
+                if not (ty_equal recv_ty (List.hd fsig.params)) then raise (Semantic_error "receiver type mismatch");
+                List.iter2 (fun (aty,_) pty -> if not (ty_equal aty pty) then raise (Semantic_error "method arg type mismatch")) sargs (List.tl fsig.params);
+                let ret_ty = match fsig.returns with []-> TyPrim Bool | [t]->t | _->TyError in
+                (ret_ty, SMethodCall(srecv, mname, sargs))
+            | _ -> raise (Semantic_error (Printf.sprintf "Unknown method %s for struct %s" mname sname))
+            end
+        | _ -> raise (Semantic_error "method call on non‑struct")
+        end
+
+      | Make (te, len_expr, cap_expr_opt) ->
+        let elt_ty = resolve_type_expr env te in
+        let slen = check_expr env len_expr in
+        ensure_numeric (fst slen) "make len";
+        let scap_opt = Option.map (check_expr env) cap_expr_opt in
+        Option.iter (fun (t,_) -> ensure_numeric t "make cap") scap_opt;
+        (TySlice elt_ty, SMake(elt_ty, slen, scap_opt))
+
+      | Cast (te, e) ->
+        let target_ty = resolve_type_expr env te in
+        let se = check_expr env e in
+        (* Allow primitive ↔ primitive casts for now *)
+        (match target_ty, fst se with
+          | TyPrim _, TyPrim _ -> (target_ty, SCast(target_ty, se))
+          | _ -> raise (Semantic_error "unsupported cast"))
+
       | _ -> raise (Semantic_error "Expression form not yet supported in semantic checker")
 
-    (* Statement checking *)
+  (* Statement checking *)
 
-    let rec check_stmt env (s: stmt) : env * sstmt =
-      match s with
-      | Expr e ->
-        let se = check_expr env e in
-        (env, SExpr se)
+  let rec check_stmt env (s: stmt) : env * sstmt =
+    match s with
+    | Expr e ->
+      let se = check_expr env e in
+      (env, SExpr se)
 
-      | VarDecl {is_const; name; var_type; init} ->
-        if StringMap.mem name env then raise (Semantic_error ("Variable already declared"));
+    | VarDecl {is_const; name; var_type; init} ->
+      if StringMap.mem name env then raise (Semantic_error ("Variable already declared"));
+      let inferred_ty, sinit =
+      match var_type, init with
+      | Some te, Some ie ->
+      let declared_ty = resolve_type_expr env te in
+      let sie = check_expr env ie in
+      if not (ty_equal declared_ty (fst sie)) then
+        raise (Semantic_error "Type mismatch in variable declaration");
+        (declared_ty, Some sie)
+      | Some te, None -> (resolve_type_expr env te, None)
+      | None, Some ie -> let sie = check_expr env ie in (fst sie, Some sie)
+      | None, None -> raise (Semantic_error "Cannot infer type that hasn't been initialized")
+
+    | Block stmts ->
+      let _, sstmts, _ = List.fold_left (fun (env_acc, sstmts_acc, _) st ->
+        let env', sst = check_stmt env_acc st in
+        (env', sstmts_acc @ [sst], ())) (env, [], ()) stmts in
+      (env, SBlock sstmts)
+
+    | IfStmt (cond, then_blk, else_opt) ->
+      let scond = check_expr env cond in
+      ensure_bool (fst scond) "if condition";
+      let _, sthen = check_stmt env then_blk in
+      let selse_opt =
+        match else_opt with
+        | None -> None
+        | Some s -> let _, se = check_stmt env s in Some se
+      in
+      (env, SIf (scond, sthen, selse_opt))
+
+    | WhileStmt (cond, body) ->
+      let scond = check_expr env cond in
+      ensure_bool (fst scond) "while condition";
+      let _, sbody = check_stmt env body in
+      (env, SWhile (scond, sbody))
+
+    | ForStmt (init, cond, update, body) ->
+      let env_after_init, sinit_opt =
+      match init with
+      | None -> (env, None)
+      | Some st -> let env', sst = check_stmt env st in (env', Some sst)
+      in
+      let scond_opt = Option.map (check_expr env_after_init) cond in
+      Option.iter (fun (t, _) -> ensure_bool t "for condition") scond_opt;
+      let supd_opt = Option.map (check_expr env_after_init) update in
+      let _, sbody = check_block env_after_init body in
+      (env, SFor (sinit_opt, Option.map fst scond_opt, Option.map fst supd_opt, sbody))
+
+    | Return exprs_opt ->
+      let sexprs_opt = Option.map (List.map (check_expr env)) exprs_opt in
+      (env, SReturn sexprs_opt)
+
+    | Break ->
+      (env, SBreak)
+
+    | Continue ->
+      (env, SContinue)
+
+  and check_block env stmts =
+    let env_block, sstmts_rev =
+      List.fold_left(fun (e_acc, acc) st ->
+        let e', sst = check_stmt e_acc st in
+        (e', sst :: acc)) (env, []) stmts
+    in
+    (env, List.rev sstmts_rev)
+
+  (* Top level declarations *)
+  let check_field env (f : field) : sfield =
+    let t = resolve_type_expr env f.field_type in
+    { name = f.name; field_type = t; modifier = f.modifier; default_value = None }
+
+  let rec collect_structs env = function
+    | [] -> env
+    | TypeStruct (name, fields) :: tl ->
+        if StringMap.mem name env.structs then
+          raise (Semantic_error ("Duplicate struct " ^ name));
+        let sfields = List.map (check_field env) fields in
+        collect_structs (add_struct name sfields env) tl
+    | _ :: tl -> collect_structs env tl
+
+  let extract_func_sig (fd : func_decl) env : func_sig =
+    let param_types = List.map (fun p -> resolve_type_expr env p.param_type) fd.params in
+    let ret_types   = List.map (resolve_type_expr env) fd.return_types in
+    { params = param_types; returns = ret_types }
+
+  let add_func_header env (fd : func_decl) : env =
+    if StringMap.mem fd.name env.values then
+      raise (Semantic_error ("Duplicate function " ^ fd.name));
+    let fsig = extract_func_sig fd env in
+    add_value fd.name (VFunc fsig) env
+
+  let check_function env (fd : func_decl) : sfunc_decl =
+    let fsig = match find_value fd.name env with VFunc s -> s | _ -> assert false in
+    (* Build an environment containing parameters *)
+    let env_with_params =
+      List.fold_left2 (fun e p ty -> add_value p.name (VVar ty) e) env fd.params fsig.params
+    in
+    let _, sbody = check_block env_with_params fd.body in
+    {
+      name = fd.name;
+      params = List.map2 (fun p t -> { name = p.name; param_type = t }) fd.params fsig.params;
+      return_types = fsig.returns;
+      body = sbody;
+    }
+
+  (* Program entry *)
+  let check_program (p : program) : sprogram =
+    (* Phase 1: build an environment with struct/type names so that they can be
+       referenced later. *)
+    let env0  = empty_env in
+    let env1  = collect_structs env0 p.type_declarations in
+    (* Phase 2: type aliases *)
+    let env2 = List.fold_left (fun e td ->
+        match td with
+        | TypeAlias (name, te) ->
+            if StringMap.mem name e.types then
+              raise (Semantic_error ("Duplicate type alias " ^ name));
+            add_type name (resolve_type_expr e te) e
+        | _ -> e
+      ) env1 p.type_declarations
+    in
+    (* Phase 3: enter all function headers so functions can mutually recurse. *)
+    let env3 = List.fold_left add_func_header env2 p.functions in
+    (* Phase 4: check globals. *)
+    let env4, sglobals =
+      List.fold_left (fun (e_acc, sg_acc) g ->
+        if StringMap.mem g.name e_acc.values then
+          raise (Semantic_error ("Duplicate global " ^ g.name));
         let inferred_ty, sinit =
-        match var_type, init with
-        | Some te, Some ie ->
-        let declared_ty = resolve_type_expr env te in
-        let sie = check_expr env ie in
-        if not (ty_equal declared_ty (fst sie)) then
-          raise (Semantic_error "Type mismatch in variable declaration");
-          (declared_ty, Some sie)
-        | Some te, None -> (resolve_type_expr env te, None)
-        | None, Some ie -> let sie = check_expr env ie in (fst sie, Some sie)
-        | None, None -> raise (Semantic_error "Cannot infer type that hasn't been initialized")
-
-      | Block stmts ->
-        let _, sstmts, _ = List.fold_left (fun (env_acc, sstmts_acc, _) st ->
-          let env', sst = check_stmt env_acc st in
-          (env', sstmts_acc @ [sst], ())) (env, [], ()) stmts in
-        (env, SBlock sstmts)
-
-      | IfStmt (cond, then_blk, else_opt) ->
-        let scond = check_expr env cond in
-        ensure_bool (fst scond) "if condition";
-        let _, sthen = check_stmt env then_blk in
-        let selse_opt =
-          match else_opt with
-          | None -> None
-          | Some s -> let _, se = check_stmt env s in Some se
+          match g.var_type, g.initializer_expr with
+          | Some te, Some ie ->
+            let t = resolve_type_expr e_acc te in
+            let sie = check_expr e_acc ie in
+            if not (ty_equal t (fst sie)) then
+              raise (Semantic_error "Global initializer mismatch");
+            (t, Some sie)
+          | Some te, None -> (resolve_type_expr e_acc te, None)
+          | None, Some ie -> let sie = check_expr e_acc ie in (fst sie, Some sie)
+          | None, None -> raise (Semantic_error "Cannot infer global type")
         in
-        (env, SIf (scond, sthen, selse_opt))
+        let e' = add_value g.name (VVar inferred_ty) e_acc in
+        let sg = { is_const = g.is_const; name = g.name; var_type = inferred_ty; init = sinit } in
+        (e', sg_acc @ [sg])
+      ) (env3, []) p.global_vars
+    in
+    (* Phase 5: fully check each function body. *)
+    let sfuncs = List.map (check_function env4) p.functions in
+    (* TODO: struct methods (sstruct_func) *)
 
-      | WhileStmt (cond, body) ->
-        let scond = check_expr env cond in
-        ensure_bool (fst scond) "while condition";
-        let _, sbody = check_stmt env body in
-        (env, SWhile (scond, sbody))
-
-      | ForStmt (init, cond, update, body) ->
-        let env_after_init, sinit_opt =
-        match init with
-        | None -> (env, None)
-        | Some st -> let env', sst = check_stmt env st in (env', Some sst)
-        in
-        let scond_opt = Option.map (check_expr env_after_init) cond in
-        Option.iter (fun (t, _) -> ensure_bool t "for condition") scond_opt;
-        let supd_opt = Option.map (check_expr env_after_init) update in
-        let _, sbody = check_block env_after_init body in
-        (env, SFor (sinit_opt, Option.map fst scond_opt, Option.map fst supd_opt, sbody))
-
-      | Return exprs_opt ->
-        let sexprs_opt = Option.map (List.map (check_expr env)) exprs_opt in
-        (env, SReturn sexprs_opt)
-
-      | Break ->
-        (env, SBreak)
-
-      | Continue ->
-        (env, SContinue)
+    {
+      sp_package = p.package_name;
+      sp_imports = p.imports;
+      sp_types   = p.type_declarations;
+      sp_globals = sglobals;
+      sp_funcs   = sfuncs;
+      sp_methods = [];
+    }
