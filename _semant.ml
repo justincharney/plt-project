@@ -22,8 +22,8 @@ module StringMap = Map.Make(String)
        and we can verify that a struct referred to from the program exists *)
     type env = {
       types: ty StringMap.t;  (* Named type + aliases *)
-        values: value_entry StringMap.t; (* Variables and functions *)
-        structs: (sfield list) StringMap.t; (* Structs and their fields *)
+      values: value_entry StringMap.t; (* Variables and functions *)
+      structs: (sfield list) StringMap.t; (* Structs and their fields *)
     }
 
     let empty_env = {
@@ -78,6 +78,9 @@ module StringMap = Map.Make(String)
     let ensure_bool (t: ty) (loc: string) =
       if not (ty_equal t (TyPrim Bool)) then
       raise (Semantic_error (loc ^ ": Expected boolean expression"))
+
+    let mangle (struct_name : string) (method_name : string) : string =
+      struct_name ^ "$" ^ method_name
 
     (* Expression checking *)
 
@@ -277,7 +280,7 @@ module StringMap = Map.Make(String)
       | Cast (te, e) ->
         let target_ty = resolve_type_expr env te in
         let se = check_expr env e in
-        (* Allow primitive ↔ primitive casts for now *)
+        (* Allow primitive -> primitive casts for now *)
         (match target_ty, fst se with
           | TyPrim _, TyPrim _ -> (target_ty, SCast(target_ty, se))
           | _ -> raise (Semantic_error "unsupported cast"))
@@ -359,7 +362,7 @@ module StringMap = Map.Make(String)
     in
     (env, List.rev sstmts_rev)
 
-  (* Top level declarations *)
+  (* ---- Top level declarations ----- *)
   let check_field env (f : field) : sfield =
     let t = resolve_type_expr env f.field_type in
     { name = f.name; field_type = t; modifier = f.modifier; default_value = None }
@@ -398,7 +401,46 @@ module StringMap = Map.Make(String)
       body = sbody;
     }
 
-  (* Program entry *)
+  let extract_method_sig env (md: struct_func) : func_sig =
+    let recv_ty = TyStruct md.struct_name in
+    let param_types =
+      recv_ty :: List.map(fun p -> resolve_type_expr env p.param_type) md.params
+    in
+    let return_types = List.map(resolve_type_expr env) md.return_types in
+    { params = param_types; returns = return_types }
+
+  let add_method_header env (md: struct_func) : env =
+    (* Make sure the struct exists and the name is still free *)
+    ignore(find_struct md.struct_name env);
+    let mangled = mangle md.struct_name md.name in
+    if StringMap.mem mangled env.values then
+      raise (Semantic_error (Printf.sprintf "Duplicate method %s for struct %s"
+                                   md.name md.struct_name));
+    add_value mangled (VFunc (extract_method_sig env md)) env
+
+  let check_struct_method env (md : struct_func) : sstruct_func =
+    let mangled = mangle md.struct_name md.name in
+    let msig =
+      match find_value mangled env with
+      | VFunc s -> s
+      | _ -> assert false
+    in
+    (* Build a local env *)
+    let env_with_recv = add_value "self" (VVar (List.hd msig.params)) env in
+    let env_with_params =
+      List.fold_left (fun e p ty -> add_value p.name (VVar ty) e) env_with_recv msig.params (List.tl msig.params)
+    in
+    (* Check block accepts env as first argument *)
+    let _, sbody = check_block env_with_params md.body in
+    {
+      name: md.name; struct_name: md.struct_name;
+      params: List.map2(fun p ty -> {name = p.name; param_type = ty})
+        md.params (List.tl msig.params);
+      return_types: msig.returns;
+      body: sbody;
+    }
+
+  (* ----- Program entry ------ *)
   let check_program (p : program) : sprogram =
     (* Phase 1: build an environment with struct/type names so that they can be
        referenced later. *)
@@ -416,6 +458,9 @@ module StringMap = Map.Make(String)
     in
     (* Phase 3: enter all function headers so functions can mutually recurse. *)
     let env3 = List.fold_left add_func_header env2 p.functions in
+    (* Phase 3b: collect method headers so they can mutually recurse with ordinary functions
+      or with one another *)
+    let env3b = List.fold_left add_method_header env3 p.struct_functions in
     (* Phase 4: check globals. *)
     let env4, sglobals =
       List.fold_left (fun (e_acc, sg_acc) g ->
@@ -440,7 +485,8 @@ module StringMap = Map.Make(String)
     in
     (* Phase 5: fully check each function body. *)
     let sfuncs = List.map (check_function env4) p.functions in
-    (* TODO: struct methods (sstruct_func) *)
+    (* Phase 5b: fully check each struct method body. *)
+    let smethods = List.map (check_struct_method env4) p.struct_functions in
 
     {
       sp_package = p.package_name;
@@ -448,5 +494,5 @@ module StringMap = Map.Make(String)
       sp_types   = p.type_declarations;
       sp_globals = sglobals;
       sp_funcs   = sfuncs;
-      sp_methods = [];
+      sp_methods = smethods;
     }
