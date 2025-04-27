@@ -11,6 +11,18 @@
 (name ast)
 (modules ast))
 
+; define sast as a library that depends on ast
+(library
+  (name sast)
+  (modules sast)
+  (libraries ast))
+
+; define semant as a library that depends on ast and sast
+(library
+  (name semant)
+  (modules semant)
+  (libraries ast sast))
+
 (executable
  (name hello)
  (modules hello)

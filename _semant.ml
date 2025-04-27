@@ -335,7 +335,7 @@ module StringMap = Map.Make(String)
         | None, None -> raise (Semantic_error "Cannot infer type that hasn't been initialized")
       in
       let env' = add_value name (VVar inferred_ty) env in
-      (env', SVarDecl {is_const; name; var_type = inferred_ty; init = sinit})
+      (env', SVarDecl {is_const; name; var_type = inferred_ty; initializer_expr = sinit})
 
     | Block b ->
       let sbody = check_block env b in
@@ -384,8 +384,12 @@ module StringMap = Map.Make(String)
 
   (* ---- Top level declarations ----- *)
   let check_field env (f : field) : sfield =
-    let t = resolve_type_expr env f.field_type in
-    { name = f.name; field_type = t; modifier = f.modifier; default_value = None }
+    {
+      name = f.name;
+      field_type = resolve_type_expr env f.field_type;
+      modifier = f.modifier;
+      default_value = Option.map (check_expr env) f.default value;
+    }
 
   let rec collect_structs env = function
     | [] -> env
@@ -413,7 +417,7 @@ module StringMap = Map.Make(String)
     let env_with_params =
       List.fold_left2 (fun e p ty -> add_value p.name (VVar ty) e) env fd.params fsig.params
     in
-    let _, sbody = check_block env_with_params fd.body in
+    let sbody = check_block env_with_params fd.body in
     {
       name = fd.name;
       params = List.map2 (fun p t -> { name = p.name; param_type = t }) fd.params fsig.params;
@@ -421,22 +425,21 @@ module StringMap = Map.Make(String)
       body = sbody;
     }
 
-  let extract_method_sig env (md: struct_func) : func_sig =
+  let extract_method_sig env (md: struct_func) : string * func_sig =
     let recv_ty = TyStruct md.struct_name in
     let param_types =
       recv_ty :: List.map(fun p -> resolve_type_expr env p.param_type) md.params
     in
     let return_types = List.map(resolve_type_expr env) md.return_types in
-    { params = param_types; returns = return_types }
+    (md.struct_name ^ "$" ^ md.name, { params = param_types; returns = return_types })
 
   let add_method_header env (md: struct_func) : env =
     (* Make sure the struct exists and the name is still free *)
-    ignore(find_struct md.struct_name env);
-    let mangled = mangle md.struct_name md.name in
+    let mangled, fsig = extract_method_sig env md in
     if StringMap.mem mangled env.values then
       raise (Semantic_error (Printf.sprintf "Duplicate method %s for struct %s"
                                    md.name md.struct_name));
-    add_value mangled (VFunc (extract_method_sig env md)) env
+    add_value mangled (VFunc fsig) env
 
   let check_struct_method env (md : struct_func) : sstruct_func =
     let mangled = mangle md.struct_name md.name in
@@ -448,10 +451,10 @@ module StringMap = Map.Make(String)
     (* Build a local env *)
     let env_with_recv = add_value "self" (VVar (List.hd msig.params)) env in
     let env_with_params =
-      List.fold_left (fun e p ty -> add_value p.name (VVar ty) e) env_with_recv msig.params (List.tl msig.params)
+      List.fold_left (fun e p ty -> add_value p.name (VVar ty) e) env_with_recv md.params (List.tl msig.params)
     in
     (* Check block accepts env as first argument *)
-    let _, sbody = check_block env_with_params md.body in
+    let sbody = check_block env_with_params md.body in
     {
       name = md.name;
       struct_name = md.struct_name;
@@ -500,7 +503,7 @@ module StringMap = Map.Make(String)
           | None, None -> raise (Semantic_error "Cannot infer global type")
         in
         let e' = add_value g.name (VVar inferred_ty) e_acc in
-        let sg = { is_const = g.is_const; name = g.name; var_type = inferred_ty; init = sinit } in
+        let sg = { is_const = g.is_const; name = g.name; var_type = inferred_ty; initializer_expr = sinit } in
         (e', sg_acc @ [sg])
       ) (env3, []) p.global_vars
     in

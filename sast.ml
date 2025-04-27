@@ -68,7 +68,7 @@ and sx =
 (* --------------------------------------------------------------------- *)
 type sstmt =
   | SExpr     of sexpr
-  | SVarDecl  of { is_const: bool; name: string; var_type: ty; init: sexpr option; }
+  | SVarDecl  of { is_const: bool; name: string; var_type: ty; initializer_expr: sexpr option; }
   | SBlock    of sstmt list
   | SIf       of sexpr * sstmt list * sstmt option
   | SWhile    of sexpr * sstmt list
@@ -119,7 +119,7 @@ type sglobal_decl = {
   is_const : bool;
   name : string;
   var_type : ty;
-  init : sexpr option;
+  initializer_expr : sexpr option;
 }
 
 type sprogram = {

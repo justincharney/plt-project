@@ -104,15 +104,12 @@ let check_lvalue (env: env) (e: Ast.expr) : Sast.sexpr * bool =
         | _ -> raise (Semantic_error (Printf.sprintf "'%s' is not a variable" id))
         end
     | FieldAccess (receiver_expr, field_name) ->
-        let (receiver_ty, sreceiver) as se_receiver = check_expr env receiver_expr in
-         (* Fields themselves aren't const, but the receiver might be part of a const var *)
-         (* TODO: Track const-ness through field access if receiver is const variable *)
-        begin match receiver_ty with
-        | TyStruct struct_name ->
-            let field_ty = lookup_struct_field struct_name field_name env in
-            ((field_ty, SFieldAccess (se_receiver, field_name)), false) (* Assuming fields are mutable for now *)
-        | _ -> raise (Semantic_error ("Field access requires a struct"))
-        end
+        let srecv = check_expr env recv in
+        (match fst srecv with
+          | TyStruct sname ->
+              let fty = lookup_struct_field sname fname env in
+              (fty, SFieldAccess (srecv, fname))
+          | _ -> raise (Semantic_error "field access on non‑struct value"))
     | IndexAccess (arr_expr, idx_expr) ->
         let (arr_ty, sarr) as se_arr = check_expr env arr_expr in
         let (idx_ty, sidx) as se_idx = check_expr env idx_expr in
