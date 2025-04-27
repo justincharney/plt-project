@@ -212,7 +212,7 @@ module StringMap = Map.Make(String)
         begin match u with
         | Neg | Bitnot -> ensure_numeric (fst se1) "unary op"; (fst se1, SUnaop (u, se1))
         | Not -> ensure_bool (fst se1) "!"; (TyPrim Bool, SUnaop (u, se1))
-        | Inc | Dec -> ensure_numeric (fst se1); (fst se1, SUnaop (u, se1))
+        | Inc | Dec -> ensure_numeric (fst se1) "++/--"; (fst se1, SUnaop (u, se1))
         end
 
       | SimpleAssign (lhs, rhs) ->
@@ -233,13 +233,13 @@ module StringMap = Map.Make(String)
           | ModAssign -> Mod
           | LshiftAssign -> Lshift
           | RshiftAssign -> Rshift
-          | BitndAssign -> Bitand
+          | BitandAssign -> Bitand
           | BitorAssign -> Bitor
           | BitxorAssign -> Bitxor
         in
         let slhs = check_expr env lhs in
         let srhs = check_expr env rhs in
-        let _ = check_binop (fst slhs) (binop_of_comp cop) (fst srhs) in
+        ignore (check_binop (fst slhs) (binop_of_comp cop) (fst srhs));
         if not (ty_equal (fst slhs) (fst srhs)) then
           raise (Semantic_error "Compound assignment type mismatch")
         (fst slhs, SCompoundAssign(slhs, cop, srhs))
@@ -319,11 +319,11 @@ module StringMap = Map.Make(String)
       let se = check_expr env e in
       (env, SExpr se)
 
-    | VarDecl {is_const; name; var_type; init} ->
+    | VarDecl {is_const; name; var_type; initializer_expr} ->
       if StringMap.mem name env.values then
         raise (Semantic_error ("Variable already declared"));
       let inferred_ty, sinit =
-        match (var_type, init) with
+        match (var_type, initializer_expr) with
         | Some te, Some ie ->
           let declared_ty = resolve_type_expr env te in
           let sie = check_expr env ie in
@@ -388,7 +388,7 @@ module StringMap = Map.Make(String)
       name = f.name;
       field_type = resolve_type_expr env f.field_type;
       modifier = f.modifier;
-      default_value = Option.map (check_expr env) f.default value;
+      default_value = Option.map (check_expr env) f.default_value
     }
 
   let rec collect_structs env = function
@@ -451,15 +451,14 @@ module StringMap = Map.Make(String)
     (* Build a local env *)
     let env_with_recv = add_value "self" (VVar (List.hd msig.params)) env in
     let env_with_params =
-      List.fold_left (fun e p ty -> add_value p.name (VVar ty) e) env_with_recv md.params (List.tl msig.params)
+      List.fold_left2 (fun e p ty -> add_value p.name (VVar ty) e) env_with_recv md.params (List.tl msig.params)
     in
     (* Check block accepts env as first argument *)
     let sbody = check_block env_with_params md.body in
     {
       name = md.name;
       struct_name = md.struct_name;
-      params = List.map2(fun p ty -> {name = p.name; param_type = ty})
-        md.params (List.tl msig.params);
+      params = List.map2(fun p ty -> {name = p.name; param_type = ty}) md.params (List.tl msig.params);
       return_types = msig.returns;
       body = sbody;
     }
