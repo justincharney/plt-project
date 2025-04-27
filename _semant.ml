@@ -42,15 +42,41 @@ module StringMap = Map.Make(String)
       { env with structs = StringMap.add name fields env.structs}
 
     let find_type name env =
-      try StringMap.find name env.types with Not_found -> raise (Semantic_error ("Type " ^ name ^ " not found"))
+      match StringMap.find_opt name env.types with
+      | Some v -> v
+      | None -> raise (Semantic_error ("Type " ^ name ^ " not found"))
 
     let find_value name env =
-      try StringMap.find name env.values with Not_found -> raise (Semantic_error ("Value " ^ name ^ " not found"))
+      match StringMap.find_opt name env.values with
+      | Some v -> v
+      | None -> raise (Semantic_error ("Value " ^ name ^ " not found"))
 
     let find_struct name env =
-      try StringMap.find name env.structs with Not_found -> raise (Semantic_error ("Struct " ^ name ^ " not found"))
+      match StringMap.find_opt name env.structs with
+      | Some v -> v
+      | None -> raise (Semantic_error ("Struct " ^ name ^ " not found"))
 
-    (* Helpers*)
+    (* ----- Helpers ----- *)
+
+    let numeric_prim = function
+      | U8 | U16 | U32 | U64 | I8 | I16 | I32 | I64 | F16 | F32 -> true
+      | _ -> false
+
+    let int_prim = function
+      | U8 | U16 | U32 | U64 | I8 | I16 | I32 | I64 -> true
+      | _ -> false
+
+    let is_numeric = function TyPrim p when numeric_prim p -> true | _ -> false
+    let is_integer = function TyPrim p when int_prim p -> true | _ -> false
+    let is_boolean = function TyPrim Bool -> true | _ -> false
+
+    let ensure_numeric ty ctx =
+      if not (is_numeric ty) then
+        raise (Semantic_error (ctx ^ ": numeric type required"))
+
+    let ensure_bool ty ctx =
+      if not (is_boolean ty) then
+        raise (Semantic_error (ctx ^ ": boolean type required"))
 
     let rec ty_equal t1 t2 =
       match t1, t2 with
@@ -62,11 +88,6 @@ module StringMap = Map.Make(String)
       | _, TyError -> true (* allow error propagation*)
       | _ -> false
 
-    let ensure_numeric ty ctx =
-      match ty with
-      | TyPrim((U8|U16|U32|U64|I8|I16|I32|I64|F16|F32)) -> ()
-      | _ -> raise (Semantic_error (ctx ^ ": numeric type required"))
-
     let rec resolve_type_expr env (t: type_expr) : ty =
       match t with
       | Primitive p -> TyPrim p
@@ -75,32 +96,22 @@ module StringMap = Map.Make(String)
       | Struct s -> (ignore (find_struct s env); TyStruct s)
       | TypeName n -> find_type n env
 
-    let ensure_bool (t: ty) (loc: string) =
-      if not (ty_equal t (TyPrim Bool)) then
-      raise (Semantic_error (loc ^ ": Expected boolean expression"))
-
     let mangle (struct_name : string) (method_name : string) : string =
       struct_name ^ "$" ^ method_name
 
     (* Expression checking *)
 
-    let rec check_binop (e1_t : ty) (op : biop) (e2_t : ty) : ty =
+    let check_binop t1 op t2 =
+      let same () = if ty_equal t1 t2 then t1 else TyError in
       match op with
-      | Plus | Minus | Mult | Div | Mod ->
-        if ty_equal e1_t e2_t && (match e1_t with TyPrim _ -> true | _ -> false)
-        then e1_t
-        else TyError
+      | Plus | Minus | Mult | Div | Mod
+      | Lshift | Rshift | Bitand | Bitxor | Bitor ->
+          if is_numeric t1 && ty_equal t1 t2 then t1 else TyError
       | Eq | Neq | Lt | Le | Gt | Ge ->
-        if ty_equal e1_t e2_t && (match e1_t with TyPrim _ -> true | _ -> false)
-        then TyPrim Bool
-        else TyError
+          if is_numeric t1 && ty_equal t1 t2 then TyPrim Bool else TyError
       | And | Or ->
-        (* Both need to be boolean *)
-        if ty_equal e1_t (TyPrim Bool) && ty_equal e2_t (TyPrim Bool)
-        then TyPrim Bool
-        else TyError
-      | Lshift | Rshift | Bitxor | Bitor | Bitand ->
-        if ty_equal e1_t e2_t then e1_t else TyError
+          if is_boolean t1 && is_boolean t2 then TyPrim Bool else TyError
+
 
     let rec check_expr env (e : expr) : sexpr =
       match e with
@@ -114,12 +125,14 @@ module StringMap = Map.Make(String)
       | ArrayLit (te, elems) ->
         let elt_ty = resolve_type_expr env te in
         let selems = List.map (check_expr env) elems in
-        List.iter (fun (t,_) -> if not (ty_equal t elt_ty) then raise (Semantic_error "array literal element type mismatch")) selems;
+        List.iter (fun (t,_) -> if not (ty_equal t elt_ty) then
+          raise (Semantic_error "array literal element type mismatch")) selems;
         (TyArray(elt_ty, List.length elems), SArrayLit(elt_ty, selems))
 
       | StructLit (name, field_inits) ->
         let sfields = find_struct name env in
-        let field_ty_map = List.fold_left(fun m f -> StringMap.add f.name f.field_type m) StringMap.empty sfields in
+        let field_ty_map = List.fold_left(fun m f -> StringMap.add f.name f.field_type m)
+          StringMap.empty sfields in
         let check_field (fname, fexpr) =
           if not (StringMap.mem fname field_ty_map) then raise (Semantic_error "unknown field");
           let expected_ty = StringMap.find fname field_ty_map in
@@ -134,7 +147,8 @@ module StringMap = Map.Make(String)
       | SliceLit (te, elems) ->
         let elt_ty = resolve_type_expr env te in
         let selems = List.map (check_expr env) elems in
-        List.iter (fun (t, _) -> if not (ty_equal t elt_ty) then raise (Semantic_error "Slice literal element type mismatch")) selems;
+        List.iter (fun (t, _) -> if not (ty_equal t elt_ty) then
+          raise (Semantic_error "Slice literal element type mismatch")) selems;
         (TySlice elt_ty, SSliceLit (elt_ty, selems))
 
       | Identifier id ->
@@ -161,21 +175,23 @@ module StringMap = Map.Make(String)
       | IndexAccess (arr, idx) ->
         let sarr = check_expr env arr in
         let sidx = check_expr env idx in
-        ensure_numeric (fst sidx) "Index";
+        if not (is_integer (fst sidx)) then
+          raise (Semantic_error "index must be an integer");
         let elt_ty =
           match fst sarr with
           | TyArray (t, _) | TySlice t -> t
-          | _ -> raise (Semantic_error "Index access on non-array/slice type")
+          | _ -> raise (Semantic_error "indexing requires array or slice")
         in
         (elt_ty, SIndexAccess (sarr, sidx))
 
       | SliceExpr (arr, lo, hi) ->
         let sarr = check_expr env arr in
-        let check_opt = Option.map(check_expr env) in
-        let slo = check_opt lo in
-        let shi = check_opt hi in
-        Option.iter (fun (t,_) -> ensure_numeric t "slice index") slo;
-        Option.iter (fun (t,_) -> ensure_numeric t "slice index") shi;
+        let slo = Option.map(check_expr env) lo in
+        let shi = Option.map(check_expr env) hi in
+        Option.iter (fun (t,_) -> if not (is_integer t) then
+          raise (Semantic_error "slice index must be an integer")) slo;
+        Option.iter (fun (t,_) -> if not (is_integer t) then
+          raise (Semantic_error "slice index must be an integer")) shi;
         let elt_ty =
           match fst sarr with
           | TyArray (t, _) | TySlice t -> t
@@ -191,14 +207,13 @@ module StringMap = Map.Make(String)
           raise (Semantic_error ("Type mismatch in binary operation"))
         else (t, SBinop (se1, op, se2))
 
-      | Unop (u, e1) ->
+      | Unaop (u, e1) ->
         let se1 = check_expr env e1 in
-        (match u with
-        | Neg | Bitnot -> if (match fst se1 with TyPrim _ -> true | _ -> false)
-          then (fst se1, SUnop (u, se1))
-          else raise (Semantic_error ("Unop expects numeric type"))
-        | Not -> ensure_bool (fst se1) "Unary not"; (TyPrim Bool, SUnaop (u, se1))
-        | Inc | Dec -> (fst se1, SUnop (u, se1)))
+        begin match u with
+        | Neg | Bitnot -> ensure_numeric (fst se1) "unary op"; (fst se1, SUnaop (u, se1))
+        | Not -> ensure_bool (fst se1) "!"; (TyPrim Bool, SUnaop (u, se1))
+        | Inc | Dec -> ensure_numeric (fst se1); (fst se1, SUnaop (u, se1))
+        end
 
       | SimpleAssign (lhs, rhs) ->
         (* SHOULD WE BE DOING A SPECIFIC CHECK FOR THE LHS HERE? *)
@@ -261,8 +276,10 @@ module StringMap = Map.Make(String)
                   raise (Semantic_error "method call arg count");
                 let sargs = List.map (check_expr env) args in
                 (* compare receiver type *)
-                if not (ty_equal recv_ty (List.hd fsig.params)) then raise (Semantic_error "receiver type mismatch");
-                List.iter2 (fun (aty,_) pty -> if not (ty_equal aty pty) then raise (Semantic_error "method arg type mismatch")) sargs (List.tl fsig.params);
+                if not (ty_equal recv_ty (List.hd fsig.params)) then
+                  raise (Semantic_error "receiver type mismatch");
+                List.iter2 (fun (aty,_) pty -> if not (ty_equal aty pty) then
+                  raise (Semantic_error "method arg type mismatch")) sargs (List.tl fsig.params);
                 let ret_ty = match fsig.returns with []-> TyPrim Bool | [t]->t | _->TyError in
                 (ret_ty, SMethodCall(srecv, mname, sargs))
             | _ -> raise (Semantic_error (Printf.sprintf "Unknown method %s for struct %s" mname sname))
@@ -273,23 +290,21 @@ module StringMap = Map.Make(String)
       | Make (te, len_expr, cap_expr_opt) ->
         let elt_ty = resolve_type_expr env te in
         let slen = check_expr env len_expr in
-        ensure_numeric (fst slen) "make len";
+        if not (is_integer (fst slen)) then
+          raise (Semantic_error "make length argument must be an integer");
         let scap_opt = Option.map (check_expr env) cap_expr_opt in
-        Option.iter (fun (t,_) -> ensure_numeric t "make cap") scap_opt;
+        Option.iter (fun (t,_) -> if not (is_integer t) then
+          raise (Semantic_error "make capacity argument must be an integer"))scap_opt;
         (TySlice elt_ty, SMake(elt_ty, slen, scap_opt))
 
       | Cast (te, e) ->
         let target_ty = resolve_type_expr env te in
         let se = check_expr env e in
-        (* Allow primitive -> primitive casts for now *)
-        (match target_ty, fst se with
-          | TyPrim _, TyPrim _ -> (target_ty, SCast(target_ty, se))
-          | _ -> raise (Semantic_error "unsupported cast"))
-
-      | _ -> raise (Semantic_error "Expression form not yet supported in semantic checker")
+        if ty_equal target (fst se) then (target, snd se |> fun sx -> SCast (target, (fst se, sx)))
+        else if is_numeric target && is_numeric (fst se) then (target, SCast (target, se))
+        else raise (Semantic_error (Printf.sprintf "invalid cast from %s to %s" (string_of_ty (fst se)) (string_of_ty target)))
 
   (* Statement checking *)
-
   let rec check_stmt env (s: stmt) : env * sstmt =
     match s with
     | Expr e ->
