@@ -305,16 +305,25 @@ module StringMap = Map.Make(String)
         else raise (Semantic_error (Printf.sprintf "invalid cast from %s to %s" (string_of_ty (fst se)) (string_of_ty target)))
 
   (* Statement checking *)
-  let rec check_stmt env (s: stmt) : env * sstmt =
-    match s with
+  let rec check_block env stmts : sstmt list =
+    let rec aux local_env = function
+      | [] -> []
+      | st :: t1 ->
+        let env', sst = check_stmt local_env st in
+        sst :: aux env' t1
+    in
+    aux { env with values = env.values } stmts
+
+  and check_stmt env = function
     | Expr e ->
       let se = check_expr env e in
       (env, SExpr se)
 
     | VarDecl {is_const; name; var_type; init} ->
-      if StringMap.mem name env then raise (Semantic_error ("Variable already declared"));
+      if StringMap.mem name env.values then
+        raise (Semantic_error ("Variable already declared"));
       let inferred_ty, sinit =
-        match var_type, init with
+        match (var_type, init) with
         | Some te, Some ie ->
           let declared_ty = resolve_type_expr env te in
           let sie = check_expr env ie in
@@ -335,49 +344,43 @@ module StringMap = Map.Make(String)
     | IfStmt (cond, then_blk, else_opt) ->
       let scond = check_expr env cond in
       ensure_bool (fst scond) "if condition";
-      let _, sthen = check_stmt env then_blk in
+      let sthen = check_block env then_blk in
       let selse_opt =
         match else_opt with
         | None -> None
-        | Some s -> let _, se = check_stmt env s in Some se
+        | Some s -> let _, sst = check_stmt env s in Some sst
       in
       (env, SIf (scond, sthen, selse_opt))
 
     | WhileStmt (cond, body) ->
       let scond = check_expr env cond in
       ensure_bool (fst scond) "while condition";
-      let _, sbody = check_stmt env body in
+      let sbody = check_block env body in
       (env, SWhile (scond, sbody))
 
-    | ForStmt (init, cond, update, body) ->
+    | ForStmt (init_opt, cond_opt, update_opt, body) ->
       let env_after_init, sinit_opt =
-      match init with
-      | None -> (env, None)
-      | Some st -> let env', sst = check_stmt env st in (env', Some sst)
+      match init_opt with
+        | None -> (env, None)
+        | Some st -> let env', sst = check_stmt env st in (env', Some sst)
       in
-      let scond_opt = Option.map (check_expr env_after_init) cond in
-      Option.iter (fun (t, _) -> ensure_bool t "for condition") scond_opt;
-      let supd_opt = Option.map (check_expr env_after_init) update in
-      let _, sbody = check_block env_after_init body in
+      let scond_opt = match cond_opt with
+        | None -> None
+        | Some c -> let sc = check_expr env_after_init c in ensure_bool (fst sc) "for condition"; Some sc
+      in
+      let supd_opt = Option.map (check_expr env_after_init) update_opt in
+      let sbody = check_block env_after_init body in
       (env, SFor (sinit_opt, scond_opt, supd_opt, sbody))
 
-    | Return exprs_opt ->
-      let sexprs_opt = Option.map (List.map (check_expr env)) exprs_opt in
-      (env, SReturn sexprs_opt)
+    | Return rexprs_opt ->
+      let srexprs_opt = Option.map (List.map (check_expr env)) rexprs_opt in
+      (env, SReturn srexprs_opt)
 
     | Break ->
       (env, SBreak)
 
     | Continue ->
       (env, SContinue)
-
-  and check_block env stmts =
-    let env_block, sstmts_rev =
-      List.fold_left(fun (e_acc, acc) st ->
-        let e', sst = check_stmt e_acc st in
-        (e', sst :: acc)) (env, []) stmts
-    in
-    (env, List.rev sstmts_rev)
 
   (* ---- Top level declarations ----- *)
   let check_field env (f : field) : sfield =
