@@ -128,7 +128,7 @@ type sglobal_decl = {
 type sprogram = {
   sp_package : package_decl; (* From the AST *)
   sp_imports : import_decl list; (* From the AST *)
-  sp_types   : type_decl list; (* From the AST *)
+  sp_types   : stype_decl list;
   sp_globals : sglobal_decl list;
   sp_funcs   : sfunc_decl list;
   sp_methods : sstruct_func list;
