@@ -69,6 +69,7 @@ module StringMap = Map.Make(String)
     let is_numeric = function TyPrim p when numeric_prim p -> true | _ -> false
     let is_integer = function TyPrim p when int_prim p -> true | _ -> false
     let is_boolean = function TyPrim Bool -> true | _ -> false
+    let is_nullable = function TyNull | TySlice _ | TyStruct _ -> true | _ -> false
 
     let ensure_numeric ty ctx =
       if not (is_numeric ty) then
@@ -80,6 +81,7 @@ module StringMap = Map.Make(String)
 
     let rec ty_equal t1 t2 =
       match t1, t2 with
+      | TyNull, t | t, TyNull -> is_nullable t
       | TyPrim p1, TyPrim p2 -> p1 = p2
       | TyArray (et1, n1), TyArray (et2, n2) -> n1 = n2 && ty_equal et1 et2
       | TySlice et1, TySlice et2 -> ty_equal et1 et2
@@ -93,16 +95,22 @@ module StringMap = Map.Make(String)
       | Primitive p -> TyPrim p
       | Array (te, n) -> TyArray (resolve_type_expr env te, n)
       | Slice te -> TySlice (resolve_type_expr env te)
-      | Struct s -> (ignore (find_struct s env); TyStruct s)
+      | Struct s ->  TyStruct s
       | TypeName n -> find_type n env
 
     let mangle (struct_name : string) (method_name : string) : string =
       struct_name ^ "$" ^ method_name
 
-    (* Expression checking *)
+    let dup n what = raise (Semantic_error ("Duplicate " ^ what ^ " " ^ n))
 
+    let rec is_lvalue = function
+      | SIdentifier _ -> true
+      | SFieldAccess (_,_) -> true
+      | SIndexAccess (_, _) -> true
+      | _ -> false
+
+    (* Expression checking *)
     let check_binop t1 op t2 =
-      let same () = if ty_equal t1 t2 then t1 else TyError in
       match op with
       | Plus | Minus | Mult | Div | Mod
       | Lshift | Rshift | Bitand | Bitxor | Bitor ->
@@ -120,7 +128,7 @@ module StringMap = Map.Make(String)
       | CharLit c -> (TyPrim U8, SCharLit c)
       | FloatLit f -> (TyPrim F32, SFloatLit f)
       | StringLit s -> (TySlice (TyPrim U8), SStringLit s)
-      | Null -> (TyError, SNull)
+      | Null -> (TyNull, SNull)
 
       | ArrayLit (te, elems) ->
         let elt_ty = resolve_type_expr env te in
@@ -216,8 +224,10 @@ module StringMap = Map.Make(String)
         end
 
       | SimpleAssign (lhs, rhs) ->
-        (* SHOULD WE BE DOING A SPECIFIC CHECK FOR THE LHS HERE? *)
+        (* specific lhs check *)
         let slhs = check_expr env lhs in
+        if not (is_lvalue (snd slhs)) then
+          raise (Semantic_error "Left-hand side of assignment is not assignable");
         let srhs = check_expr env rhs in
         if not (ty_equal (fst slhs) (fst srhs)) then
           raise (Semantic_error "Assignment type mismatch")
@@ -238,10 +248,10 @@ module StringMap = Map.Make(String)
           | BitxorAssign -> Bitxor
         in
         let slhs = check_expr env lhs in
+        if not (is_lvalue (snd slhs)) then
+          raise (Semantic_error "Left-hand side of assignment is not assignable");
         let srhs = check_expr env rhs in
         ignore (check_binop (fst slhs) (binop_of_comp cop) (fst srhs));
-        if not (ty_equal (fst slhs) (fst srhs)) then
-          raise (Semantic_error "Compound assignment type mismatch")
         (fst slhs, SCompoundAssign(slhs, cop, srhs))
 
       | Sequence (e1, e2) ->
@@ -257,7 +267,8 @@ module StringMap = Map.Make(String)
           let sargs = List.map (check_expr env) args in
           List.iter2 (fun (a_ty, _) p_ty -> if not (ty_equal a_ty p_ty) then
             raise (Semantic_error ("argument type mismatch in call to " ^ fname))) sargs fsig.params;
-          let ret_ty = match fsig.returns with [] -> TyPrim Bool | [t] -> t | _ -> TyError in
+          (* Not sure what we should return for void function *)
+          let ret_ty = match fsig.returns with [] -> TyUnit | [t] -> t | _::_ -> TyError in
           (ret_ty, SFunctionCall(fname, sargs))
         | _ -> raise (Semantic_error (fname ^ " is not a function"))
         end
@@ -280,7 +291,7 @@ module StringMap = Map.Make(String)
                   raise (Semantic_error "receiver type mismatch");
                 List.iter2 (fun (aty,_) pty -> if not (ty_equal aty pty) then
                   raise (Semantic_error "method arg type mismatch")) sargs (List.tl fsig.params);
-                let ret_ty = match fsig.returns with []-> TyPrim Bool | [t]->t | _->TyError in
+                let ret_ty = match fsig.returns with [] -> TyUnit | [t] -> t | _::_ -> TyError in
                 (ret_ty, SMethodCall(srecv, mname, sargs))
             | _ -> raise (Semantic_error (Printf.sprintf "Unknown method %s for struct %s" mname sname))
             end
@@ -297,24 +308,24 @@ module StringMap = Map.Make(String)
           raise (Semantic_error "make capacity argument must be an integer"))scap_opt;
         (TySlice elt_ty, SMake(elt_ty, slen, scap_opt))
 
-      | Cast (te, e) ->
-        let target_ty = resolve_type_expr env te in
+      | Cast (ast_ty, e) ->
+        let target = resolve_type_expr env ast_ty in
         let se = check_expr env e in
         if ty_equal target (fst se) then (target, snd se |> fun sx -> SCast (target, (fst se, sx)))
         else if is_numeric target && is_numeric (fst se) then (target, SCast (target, se))
         else raise (Semantic_error (Printf.sprintf "invalid cast from %s to %s" (string_of_ty (fst se)) (string_of_ty target)))
 
   (* Statement checking *)
-  let rec check_block env stmts : sstmt list =
+  let rec check_block env expected stmts : sstmt list =
     let rec aux local_env = function
       | [] -> []
       | st :: t1 ->
-        let env', sst = check_stmt local_env st in
+        let env', sst = check_stmt local_env expected st in
         sst :: aux env' t1
     in
     aux { env with values = env.values } stmts
 
-  and check_stmt env = function
+  and check_stmt env expected = function
     | Expr e ->
       let se = check_expr env e in
       (env, SExpr se)
@@ -338,42 +349,43 @@ module StringMap = Map.Make(String)
       (env', SVarDecl {is_const; name; var_type = inferred_ty; initializer_expr = sinit})
 
     | Block b ->
-      let sbody = check_block env b in
+      let sbody = check_block env expected b in
       (env, SBlock sbody)
 
     | IfStmt (cond, then_blk, else_opt) ->
       let scond = check_expr env cond in
       ensure_bool (fst scond) "if condition";
-      let sthen = check_block env then_blk in
+      let sthen = check_block env expected then_blk in
       let selse_opt =
         match else_opt with
         | None -> None
-        | Some s -> let _, sst = check_stmt env s in Some sst
+        | Some s -> let _, sst = check_stmt env expected s in Some sst
       in
       (env, SIf (scond, sthen, selse_opt))
 
     | WhileStmt (cond, body) ->
       let scond = check_expr env cond in
       ensure_bool (fst scond) "while condition";
-      let sbody = check_block env body in
+      let sbody = check_block env expected body in
       (env, SWhile (scond, sbody))
 
     | ForStmt (init_opt, cond_opt, update_opt, body) ->
       let env_after_init, sinit_opt =
       match init_opt with
         | None -> (env, None)
-        | Some st -> let env', sst = check_stmt env st in (env', Some sst)
+        | Some st -> let env', sst = check_stmt env expected st in (env', Some sst)
       in
       let scond_opt = match cond_opt with
         | None -> None
         | Some c -> let sc = check_expr env_after_init c in ensure_bool (fst sc) "for condition"; Some sc
       in
       let supd_opt = Option.map (check_expr env_after_init) update_opt in
-      let sbody = check_block env_after_init body in
+      let sbody = check_block env_after_init expected body in
       (env, SFor (sinit_opt, scond_opt, supd_opt, sbody))
 
     | Return rexprs_opt ->
       let srexprs_opt = Option.map (List.map (check_expr env)) rexprs_opt in
+      check_return expected srexprs_opt;
       (env, SReturn srexprs_opt)
 
     | Break ->
@@ -381,6 +393,19 @@ module StringMap = Map.Make(String)
 
     | Continue ->
       (env, SContinue)
+
+  and check_return expected sexprs_opt =
+    match expected, sexprs_opt with
+    | [], None -> () (* void function *)
+    | [], Some _ -> raise (Semantic_error "Return statement with non-void function")
+    | _, None -> raise (Semantic_error "Return statement with no value")
+    | etys, Some actuals ->
+      if List.length etys <> List.length actuals then
+        raise (Semantic_error "Return statement with wrong number of arguments");
+      List.iter2
+        (fun ety (aty, _) -> if not (ty_equal ety aty) then
+          raise (Semantic_error "Return type mismatch"))
+        etys actuals
 
   (* ---- Top level declarations ----- *)
   let check_field env (f : field) : sfield =
@@ -417,7 +442,7 @@ module StringMap = Map.Make(String)
     let env_with_params =
       List.fold_left2 (fun e p ty -> add_value p.name (VVar ty) e) env fd.params fsig.params
     in
-    let sbody = check_block env_with_params fd.body in
+    let sbody = check_block env_with_params fsig.returns fd.body in
     {
       name = fd.name;
       params = List.map2 (fun p t -> { name = p.name; param_type = t }) fd.params fsig.params;
@@ -454,7 +479,7 @@ module StringMap = Map.Make(String)
       List.fold_left2 (fun e p ty -> add_value p.name (VVar ty) e) env_with_recv md.params (List.tl msig.params)
     in
     (* Check block accepts env as first argument *)
-    let sbody = check_block env_with_params md.body in
+    let sbody = check_block env_with_params msig.returns md.body in
     {
       name = md.name;
       struct_name = md.struct_name;
@@ -465,19 +490,44 @@ module StringMap = Map.Make(String)
 
   (* ----- Program entry ------ *)
   let check_program (p : program) : sprogram =
-    (* Phase 1: build an environment with struct/type names so that they can be
-       referenced later. *)
-    let env0  = empty_env in
-    let env1  = collect_structs env0 p.type_declarations in
-    (* Phase 2: type aliases *)
-    let env2 = List.fold_left (fun e td ->
+    (* ------------------------------------------------------ *)
+    (* Pass 0 - declare every struct & alias name - no bodies *)
+    (* ------------------------------------------------------ *)
+    let env0  =
+      List.fold_left (fun e td ->
+        match td with
+        | TypeStruct (n, _) ->
+          if StringMap.mem n e.types then dup n "type";
+          add_type n (TyStruct n) e
+        | TypeAlias (n, _) ->
+          if StringMap.mem n e.types then dup n "type";
+          add_type n TyError e)
+      empty_env p.type_declarations
+    in
+    (* ------------------------------------------------------ *)
+    (* Pass 1 - resolve alias RHS types now that names exist *)
+    (* ------------------------------------------------------ *)
+    let env1 =
+      List.fold_left (fun e td ->
         match td with
         | TypeAlias (name, te) ->
-            if StringMap.mem name e.types then
-              raise (Semantic_error ("Duplicate type alias " ^ name));
             add_type name (resolve_type_expr e te) e
         | _ -> e
-      ) env1 p.type_declarations
+      ) env0 p.type_declarations
+    in
+    (* ------------------------------------------------------ *)
+    (* Pass 2 - resolve struct fields *)
+    (* ------------------------------------------------------ *)
+    let env2, stype_decls =
+      List.fold_left (fun (e_acc, sd_acc) td ->
+        match td with
+        | TypeStruct (n, flds) ->
+          let sfields = List.map (check_field e_acc) flds in
+          let e' = add_struct n sfields e_acc in
+          (e', sd_acc @ [STypeStruct (n, sfields)])
+        | TypeAlias (n, _) ->
+          (e_acc, sd_acc @ [STypeAlias (n, find_type n e_acc)])
+      ) (env1, []) p.type_declarations
     in
     (* Phase 3: enter all function headers so functions can mutually recurse. *)
     let env3 = List.fold_left add_func_header env2 p.functions in
@@ -504,7 +554,7 @@ module StringMap = Map.Make(String)
         let e' = add_value g.name (VVar inferred_ty) e_acc in
         let sg = { is_const = g.is_const; name = g.name; var_type = inferred_ty; initializer_expr = sinit } in
         (e', sg_acc @ [sg])
-      ) (env3, []) p.global_vars
+      ) (env3b, []) p.global_vars
     in
     (* Phase 5: fully check each function body. *)
     let sfuncs = List.map (check_function env4) p.functions in
@@ -514,7 +564,7 @@ module StringMap = Map.Make(String)
     {
       sp_package = p.package_name;
       sp_imports = p.imports;
-      sp_types   = p.type_declarations;
+      sp_types   = stype_decls;
       sp_globals = sglobals;
       sp_funcs   = sfuncs;
       sp_methods = smethods;

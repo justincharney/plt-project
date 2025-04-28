@@ -9,6 +9,8 @@ type ty =
   | TyArray  of ty * int
   | TySlice  of ty
   | TyStruct of string
+  | TyNull
+  | TyUnit
   | TyError
 
 (* A helper for readable printing / debugging *)
@@ -25,8 +27,9 @@ let rec string_of_ty = function
   | TyArray (t, n) -> Printf.sprintf "[%d]%s" n (string_of_ty t)
   | TySlice t      -> Printf.sprintf "[]%s" (string_of_ty t)
   | TyStruct n     -> n
+  | TyNull         -> "null"
+  | TyUnit         -> "unit" (* For functions without returns *)
   | TyError        -> "<type_error>"
-  | TyVoid         -> "void"
 
 (* --------------------------------------------------------------------- *)
 (*  Expressions (each carries its inferred type)                         *)
