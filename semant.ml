@@ -70,6 +70,7 @@ module StringMap = Map.Make(String)
     let is_integer = function TyPrim p when int_prim p -> true | _ -> false
     let is_boolean = function TyPrim Bool -> true | _ -> false
     let is_nullable = function TyNull | TySlice _ | TyStruct _ -> true | _ -> false
+    let is_string = function TyPrim String -> true | _ -> false
 
     let ensure_numeric ty ctx =
       if not (is_numeric ty) then
@@ -95,7 +96,10 @@ module StringMap = Map.Make(String)
       | Primitive p -> TyPrim p
       | Array (te, n) -> TyArray (resolve_type_expr env te, n)
       | Slice te -> TySlice (resolve_type_expr env te)
-      | Struct s ->  TyStruct s
+      | Struct s ->
+        if not (StringMap.mem s env.structs) then
+          raise (Semantic_error ("Struct " ^ s ^ " not found"));
+        TyStruct s
       | TypeName n -> find_type n env
 
     let mangle (struct_name : string) (method_name : string) : string =
@@ -112,22 +116,27 @@ module StringMap = Map.Make(String)
     (* Expression checking *)
     let check_binop t1 op t2 =
       match op with
+      (* String ops *)
+      | Plus when is_string t1 && is_string t2 -> TyPrim String (* Concatenation *)
+      | Eq | Neq when is_string t1 && is_string t2 -> TyPrim Bool (* Equality *)
+      (* Numeric Ops *)
       | Plus | Minus | Mult | Div | Mod
       | Lshift | Rshift | Bitand | Bitxor | Bitor ->
           if is_numeric t1 && ty_equal t1 t2 then t1 else TyError
       | Eq | Neq | Lt | Le | Gt | Ge ->
           if is_numeric t1 && ty_equal t1 t2 then TyPrim Bool else TyError
+      (* Boolean ops *)
       | And | Or ->
           if is_boolean t1 && is_boolean t2 then TyPrim Bool else TyError
 
 
     let rec check_expr env (e : expr) : sexpr =
       match e with
-      | IntLit i -> (TyPrim U32, SIntLit i) (* u32 is the default *)
+      | IntLit i -> (TyPrim I32, SIntLit i) (* I32 is the default *)
       | BoolLit b -> (TyPrim Bool, SBoolLit b)
       | CharLit c -> (TyPrim U8, SCharLit c)
       | FloatLit f -> (TyPrim F32, SFloatLit f)
-      | StringLit s -> (TySlice (TyPrim U8), SStringLit s)
+      | StringLit s -> (TyPrim String, SStringLit s)
       | Null -> (TyNull, SNull)
 
       | ArrayLit (te, elems) ->
@@ -189,6 +198,7 @@ module StringMap = Map.Make(String)
         let elt_ty =
           match fst sarr with
           | TyArray (t, _) | TySlice t -> t
+          | TyPrim String -> TyPrim U8 (* Gives you the character *)
           | _ -> raise (Semantic_error "indexing requires array or slice")
         in
         (elt_ty, SIndexAccess (sarr, sidx))
@@ -204,6 +214,7 @@ module StringMap = Map.Make(String)
         let elt_ty =
           match fst sarr with
           | TyArray (t, _) | TySlice t -> t
+          | TyPrim String -> TyPrim String (* Gives you the substring *)
           | _ -> raise (Semantic_error "Slice on non-array/slice type")
         in
         (TySlice elt_ty, SSliceExpr (sarr, slo, shi))
