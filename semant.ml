@@ -461,6 +461,8 @@ module StringMap = Map.Make(String)
 
   let add_method_header env (md: struct_func) : env =
     (* Make sure the struct exists and the name is still free *)
+    if not (StringMap.mem md.struct_name env.structs) then
+      raise (Semantic_error ("Struct " ^ md.struct_name ^ " not found"));
     let mangled, fsig = extract_method_sig env md in
     if StringMap.mem mangled env.values then
       raise (Semantic_error (Printf.sprintf "Duplicate method %s for struct %s"
