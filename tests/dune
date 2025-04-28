@@ -8,4 +8,4 @@
 
  (test
   (name test_semant)
-  (libraries semant ast ounit2))
+  (libraries semant ast sast ounit2))
