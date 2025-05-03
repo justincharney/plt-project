@@ -1,6 +1,9 @@
 ; process scanner.mll with ocamllex
 (ocamllex scanner)
 
+; process parser.mly with ocamlyacc
+(ocamlyacc parser)
+
 ; define the ast as a library (first, as others depend on it)
 (library
   (name ast)

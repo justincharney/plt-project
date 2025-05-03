@@ -58,10 +58,10 @@ open Ast
 
 /* === Program hierarchy ================================================== */
 program:
-    PACKAGE IDENT import_list decl_list EOF
-      { let (t,g,f,s) = $4 in
+    PACKAGE IDENT SEMICOLON import_list decl_list EOF
+      { let (t,g,f,s) = $5 in
         { package_name      = $2;
-          imports           = $3;
+          imports           = $4;
           type_declarations = List.rev t;
           global_vars       = List.rev g;
           functions         = List.rev f;
@@ -72,11 +72,12 @@ import_list:
     | import_list import_decl { $2 :: $1 }
 
 import_decl:
-      IMPORT STRING_LIT      { $2 }
+      IMPORT STRING_LIT SEMICOLON      { $2 }
 
 /* === Top‑level declarations ============================================ */
 decl_list:
       /* None */                 { ([],[],[],[]) }
+    | decl_list SEMICOLON       { $1 } /* Swallow any top-level semicolons */
     | decl_list top_decl      {
         let (tl,gl,fl,sl) = $1 in
         match $2 with
