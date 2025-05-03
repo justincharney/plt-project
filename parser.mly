@@ -21,6 +21,7 @@ open Ast
 %token LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET
 %token SEMICOLON COLON COMMA DOT
 %token <string> IDENT
+%token <string> TYPE_NAME
 %token <int>    INT_LIT
 %token <float>  FLOAT_LIT
 %token <string> STRING_LIT
@@ -41,6 +42,7 @@ open Ast
 %left  BITXOR
 %left  BITAND
 %left  LSHIFT RSHIFT
+%nonassoc CAST
 %left  PLUS MINUS
 %left  MULT DIV MOD
 %right NOT BITNOT
@@ -104,7 +106,7 @@ primitive_type:
 
 type_expr:
       primitive_type                       { $1 }
-    | IDENT                                { TypeName $1 }
+    | TYPE_NAME                            { TypeName $1 }
     | LBRACKET INT_LIT RBRACKET type_expr  { Array($4,$2) }
     | LBRACKET RBRACKET type_expr          { Slice $3 }
 
@@ -131,9 +133,15 @@ field_list:
 /* ---------- Type declarations ------------------------------------------ */
 type_decl:
       TYPE IDENT STRUCT LBRACE field_list RBRACE
-        { TypeStruct($2,List.rev $5) }
+        {
+            Scanner_state.register_type_name $2;
+            TypeStruct($2,List.rev $5)
+        }
     | TYPE IDENT ASSIGN type_expr
-        { TypeAlias($2,$4) }
+        {
+            Scanner_state.register_type_name $2;
+            TypeAlias($2,$4)
+        }
 
 /* ---------- Global var declarations ------------------------------------ */
 global_decl:
@@ -242,6 +250,8 @@ lvalue:
 expr:
       literal                          { $1 }
     | IDENT                            { Identifier $1 }
+    | LPAREN type_expr RPAREN expr %prec CAST
+                                       { Cast($2, $4) }
     | LPAREN expr RPAREN               { $2 }
     | expr DOT IDENT                   { FieldAccess($1,$3) }
     | expr LBRACKET expr RBRACKET      { IndexAccess($1,$3) }

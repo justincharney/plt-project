@@ -272,18 +272,43 @@ module StringMap = Map.Make(String)
         (fst se2, SSequence (se1, se2))
 
       | FunctionCall (fname, args) ->
-        begin match find_value fname env with
-        | VFunc fsig ->
-          if List.length args <> List.length fsig.params then
-            raise (Semantic_error (Printf.sprintf "Function %s expects %d args" fname (List.length fsig.params)));
-          let sargs = List.map (check_expr env) args in
-          List.iter2 (fun (a_ty, _) p_ty -> if not (ty_equal a_ty p_ty) then
-            raise (Semantic_error ("argument type mismatch in call to " ^ fname))) sargs fsig.params;
-          (* Not sure what we should return for void function *)
-          let ret_ty = match fsig.returns with [] -> TyUnit | [t] -> t | _::_ -> TyError in
-          (ret_ty, SFunctionCall(fname, sargs))
-        | _ -> raise (Semantic_error (fname ^ " is not a function"))
-        end
+        (* 1) if fname is actually a type name and exactly one arg, do a numeric or identity cast *)
+        if StringMap.mem fname env.types && List.length args = 1 then
+          (* 1) semantically check the one argument, *keeping* the full sexpr *)
+          let se_arg = check_expr env (List.hd args) in
+          let src_ty = fst se_arg in
+
+          (* 2) compute the target type *)
+          let target_ty = resolve_type_expr env (TypeName fname) in
+
+          (* 3) enforce your cast policy *)
+          let ok =
+            ty_equal src_ty target_ty           (* identity cast *)
+            || (is_numeric src_ty && is_numeric target_ty)
+          in
+          if not ok then
+            raise (Semantic_error
+              (Printf.sprintf "illegal cast from %s to %s"
+                  (string_of_ty src_ty)
+                  (string_of_ty target_ty)));
+
+          (* 4) build the *sexpr*: pair the new ty with an sx node *)
+          ( target_ty,
+            SCast (target_ty, se_arg) )
+        else
+          (* 2) otherwise do ordinary function‐call lookup *)
+          begin match find_value fname env with
+          | VFunc fsig ->
+            if List.length args <> List.length fsig.params then
+              raise (Semantic_error (Printf.sprintf "Function %s expects %d args" fname (List.length fsig.params)));
+            let sargs = List.map (check_expr env) args in
+            List.iter2 (fun (a_ty, _) p_ty -> if not (ty_equal a_ty p_ty) then
+              raise (Semantic_error ("argument type mismatch in call to " ^ fname))) sargs fsig.params;
+            (* Not sure what we should return for void function *)
+            let ret_ty = match fsig.returns with [] -> TyUnit | [t] -> t | _::_ -> TyError in
+            (ret_ty, SFunctionCall(fname, sargs))
+          | _ -> raise (Semantic_error (fname ^ " is not a function"))
+          end
 
       | MethodCall (recv, mname, args) ->
         (* Minimal support: treat struct methods as free functions structName$method(recv, ...) already collected later *)
@@ -335,7 +360,8 @@ module StringMap = Map.Make(String)
         let env', sst = check_stmt local_env expected st in
         sst :: aux env' t1
     in
-    aux { env with values = env.values } stmts
+    let reversed_stmts = List.rev stmts in
+    aux { env with values = env.values } reversed_stmts
 
   and check_stmt env expected = function
     | Expr e ->

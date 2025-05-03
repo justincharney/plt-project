@@ -65,7 +65,8 @@ let paren_depth = ref 0
 (* The `ends_stmt` function below lists tokens that can end a statement *)
 (* if followed by a newline (outside parentheses/brackets).            *)
 let ends_stmt = function
-  | IDENT _ | INT_LIT _ | FLOAT_LIT _ | STRING_LIT _ | CHAR_LIT _
+  | IDENT _ | TYPE_NAME _
+  | INT_LIT _ | FLOAT_LIT _ | STRING_LIT _ | CHAR_LIT _
   | BOOL_LIT _ | NULL
   | RETURN | BREAK | CONTINUE | INC | DEC
   | RPAREN | RBRACKET | RBRACE                       -> true
@@ -236,7 +237,11 @@ rule token = parse
     | "."                   { emit DOT }
 
     (* Ocamllex checks rules in order, so this is after keywords *)
-    | identifier            { emit (IDENT (Lexing.lexeme lexbuf)) }
+    | identifier as s           { if Scanner_state.is_type_name s then
+                                emit (TYPE_NAME s)
+                              else
+                                emit (IDENT s)
+                            }
     | eof                   { EOF }
     | _ as c                { raise (Failure (Printf.sprintf "Lexing bad char: '%c'" c)) }
 

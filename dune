@@ -10,15 +10,19 @@
   (modules ast))
 
 (library
+  (name scanner_state)
+  (modules scanner_state))
+
+(library
   (name scanner)
   (modules scanner)
-  (libraries parser))
+  (libraries parser scanner_state))
 
 ; define parser which generates token types (depends on ast)
 (library
   (name parser)
   (modules parser)
-  (libraries ast))
+  (libraries ast scanner_state))
 
 ; define sast as a library that depends on ast
 (library
