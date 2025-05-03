@@ -1,21 +1,37 @@
 ; process scanner.mll with ocamllex
 (ocamllex scanner)
 
-; define the scanner as a library
+; define the ast as a library (first, as others depend on it)
 (library
-(name scanner)
-(modules scanner))
+  (name ast)
+  (modules ast))
 
-; define the ast as a library
 (library
-(name ast)
-(modules ast))
+  (name scanner)
+  (modules scanner)
+  (libraries parser))
+
+; define parser which generates token types (depends on ast)
+(library
+  (name parser)
+  (modules parser)
+  (libraries ast))
 
 ; define sast as a library that depends on ast
 (library
   (name sast)
   (modules sast)
   (libraries ast))
+
+  (library
+   (name sast_printer)
+   (modules sast_printer)
+   (libraries ast sast))
+
+  (executable
+   (name plt)
+   (modules plt)
+   (libraries ast sast scanner parser semant sast_printer))
 
 ; define semant as a library that depends on ast and sast
 (library

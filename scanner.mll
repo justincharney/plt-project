@@ -2,6 +2,10 @@
 
 {
 
+open Parser (* use parser's tokens *)
+
+exception Lexer_error of string
+
 (* Any OCaml functions defined here will be subsequently available in the remainder of the lexer definition. *)
 
 let interpret_string s =
@@ -30,62 +34,6 @@ let interpret_char s =
     | '\\' -> '\\'
     | _ -> failwith "Invalid escape sequence"
   else failwith "Invalid character literal"
-
-(* Token type definition exposed to other modules *)
-
-(* Keywords *)
-type token =
- | FUNC | PACKAGE | IMPORT | TYPE | STRUCT | RETURN | BREAK | IF | ELSE
- | CONTINUE | FOR | CONST | MAKE | WHILE
- | TRUE | FALSE | FINAL | MUT | LATE | PRIVATE | ERROR
- | NULL
-
- (* Built-in type keywords *)
- | BOOL
- | STRING
- | U8 | U16 | U32 | U64
- | I8 | I16 | I32 | I64
- | F16 | F32
-
- (* Identifiers *)
- | IDENT of string
-
- (* Literals *)
- | INT_LIT of int
- | FLOAT_LIT of float
- | BOOL_LIT of bool
- | STRING_LIT of string (* string literal *)
- | CHAR_LIT of char
-
-
- (* Operators *)
-
- (* Arithmetic *)
- | PLUS | MINUS | DIV | MOD | MULT
-
- (* Bitwise *)
- | LSHIFT | RSHIFT | BITXOR | BITOR | BITNOT | BITAND
-
- (* Assignment *)
- | ASSIGN | DECL_ASSIGN (* = vs := *)
- | PLUS_ASSIGN | MINUS_ASSIGN | TIMES_ASSIGN | DIV_ASSIGN | MOD_ASSIGN
- | LSHIFT_ASSIGN | RSHIFT_ASSIGN | BITAND_ASSIGN | BITXOR_ASSIGN | BITOR_ASSIGN
-
- (* Equivalence *)
- | EQ | NEQ | LT | LE | GT | GE
-
- (* Logical *)
- | AND | OR | NOT
-
- (* Unary *)
- | INC | DEC
-
- (* Separators *)
- | LPAREN | RPAREN | LBRACE | RBRACE | LBRACKET | RBRACKET
- | SEMICOLON | COLON | COMMA | DOT
-
- (* Special tokens *)
- | EOF     (* End of file *)
 
 (* ------------------------------------------------------------------ *)
 (*  Automatic-semicolon-insertion (ASI) state                         *)

@@ -1,6 +1,6 @@
 
 open OUnit2
-open Scanner (* scanner.ml contains the token type and lexer *)
+open Parser
 
 (* Helper function to get all tokens from a string *)
 let get_all_tokens str =

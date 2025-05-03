@@ -1,11 +1,14 @@
 (test
  (name test_scanner)
- (libraries scanner ounit2))
+ (modules Test_scanner)
+ (libraries scanner parser ast ounit2)) ; Use internal names
 
  (test
   (name test_ast)
-  (libraries ast ounit2))
+  (modules Test_ast)
+  (libraries ast ounit2)) ; Use internal names
 
  (test
   (name test_semant)
-  (libraries semant ast sast ounit2))
+  (modules Test_semant)
+  (libraries semant ast sast ounit2)) ; Use internal names

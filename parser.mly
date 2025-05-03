@@ -170,7 +170,7 @@ type_expr_list:
     | type_expr_list COMMA type_expr      { $3 :: $1 }
 
 func_body:
-      block { $1 }
+    block { $1 }
 
 func_decl:
       FUNC IDENT LPAREN param_list RPAREN return_types func_body
@@ -183,7 +183,7 @@ struct_func_decl:
 
 /* ---------- Statements -------------------------------------------------- */
 block:
-      LBRACE stmt_list RBRACE { $2 }
+    LBRACE stmt_list RBRACE { $2 }
 
 stmt_list:
       /* None */            { [] }
@@ -192,11 +192,11 @@ stmt_list:
 stmt:
       expr SEMICOLON                { Expr $1 }
     | var_decl SEMICOLON            { $1 }
-    | block                         { $1 }
+    | block                         { Block $1 }
     | IF expr block %prec IFX       { IfStmt($2, $3, None) }
     | IF expr block ELSE stmt       { IfStmt($2,$3,Some $5) }
     | WHILE expr block              { WhileStmt($2,$3) }
-    | FOR for_clause block          { ForStmt($2.init,$2.cond,$2.step,$3) }
+    | FOR for_clause block          { let (init, cond, step) = $2 in ForStmt(init, cond, step, $3) }
     | RETURN ret_opt SEMICOLON      { Return $2 }
     | BREAK SEMICOLON               { Break }
     | CONTINUE SEMICOLON            { Continue }
@@ -212,7 +212,9 @@ expr_list:
 /* simple C‑style three‑field clause */
 for_clause:
       expr_opt SEMICOLON expr_opt SEMICOLON expr_opt
-        { { init=$1; cond=$3; step=$5 } }
+        { (match $1 with
+           | None -> None
+           | Some e -> Some (Expr e)), $3, $5 }
 
 expr_opt:
       /* None */ { None } | expr { Some $1 }
