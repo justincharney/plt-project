@@ -122,6 +122,7 @@ type func_decl = {
 
 type struct_func = {
   name: string;
+  receiver_name: string;
   struct_name: string;
   params: param list;
   return_types: type_expr list;

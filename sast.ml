@@ -107,6 +107,7 @@ type sfunc_decl = {
 (* Represents a checked struct method *)
 type sstruct_func = {
   name         : string; (* Method name *)
+  receiver_name: string; (* Name of the receiver *)
   struct_name  : string; (* Name of the struct it belongs to *)
   params       : sparam list; (* Regular parameters *)
   return_types : ty list;

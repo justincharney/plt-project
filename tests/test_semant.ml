@@ -313,7 +313,7 @@ let struct_method_tests = "Structs and Methods" >::: [
     "simple method definition I32" >:: run_semant_test_pass (make_program
         ~types:[TypeStruct("Counter", [{name="val"; field_type=Primitive I32; modifier=None; default_value=None}])]
         ~struct_funcs:[{
-            name="get"; struct_name="Counter"; params=[]; return_types=[Primitive I32];
+            name="get"; receiver_name="self"; struct_name="Counter"; params=[]; return_types=[Primitive I32];
             body=[Return(Some [FieldAccess(Identifier "self", "val")])] (* Assuming self convention *)
         }]
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[] }]
@@ -322,7 +322,7 @@ let struct_method_tests = "Structs and Methods" >::: [
     "simple method call I32" >:: run_semant_test_pass (make_program
         ~types:[TypeStruct("Counter", [{name="val"; field_type=Primitive I32; modifier=None; default_value=None}])]
         ~struct_funcs:[{
-            name="get"; struct_name="Counter"; params=[]; return_types=[Primitive I32];
+            name="get"; receiver_name="self"; struct_name="Counter"; params=[]; return_types=[Primitive I32];
             body=[Return(Some [FieldAccess(Identifier "self", "val")])]
         }]
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
@@ -334,7 +334,7 @@ let struct_method_tests = "Structs and Methods" >::: [
      "method with params I32" >:: run_semant_test_pass (make_program
         ~types:[TypeStruct("Adder", [])]
         ~struct_funcs:[{
-            name="add"; struct_name="Adder";
+            name="add"; receiver_name="self"; struct_name="Adder";
             params=[{name="a"; param_type=Primitive I32}; {name="b"; param_type=Primitive I32}];
             return_types=[Primitive I32];
             body=[Return(Some [Binop(Identifier "a", Plus, Identifier "b")])]
@@ -390,8 +390,8 @@ let error_tests_declarations = "Error Cases: Declarations" >::: [
     "duplicate method" >:: run_semant_test_fail (make_program
         ~types:[TypeStruct("Thing", [])]
         ~struct_funcs:[
-            {name="doIt"; struct_name="Thing"; params=[]; return_types=[]; body=[]};
-            {name="doIt"; struct_name="Thing"; params=[]; return_types=[]; body=[]}
+            {name="doIt"; receiver_name="self"; struct_name="Thing"; params=[]; return_types=[]; body=[]};
+            {name="doIt"; receiver_name="self"; struct_name="Thing"; params=[]; return_types=[]; body=[]}
         ]
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[] }]
         ()
@@ -711,7 +711,7 @@ let error_tests_structs = "Error Cases: Structs and Methods" >::: [
     "method call wrong number of args" >:: run_semant_test_fail (make_program
         ~types:[TypeStruct("Thing", [])]
          ~struct_funcs:[{
-            name="doIt"; struct_name="Thing"; params=[{name="a"; param_type=Primitive I32}]; return_types=[];
+            name="doIt"; receiver_name="self"; struct_name="Thing"; params=[{name="a"; param_type=Primitive I32}]; return_types=[];
             body=[]
         }]
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
@@ -723,7 +723,7 @@ let error_tests_structs = "Error Cases: Structs and Methods" >::: [
      "method call wrong arg type (I32 expected, Bool given)" >:: run_semant_test_fail (make_program
         ~types:[TypeStruct("Thing", [])]
          ~struct_funcs:[{
-            name="doIt"; struct_name="Thing"; params=[{name="a"; param_type=Primitive I32}]; return_types=[];
+            name="doIt"; receiver_name="self"; struct_name="Thing"; params=[{name="a"; param_type=Primitive I32}]; return_types=[];
             body=[]
         }]
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
@@ -735,7 +735,7 @@ let error_tests_structs = "Error Cases: Structs and Methods" >::: [
      "method call wrong arg type (I32 expected, U32 given)" >:: run_semant_test_fail (make_program
         ~types:[TypeStruct("Thing", [])]
          ~struct_funcs:[{
-            name="doIt"; struct_name="Thing"; params=[{name="a"; param_type=Primitive I32}]; return_types=[];
+            name="doIt"; receiver_name="self"; struct_name="Thing"; params=[{name="a"; param_type=Primitive I32}]; return_types=[];
             body=[]
         }]
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
@@ -746,7 +746,7 @@ let error_tests_structs = "Error Cases: Structs and Methods" >::: [
     );
      "method definition for unknown struct" >:: run_semant_test_fail (make_program
          ~struct_funcs:[{
-            name="doIt"; struct_name="NoSuchStruct"; params=[]; return_types=[];
+            name="doIt"; receiver_name="self"; struct_name="NoSuchStruct"; params=[]; return_types=[];
             body=[]
         }]
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[] }]

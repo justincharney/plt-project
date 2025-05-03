@@ -514,7 +514,7 @@ module StringMap = Map.Make(String)
       | _ -> assert false
     in
     (* Build a local env *)
-    let env_with_recv = add_value "self" (VVar (List.hd msig.params)) env in
+    let env_with_recv = add_value md.receiver_name (VVar (List.hd msig.params)) env in
     let env_with_params =
       List.fold_left2 (fun e (p : param) ty -> add_value p.name (VVar ty) e) env_with_recv md.params (List.tl msig.params)
     in
@@ -522,6 +522,7 @@ module StringMap = Map.Make(String)
     let sbody = check_block env_with_params msig.returns md.body in
     {
       name = md.name;
+      receiver_name = md.receiver_name;
       struct_name = md.struct_name;
       params = List.map2(fun (p : param) ty -> {name = p.name; param_type = ty}) md.params (List.tl msig.params);
       return_types = msig.returns;

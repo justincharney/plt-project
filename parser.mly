@@ -119,8 +119,8 @@ modifier_opt:
     | LATE         { Some Late }
 
 field:
-      modifier_opt IDENT type_expr default_opt
-      { { name=$2; field_type=$3; modifier=$1; default_value=$4 } }
+      modifier_opt IDENT COLON type_expr default_opt
+      { { name=$2; field_type=$4; modifier=$1; default_value=$5 } }
 
 default_opt:
       /* None */                { None }
@@ -128,7 +128,7 @@ default_opt:
 
 field_list:
       /* None */                { [] }
-    | field_list field SEMICOLON { $2 :: $1 }
+    | field_list field { $2 :: $1 }
 
 /* ---------- Type declarations ------------------------------------------ */
 type_decl:
@@ -186,8 +186,8 @@ func_decl:
         { { name=$2; params=List.rev $4; return_types=$6; body=$7 } }
 
 struct_func_decl:
-      FUNC LPAREN IDENT IDENT RPAREN IDENT LPAREN param_list RPAREN return_types func_body
-        { { name=$6; struct_name=$3;
+      FUNC LPAREN IDENT TYPE_NAME RPAREN IDENT LPAREN param_list RPAREN return_types func_body
+        { { name=$6; receiver_name = $3; struct_name=$4;
             params=List.rev $8; return_types=$10; body=$11 } }
 
 /* ---------- Statements -------------------------------------------------- */
@@ -230,14 +230,13 @@ expr_opt:
 
 /* ---------- Local variable decl (stmt) --------------------------------- */
 
-/*  A declaration must start with  CONST .
-    Otherwise the line is parsed as an expression / assignment statement.  */
 var_decl:
       CONST IDENT type_ann_opt ASSIGN expr
         { VarDecl{is_const=true; name=$2; var_type=$3; initializer_expr=Some $5} }
+    | IDENT COLON type_expr ASSIGN expr
+        { VarDecl{is_const=false; name=$1; var_type=Some $3; initializer_expr=Some $5} }
     | IDENT DECL_ASSIGN expr
         { VarDecl{is_const=false; name=$1; var_type=None; initializer_expr=Some $3} }
-
 /* ---------- Expressions ------------------------------------------------- */
 
 /* An lvalue represents an expression that can appear on the left side of an assignment */
@@ -252,6 +251,8 @@ expr:
     | IDENT                            { Identifier $1 }
     | LPAREN type_expr RPAREN expr %prec CAST
                                        { Cast($2, $4) }
+    | TYPE_NAME LBRACE field_assign_list_opt RBRACE
+                                       { StructLit($1, List.rev $3) }
     | LPAREN expr RPAREN               { $2 }
     | expr DOT IDENT                   { FieldAccess($1,$3) }
     | expr LBRACKET expr RBRACKET      { IndexAccess($1,$3) }
@@ -304,6 +305,17 @@ expr:
     /* make (slice constructor) */
     | MAKE LPAREN type_expr COMMA expr cap_opt RPAREN
         { Make($3,$5,$6) }
+
+field_assign_list_opt:
+      /* None */                { [] }
+    | field_assign_list         { $1 }
+
+field_assign_list:
+      field_assign               { [$1] }
+    | field_assign_list COMMA field_assign { $3 :: $1 }
+
+field_assign:
+      IDENT COLON expr          { ($1, $3) }
 
 arg_list:
       /* None */               { [] }

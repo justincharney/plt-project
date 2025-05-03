@@ -243,6 +243,7 @@ let ast_construction_tests = "test suite for AST construction and structure" >::
      (* Test struct_func record *)
     let struct_func_decl: struct_func = {
       name = "getStatus";
+      receiver_name = "ms";
       struct_name = "MyStruct";
       params = [];
       return_types = [Primitive String];
@@ -310,6 +311,7 @@ let ast_construction_tests = "test suite for AST construction and structure" >::
       }];
       struct_functions = [{ (* Added struct func *)
           name = "helper";
+          receiver_name = "h";
           struct_name = "Util";
           params = []; return_types = []; body = []
       }];
