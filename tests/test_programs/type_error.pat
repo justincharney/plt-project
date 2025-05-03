@@ -1,5 +1,5 @@
 package main
 
 func main() {
-    x: i32 = true // Type mismatch error
+    const x: i32 = true // Type mismatch error
 }

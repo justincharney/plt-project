@@ -43,8 +43,18 @@ let () =
       exit 1
   | Parsing.Parse_error ->
       let pos = lexbuf.lex_curr_p in
-      Printf.eprintf "Syntax error at %s line %d character %d near token '%s'\n"
-        pos.pos_fname pos.pos_lnum (pos.pos_cnum - pos.pos_bol + 1) (Lexing.lexeme lexbuf);
+      let offending_token = Lexing.lexeme lexbuf in
+      let base_msg =
+        Printf.sprintf "Syntax error at %s line %d character %d near token '%s'\n"
+        pos.pos_fname pos.pos_lnum (pos.pos_cnum - pos.pos_bol + 1) offending_token
+      in
+      let hint =
+        match offending_token with
+        | ":" -> ".\n Hint: Unexpected ':'. Did you mean ':=' for a short variable declaration?\n Hint: Or, if declaring a variable with a type, did you forget the 'const' keyword before the variable name?"
+        | "=" -> ".\n Hint: Unexpected '='. For assignment use '='. For short form variable declaration and initialization, use ':='."
+        | _ -> "."
+      in
+      Printf.printf "%s%s\n" base_msg hint;
       close_in channel;
       exit 1
    | Semant.Semantic_error msg ->
