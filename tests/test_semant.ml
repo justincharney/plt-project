@@ -2,6 +2,10 @@ open OUnit2
 open Ast
 open Semant (* The module we are testing *)
 
+(* Note: Tests in this file must have statements in reverse order compared to
+   natural code flow, because our semantic analyzer processes statements
+   in source code order (after reversing the AST's reversed order). *)
+
 (* Helper to create a minimal valid program structure *)
 let make_program ?(imports=[]) ?(types=[]) ?(globals=[]) ?(functions=[]) ?(struct_funcs=[]) () =
   {
@@ -71,16 +75,17 @@ let basic_tests = "Basic Valid Programs" >::: [
 let type_tests = "Type Checking and Resolution" >::: [
     "valid assignment I32" >:: run_semant_test_pass (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
-            VarDecl {is_const=false; name="x"; var_type=Some (Primitive I32); initializer_expr=None};
-            Expr (SimpleAssign(Identifier "x", Cast(Primitive I32, IntLit 5)))
+            Expr (SimpleAssign(Identifier "x", Cast(Primitive I32, IntLit 5)));
+            VarDecl {is_const=false; name="x"; var_type=Some (Primitive I32);
+            initializer_expr=None};
         ]}]
         ()
     );
 
     "valid inferred assignment (Float)" >:: run_semant_test_pass (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
+            Expr (SimpleAssign(Identifier "x", FloatLit 2.71));
             VarDecl {is_const=false; name="x"; var_type=None; initializer_expr=Some (FloatLit 3.14)};
-            Expr (SimpleAssign(Identifier "x", FloatLit 2.71))
         ]}]
         ()
     );
@@ -88,8 +93,8 @@ let type_tests = "Type Checking and Resolution" >::: [
     "type alias usage I32" >:: run_semant_test_pass (make_program
         ~types:[TypeAlias("MyInt", Primitive I32)]
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
+            Expr (SimpleAssign(Identifier "x", Cast(Primitive I32, IntLit 2)));
             VarDecl {is_const=false; name="x"; var_type=Some (TypeName "MyInt"); initializer_expr=Some (Cast(Primitive I32, IntLit 1))};
-            Expr (SimpleAssign(Identifier "x", Cast(Primitive I32, IntLit 2)))
         ]}]
         ()
     );
@@ -117,16 +122,16 @@ let type_tests = "Type Checking and Resolution" >::: [
 
     "valid cast I32 to I64" >:: run_semant_test_pass (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
-             VarDecl {is_const=false; name="x"; var_type=None; initializer_expr=Some (IntLit 10)}; (* x is I32 *)
-             Expr (Cast(Primitive I64, Identifier "x"))
+            Expr (Cast(Primitive I64, Identifier "x"));
+            VarDecl {is_const=false; name="x"; var_type=None; initializer_expr=Some (IntLit 10)}; (* x is I32 *)
         ]}]
         ()
     );
 
     "null assignment to slice" >:: run_semant_test_pass (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
-             VarDecl {is_const=false; name="s"; var_type=Some(Slice(Primitive I32)); initializer_expr=None};
-             Expr (SimpleAssign(Identifier "s", Null))
+            Expr (SimpleAssign(Identifier "s", Null));
+            VarDecl {is_const=false; name="s"; var_type=Some(Slice(Primitive I32)); initializer_expr=None};
         ]}]
         ()
      );
@@ -183,22 +188,22 @@ let expression_tests = "Expression Checking" >::: [
     );
     "valid compound assignment I32 (default)" >:: run_semant_test_pass (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
+            Expr (CompoundAssign(Identifier "x", PlusAssign, IntLit 5));
             VarDecl {is_const=false; name="x"; var_type=None; initializer_expr=Some (IntLit 10)};
-            Expr (CompoundAssign(Identifier "x", PlusAssign, IntLit 5))
         ]}]
         ()
     );
      "valid compound assignment I32 (explicit)" >:: run_semant_test_pass (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
+            Expr (CompoundAssign(Identifier "x", PlusAssign, Cast(Primitive I32, IntLit 5)));
             VarDecl {is_const=false; name="x"; var_type=Some (Primitive I32); initializer_expr=Some(Cast(Primitive I32, IntLit 10))};
-            Expr (CompoundAssign(Identifier "x", PlusAssign, Cast(Primitive I32, IntLit 5)))
         ]}]
         ()
     );
      "valid compound assignment U32 (explicit)" >:: run_semant_test_pass (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
+            Expr (CompoundAssign(Identifier "x", PlusAssign, Cast(Primitive U32, IntLit 5)));
             VarDecl {is_const=false; name="x"; var_type=Some (Primitive U32); initializer_expr=Some(Cast(Primitive U32, IntLit 10))};
-            Expr (CompoundAssign(Identifier "x", PlusAssign, Cast(Primitive U32, IntLit 5)))
         ]}]
         ()
     );
@@ -210,15 +215,15 @@ let expression_tests = "Expression Checking" >::: [
     );
     "valid index access I32 array" >:: run_semant_test_pass (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
+            Expr (IndexAccess(Identifier "a", IntLit 0)); (* Index is I32, allowed *)
             VarDecl {is_const=false; name="a"; var_type=None; initializer_expr=Some(ArrayLit(Primitive I32, [Cast(Primitive I32, IntLit 1)]))};
-            Expr (IndexAccess(Identifier "a", IntLit 0)) (* Index is I32, allowed *)
         ]}]
         ()
     );
      "valid slice expression I32 array" >:: run_semant_test_pass (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
+            Expr (SliceExpr(Identifier "a", Some (IntLit 0), Some (IntLit 1))); (* Indices are I32, allowed *)
             VarDecl {is_const=false; name="a"; var_type=None; initializer_expr=Some(ArrayLit(Primitive I32, [Cast(Primitive I32, IntLit 1); Cast(Primitive I32, IntLit 2)]))};
-            Expr (SliceExpr(Identifier "a", Some (IntLit 0), Some (IntLit 1))) (* Indices are I32, allowed *)
         ]}]
         ()
     );
@@ -271,11 +276,11 @@ let statement_tests = "Statement Checking" >::: [
     );
      "valid block scope" >:: run_semant_test_pass (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
-            Block [
+             (* x is not visible here *)
+            VarDecl {is_const=false; name="y"; var_type=None; initializer_expr=Some(IntLit 2)}; (* y is I32 *)
+             Block [
                 VarDecl {is_const=false; name="x"; var_type=None; initializer_expr=Some(IntLit 1)} (* x is I32 *)
             ];
-             (* x is not visible here *)
-            VarDecl {is_const=false; name="y"; var_type=None; initializer_expr=Some(IntLit 2)} (* y is I32 *)
         ]}]
         ()
     );
@@ -300,8 +305,8 @@ let struct_method_tests = "Structs and Methods" >::: [
     "struct field access I32" >:: run_semant_test_pass (make_program
         ~types:[TypeStruct("Point", [{name="x"; field_type=Primitive I32; modifier=None; default_value=None}])]
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
+            Expr (FieldAccess(Identifier "p", "x"));
             VarDecl {is_const=false; name="p"; var_type=None; initializer_expr=Some(StructLit("Point", [("x", Cast(Primitive I32, IntLit 1))]))};
-            Expr (FieldAccess(Identifier "p", "x"))
         ]}]
         ()
     );
@@ -321,8 +326,8 @@ let struct_method_tests = "Structs and Methods" >::: [
             body=[Return(Some [FieldAccess(Identifier "self", "val")])]
         }]
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
+            Expr (MethodCall(Identifier "c", "get", []));
             VarDecl {is_const=false; name="c"; var_type=None; initializer_expr=Some(StructLit("Counter", [("val", Cast(Primitive I32, IntLit 5))]))};
-            Expr (MethodCall(Identifier "c", "get", []))
         ]}]
         ()
     );
@@ -335,16 +340,16 @@ let struct_method_tests = "Structs and Methods" >::: [
             body=[Return(Some [Binop(Identifier "a", Plus, Identifier "b")])]
         }]
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
-             VarDecl {is_const=false; name="ad"; var_type=None; initializer_expr=Some(StructLit("Adder", []))};
-            Expr (MethodCall(Identifier "ad", "add", [Cast(Primitive I32, IntLit 3); Cast(Primitive I32, IntLit 4)]))
+            Expr (MethodCall(Identifier "ad", "add", [Cast(Primitive I32, IntLit 3); Cast(Primitive I32, IntLit 4)]));
+            VarDecl {is_const=false; name="ad"; var_type=None; initializer_expr=Some(StructLit("Adder", []))};
         ]}]
         ()
     );
      "null assignment to struct" >:: run_semant_test_pass (make_program
         ~types:[TypeStruct("Point", [{name="x"; field_type=Primitive I32; modifier=None; default_value=None}])]
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
-             VarDecl {is_const=false; name="p"; var_type=Some(Struct("Point")); initializer_expr=None};
-             Expr (SimpleAssign(Identifier "p", Null))
+            Expr (SimpleAssign(Identifier "p", Null));
+            VarDecl {is_const=false; name="p"; var_type=Some(Struct("Point")); initializer_expr=None};
         ]}]
         ()
      );
@@ -409,15 +414,15 @@ let error_tests_declarations = "Error Cases: Declarations" >::: [
 let error_tests_types = "Error Cases: Types" >::: [
     "assignment type mismatch (I32 vs Bool)" >:: run_semant_test_fail (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
+            Expr (SimpleAssign(Identifier "x", BoolLit true));
             VarDecl {is_const=false; name="x"; var_type=Some (Primitive I32); initializer_expr=None};
-            Expr (SimpleAssign(Identifier "x", BoolLit true))
         ]}]
         ()
     );
      "assignment type mismatch (I32 vs U32)" >:: run_semant_test_fail (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
+            Expr (SimpleAssign(Identifier "x", Cast(Primitive U32, IntLit 5))); (* Cast to U32 to force mismatch *)
             VarDecl {is_const=false; name="x"; var_type=Some (Primitive I32); initializer_expr=None};
-            Expr (SimpleAssign(Identifier "x", Cast(Primitive U32, IntLit 5))) (* Cast to U32 to force mismatch *)
         ]}]
         ()
     );
@@ -537,8 +542,8 @@ let error_tests_types = "Error Cases: Types" >::: [
     );
     "null assignment to non-nullable (I32)" >:: run_semant_test_fail (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
+             Expr (SimpleAssign(Identifier "x", Null));
              VarDecl {is_const=false; name="x"; var_type=Some(Primitive I32); initializer_expr=None};
-             Expr (SimpleAssign(Identifier "x", Null))
         ]}]
         ()
      );
@@ -593,29 +598,29 @@ let error_tests_scope = "Error Cases: Scope and Usage" >::: [
     );
      "index non-array/slice" >:: run_semant_test_fail (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
+            Expr (IndexAccess(Identifier "x", IntLit 0));
             VarDecl {is_const=false; name="x"; var_type=None; initializer_expr=Some(IntLit 1)};
-            Expr (IndexAccess(Identifier "x", IntLit 0))
         ]}]
         ()
     );
      "index with non-integer" >:: run_semant_test_fail (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
+            Expr (IndexAccess(Identifier "a", BoolLit true));
             VarDecl {is_const=false; name="a"; var_type=None; initializer_expr=Some(ArrayLit(Primitive I32, [Cast(Primitive I32, IntLit 1)]))};
-            Expr (IndexAccess(Identifier "a", BoolLit true))
         ]}]
         ()
     );
       "slice non-array/slice" >:: run_semant_test_fail (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
+            Expr (SliceExpr(Identifier "x", Some(IntLit 0), None));
             VarDecl {is_const=false; name="x"; var_type=None; initializer_expr=Some(IntLit 1)};
-            Expr (SliceExpr(Identifier "x", Some(IntLit 0), None))
         ]}]
         ()
     );
       "slice with non-integer index" >:: run_semant_test_fail (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
+            Expr (SliceExpr(Identifier "a", Some(FloatLit 0.0), None));
             VarDecl {is_const=false; name="a"; var_type=None; initializer_expr=Some(ArrayLit(Primitive I32, [Cast(Primitive I32, IntLit 1)]))};
-            Expr (SliceExpr(Identifier "a", Some(FloatLit 0.0), None))
         ]}]
         ()
     );
@@ -675,31 +680,31 @@ let error_tests_structs = "Error Cases: Structs and Methods" >::: [
     );
     "field access on non-struct" >:: run_semant_test_fail (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
+            Expr (FieldAccess(Identifier "x", "some_field"));
             VarDecl {is_const=false; name="x"; var_type=None; initializer_expr=Some(IntLit 1)};
-            Expr (FieldAccess(Identifier "x", "some_field"))
         ]}]
         ()
     );
     "field access unknown field" >:: run_semant_test_fail (make_program
         ~types:[TypeStruct("Point", [{name="x"; field_type=Primitive I32; modifier=None; default_value=None}])]
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
+            Expr (FieldAccess(Identifier "p", "y"));
             VarDecl {is_const=false; name="p"; var_type=None; initializer_expr=Some(StructLit("Point", [("x", Cast(Primitive I32, IntLit 1))]))};
-            Expr (FieldAccess(Identifier "p", "y"))
         ]}]
         ()
     );
      "method call on non-struct" >:: run_semant_test_fail (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
+            Expr (MethodCall(Identifier "x", "doThing", []));
             VarDecl {is_const=false; name="x"; var_type=None; initializer_expr=Some(IntLit 1)};
-            Expr (MethodCall(Identifier "x", "doThing", []))
         ]}]
         ()
     );
      "method call unknown method" >:: run_semant_test_fail (make_program
         ~types:[TypeStruct("Thing", [])]
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
+            Expr (MethodCall(Identifier "t", "noSuchMethod", []));
             VarDecl {is_const=false; name="t"; var_type=None; initializer_expr=Some(StructLit("Thing", []))};
-            Expr (MethodCall(Identifier "t", "noSuchMethod", []))
         ]}]
         ()
     );
@@ -710,8 +715,8 @@ let error_tests_structs = "Error Cases: Structs and Methods" >::: [
             body=[]
         }]
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
+            Expr (MethodCall(Identifier "t", "doIt", [])); (* Missing arg 'a' *)
             VarDecl {is_const=false; name="t"; var_type=None; initializer_expr=Some(StructLit("Thing", []))};
-            Expr (MethodCall(Identifier "t", "doIt", [])) (* Missing arg 'a' *)
         ]}]
         ()
     );
@@ -722,8 +727,8 @@ let error_tests_structs = "Error Cases: Structs and Methods" >::: [
             body=[]
         }]
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
+            Expr (MethodCall(Identifier "t", "doIt", [BoolLit true])); (* Wrong type for 'a' *)
             VarDecl {is_const=false; name="t"; var_type=None; initializer_expr=Some(StructLit("Thing", []))};
-            Expr (MethodCall(Identifier "t", "doIt", [BoolLit true])) (* Wrong type for 'a' *)
         ]}]
         ()
     );
@@ -734,8 +739,8 @@ let error_tests_structs = "Error Cases: Structs and Methods" >::: [
             body=[]
         }]
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
+            Expr (MethodCall(Identifier "t", "doIt", [Cast(Primitive U32, IntLit 1)])); (* Cast arg to U32 *)
             VarDecl {is_const=false; name="t"; var_type=None; initializer_expr=Some(StructLit("Thing", []))};
-            Expr (MethodCall(Identifier "t", "doIt", [Cast(Primitive U32, IntLit 1)])) (* Cast arg to U32 *)
         ]}]
         ()
     );
