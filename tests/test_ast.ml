@@ -58,7 +58,8 @@ let ast_construction_tests = "test suite for AST construction and structure" >::
     let make_expr = Make (Slice (Primitive I32), IntLit 10, None) in
     let make_expr_cap = Make (Slice (Primitive U8), IntLit 5, Some (IntLit 10)) in
     let seq_expr = Sequence (SimpleAssign (Identifier "a", IntLit 1), Identifier "a") in
-    let arr_lit = ArrayLit (Primitive I32, [IntLit 1; IntLit 2]) in
+    let arr_type = Array (Primitive I32, 2) in (* Define the type: array of 2 i32s *)
+    let arr_lit = ArrayLit (arr_type, [IntLit 1; IntLit 2]) in
     let struct_lit = StructLit ("Point", [("x", IntLit 0); ("y", IntLit 0)]) in
     let slice_lit = SliceLit (Primitive F32, [FloatLit 1.0; FloatLit 2.0]) in
 
@@ -134,7 +135,7 @@ let ast_construction_tests = "test suite for AST construction and structure" >::
 
     (* Verify Literals *)
     (match arr_lit with
-      | ArrayLit(Primitive I32, elems) -> assert_equal 2 (List.length elems)
+      | ArrayLit(Array(Primitive I32, 2), elems) -> assert_equal 2 (List.length elems)
       | _ -> assert_failure "Expected ArrayLit");
     (match struct_lit with
       | StructLit("Point", fields) -> assert_equal 2 (List.length fields); assert_equal "x" (fst (List.hd fields))

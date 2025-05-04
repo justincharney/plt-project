@@ -87,6 +87,7 @@ module StringMap = Map.Make(String)
       | TyArray (et1, n1), TyArray (et2, n2) -> n1 = n2 && ty_equal et1 et2
       | TySlice et1, TySlice et2 -> ty_equal et1 et2
       | TyStruct s1, TyStruct s2 -> s1 = s2
+      | TyTuple ts1, TyTuple ts2 -> List.length ts1 = List.length ts2 && List.for_all2 ty_equal ts1 ts2
       | TyError, _
       | _, TyError -> true (* allow error propagation*)
       | _ -> false
@@ -139,15 +140,45 @@ module StringMap = Map.Make(String)
       | StringLit s -> (TyPrim String, SStringLit s)
       | Null -> (TyNull, SNull)
 
-      | ArrayLit (te, elems) ->
-        let elt_ty = resolve_type_expr env te in
+      | ArrayLit (arr_ty_expr, elems) ->
+        (* 1. Resolve the provided type expression (e.g., [2]i32) to a Sast.ty *)
+        let resolved_ty = resolve_type_expr env arr_ty_expr in
+
+        (* 2. Validate it's an array type and get element type/size *)
+        let (elt_ty, expected_len) =
+          match resolved_ty with
+          | TyArray (et, len) -> (et, len)
+          | _ -> raise (Semantic_error "Array literal's type specification is not an array type")
+        in
+
+        (* 3. Check if the number of elements matches the declared size *)
+        if List.length elems <> expected_len then
+          raise (Semantic_error (Printf.sprintf "Array literal size mismatch: expected %d elements, got %d"
+                                    expected_len (List.length elems)));
+
+        (* 4. Type-check each element against the expected element type *)
         let selems = List.map (check_expr env) elems in
-        List.iter (fun (t,_) -> if not (ty_equal t elt_ty) then
-          raise (Semantic_error "array literal element type mismatch")) selems;
-        (TyArray(elt_ty, List.length elems), SArrayLit(elt_ty, selems))
+        List.iter (fun (actual_ty, _) ->
+          if not (ty_equal actual_ty elt_ty) then
+            raise (Semantic_error (Printf.sprintf "Array literal element type mismatch: expected %s, got %s"
+                                      (string_of_ty elt_ty) (string_of_ty actual_ty)))
+        ) selems;
+
+        (* 5. Return the Sast node: the overall type is resolved_ty,
+              and SArrayLit likely needs the element type and the checked elements *)
+        (resolved_ty, SArrayLit (elt_ty, selems))
+
 
       | StructLit (name, field_inits) ->
-        let sfields = find_struct name env in
+        (* 1) resolve the alias or struct-name to an actual TyStruct *)
+        let ty = resolve_type_expr env (TypeName name) in
+        let real_struct_name =
+          match ty with
+          | TyStruct s -> s
+          | _ -> raise (Semantic_error (name ^ " is not a struct type"))
+        in
+        (* 2) now fetch the real struct’s field list *)
+        let sfields = find_struct real_struct_name env in
         let field_ty_map = List.fold_left(fun m (f : sfield) -> StringMap.add f.name f.field_type m)
           StringMap.empty sfields in
         let check_field (fname, fexpr) =
@@ -157,10 +188,10 @@ module StringMap = Map.Make(String)
           let actual_ty = fst actual_sexpr in
           if not (ty_equal expected_ty actual_ty) then
             raise (Semantic_error (Printf.sprintf "Field %s type mismatch" fname));
-          (fname, actual_sexpr)
-        in
-        let sfield_inits = List.map check_field field_inits in
-        (TyStruct name, SStructLit (name, sfield_inits))
+          (fname, actual_sexpr) in
+          let sfield_inits = List.map check_field field_inits in
+          (* return the *resolved* struct type, but keep the literal name in the AST if you like *)
+          (ty, SStructLit (name, sfield_inits))
 
       | SliceLit (te, elems) ->
         let elt_ty = resolve_type_expr env te in
@@ -190,18 +221,33 @@ module StringMap = Map.Make(String)
         in
         (fty, SFieldAccess (se, fname))
 
-      | IndexAccess (arr, idx) ->
-        let sarr = check_expr env arr in
+      | IndexAccess (coll, idx) ->
+        let scoll = check_expr env coll in
         let sidx = check_expr env idx in
+
+        (* Check index type *)
         if not (is_integer (fst sidx)) then
-          raise (Semantic_error "index must be an integer");
+            raise (Semantic_error "index must be an integer type");
+
         let elt_ty =
-          match fst sarr with
-          | TyArray (t, _) | TySlice t -> t
-          | TyPrim String -> TyPrim U8 (* Gives you the character *)
-          | _ -> raise (Semantic_error "indexing requires array or slice")
+          match fst scoll with
+          | TyArray (t, _) | TySlice t -> t (* Indexing array/slice gives element type *)
+          | TyPrim String -> TyPrim U8      (* Indexing string gives byte/char (u8) *)
+          | TyTuple tys ->
+              (* For tuples, require index to be a compile-time constant integer *)
+              let index_val =
+                match snd sidx with
+                | SIntLit i -> i
+                | _ -> raise (Semantic_error "tuple index must be an integer literal constant")
+              in
+              if index_val < 0 || index_val >= List.length tys then
+                raise (Semantic_error (Printf.sprintf "tuple index %d out of bounds for tuple of size %d"
+                                          index_val (List.length tys)))
+              else
+                List.nth tys index_val (* Return the type of the element at that index *)
+          | ty -> raise (Semantic_error ("Type " ^ string_of_ty ty ^ " cannot be indexed (requires array, slice, string, or tuple)")) (* Updated error *)
         in
-        (elt_ty, SIndexAccess (sarr, sidx))
+        (elt_ty, SIndexAccess (scoll, sidx))
 
       | SliceExpr (arr, lo, hi) ->
         let sarr = check_expr env arr in
@@ -305,7 +351,7 @@ module StringMap = Map.Make(String)
             List.iter2 (fun (a_ty, _) p_ty -> if not (ty_equal a_ty p_ty) then
               raise (Semantic_error ("argument type mismatch in call to " ^ fname))) sargs fsig.params;
             (* Not sure what we should return for void function *)
-            let ret_ty = match fsig.returns with [] -> TyUnit | [t] -> t | _::_ -> TyError in
+            let ret_ty = match fsig.returns with [] -> TyUnit | [t] -> t | ts -> TyTuple ts in
             (ret_ty, SFunctionCall(fname, sargs))
           | _ -> raise (Semantic_error (fname ^ " is not a function"))
           end

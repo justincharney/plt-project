@@ -101,7 +101,7 @@ let type_tests = "Type Checking and Resolution" >::: [
 
     "array literal type check Bool" >:: run_semant_test_pass (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
-            Expr (ArrayLit (Primitive Bool, [BoolLit true; BoolLit false]))
+          Expr (ArrayLit (Array (Primitive Bool, 2), [BoolLit true; BoolLit false]))
         ]}]
         ()
     );
@@ -216,14 +216,14 @@ let expression_tests = "Expression Checking" >::: [
     "valid index access I32 array" >:: run_semant_test_pass (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
             Expr (IndexAccess(Identifier "a", IntLit 0)); (* Index is I32, allowed *)
-            VarDecl {is_const=false; name="a"; var_type=None; initializer_expr=Some(ArrayLit(Primitive I32, [Cast(Primitive I32, IntLit 1)]))};
+            VarDecl {is_const=false; name="a"; var_type=None; initializer_expr=Some(ArrayLit(Array (Primitive I32, 1), [Cast(Primitive I32, IntLit 1)]))};
         ]}]
         ()
     );
      "valid slice expression I32 array" >:: run_semant_test_pass (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
             Expr (SliceExpr(Identifier "a", Some (IntLit 0), Some (IntLit 1))); (* Indices are I32, allowed *)
-            VarDecl {is_const=false; name="a"; var_type=None; initializer_expr=Some(ArrayLit(Primitive I32, [Cast(Primitive I32, IntLit 1); Cast(Primitive I32, IntLit 2)]))};
+            VarDecl {is_const=false; name="a"; var_type=None; initializer_expr=Some(ArrayLit(Array (Primitive I32, 2), [Cast(Primitive I32, IntLit 1); Cast(Primitive I32, IntLit 2)]))};
         ]}]
         ()
     );
@@ -518,13 +518,13 @@ let error_tests_types = "Error Cases: Types" >::: [
     );
      "array literal element type mismatch (I32 vs Bool)" >:: run_semant_test_fail (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
-            Expr (ArrayLit(Primitive I32, [Cast(Primitive I32, IntLit 1); BoolLit true])) (* Still fails *)
+            Expr (ArrayLit(Array (Primitive I32, 2), [Cast(Primitive I32, IntLit 1); BoolLit true])) (* Still fails *)
         ]}]
         ()
     );
      "array literal element type mismatch (I32 vs U32)" >:: run_semant_test_fail (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
-            Expr (ArrayLit(Primitive I32, [Cast(Primitive U32, IntLit 1); Cast(Primitive I32, IntLit 2)])) (* Cast first element to U32 *)
+            Expr (ArrayLit(Array (Primitive I32, 2), [Cast(Primitive U32, IntLit 1); Cast(Primitive I32, IntLit 2)])) (* Cast first element to U32 *)
         ]}]
         ()
     );
@@ -606,7 +606,7 @@ let error_tests_scope = "Error Cases: Scope and Usage" >::: [
      "index with non-integer" >:: run_semant_test_fail (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
             Expr (IndexAccess(Identifier "a", BoolLit true));
-            VarDecl {is_const=false; name="a"; var_type=None; initializer_expr=Some(ArrayLit(Primitive I32, [Cast(Primitive I32, IntLit 1)]))};
+            VarDecl {is_const=false; name="a"; var_type=None; initializer_expr=Some(ArrayLit(Array (Primitive I32, 1), [Cast(Primitive I32, IntLit 1)]))};
         ]}]
         ()
     );
@@ -620,7 +620,7 @@ let error_tests_scope = "Error Cases: Scope and Usage" >::: [
       "slice with non-integer index" >:: run_semant_test_fail (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
             Expr (SliceExpr(Identifier "a", Some(FloatLit 0.0), None));
-            VarDecl {is_const=false; name="a"; var_type=None; initializer_expr=Some(ArrayLit(Primitive I32, [Cast(Primitive I32, IntLit 1)]))};
+            VarDecl {is_const=false; name="a"; var_type=None; initializer_expr=Some(ArrayLit(Array (Primitive I32, 1), [Cast(Primitive I32, IntLit 1)]))};
         ]}]
         ()
     );

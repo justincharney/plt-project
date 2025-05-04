@@ -33,7 +33,7 @@ func add_points(p1: Point, p2: Vector) Point {
     return result
 }
 
-func scale_and_label(p Point, factor f32, new_label string) (Point, bool) {
+func scale_and_label(p: Point, factor: f32, new_label: string) (Point, bool) {
     // Scales a point and updates its label, returns modified point and success
     scaled_p : Point = p // Copy struct
     scaled_p.x = p.x * factor
@@ -55,16 +55,15 @@ func main() {
     // Method call
     dist_sq := pt1.distSq()
 
-    // Multiple return assignment (need syntax for this, assuming tuple-like or multiple vars)
-    // Let's simulate by calling and using one result for now, as multi-assign isn't in AST yet
+    // Multiple return assignment? ( multi-assign isn't in AST yet)
     // scaled_pt : Point
     // success : bool
     // scaled_pt, success = scale_and_label(pt2, scale_factor, "scaled_pt2")
-    temp_scaled, _ := scale_and_label(pt2, scale_factor, "scaled_pt2")
-    sum_pt = temp_scaled // Reassign
+    temp_scaled := scale_and_label(pt2, scale_factor, "scaled_pt2")
+    sum_pt = temp_scaled[0] // Reassign
 
     // Control Flow (If/Else)
-    message : string
+    message : string; // STILL NEED A SEMICOLON HERE (FIX)
     if dist_sq > 10.0 {
         message = "Far from origin"
     } else {
@@ -72,12 +71,12 @@ func main() {
     }
 
     // Array and Slice
-    points_arr : [3]Point = [
+    points_arr : [3]Point = [3]Point{
         origin,
         pt1,
-        Point{x: 5.0, y: 5.0, label:"arr_pt"}
-    ]
-    points_slice : []Point = make([]Point, 2, 5) // Make slice
+        Point{x: 5.0, y: 5.0, label:"arr_pt"}}; // SEMICOLON WRONGLY ADDED HERE IF LAST BRACE ON NEW LINE
+
+    points_slice : []Point = make([]Point, 2, 5); // Make slice
 
     // Index access and assignment
     points_slice[0] = points_arr[1] // Assign pt1
@@ -92,7 +91,7 @@ func main() {
     // For loop with cast and break/continue
     loop_counter : i32 = 0
     float_sum : f32 = 0.0
-    for i := 0; i < 10; i++ {
+    for i := 0; i < 10; ++i {
         loop_counter = i // Assign loop var
         if i == 2 {
             continue // Skip iteration 2
