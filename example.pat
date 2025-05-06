@@ -1,6 +1,6 @@
 package example
 
-func main() i32 {
-    i32 x = 42;
+func main() i64 {
+    i64 x = 5;
     return x;
 }

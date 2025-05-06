@@ -266,6 +266,7 @@ expr:
 | DEC expr                 { Unaop(Dec, $2)    }
 | LPAREN MINUS expr RPAREN { Unaop(Neg, $3)    }
 
+| IDENT                                    { Identifier($1)                                 }
 | IDENT DOUBLECOLON IDENT                  { FieldAccess(Identifier($1), Identifier($3))    }
 | IDENT LBRACKET expr RBRACKET             { IndexAccess(Identifier($1), $3)                }
 | IDENT LBRACKET expr COLON expr RBRACKET  { SliceExpr(Identifier($1), $3, Some $5)         }

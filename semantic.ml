@@ -599,30 +599,48 @@ let analyze (prog : program) : sprogram =
     ) (env1, []) global_vars
   in
 
-  (* 3. Process free functions *)
+  (* 3. Free functions: register & type‐check bodies *)
   let (env3, sfuncs) =
     List.fold_left (fun (env, facc) (fdecl : func_decl) ->
-      (* Register signature *)
-      let param_sigs = List.map (fun p ->
-        let tp = resolve_type env p.param_type in
-        (tp, p.is_variadic)
-      ) fdecl.params in
+      (* --- register the function signature --- *)
+      let param_sigs =
+        List.map (fun p ->
+          let tp = resolve_type env p.param_type in
+          (tp, p.is_variadic)
+        ) fdecl.params
+      in
       let ret_ts = List.map (resolve_type env) fdecl.return_types in
-      let env' = bind_function env fdecl.name (param_sigs, ret_ts) in
+      let env'   = bind_function env fdecl.name (param_sigs, ret_ts) in
 
-      (* New scope with return types known *)
-      let env'' = { env' with current_returns = Some ret_ts } in
-      let env_par = push_scope env'' in
+      (* --- set up a fresh scope for the body --- *)
+      let env_with_returns = { env' with current_returns = Some ret_ts } in
+      let env0 = push_scope env_with_returns in
 
-      (* Bind parameters locally *)
-      let sparams = List.map (fun p ->
-        let tp = resolve_type env p.param_type in
-        let env_par = bind_local env_par p.name tp in
-        { sp_name = p.name; sp_type = tp; sp_is_variadic = p.is_variadic }
-      ) fdecl.params in
+      (* --- *sequentially* bind parameters into env0 --- *)
+      let (env_par, sparams_rev) =
+        List.fold_left (fun (e_acc, sp_acc) p ->
+          let tp = resolve_type env p.param_type in
+          let e_acc' = bind_local e_acc p.name tp in
+          let sp = { sp_name = p.name;
+                    sp_type = tp;
+                    sp_is_variadic = p.is_variadic }
+          in
+          (e_acc', sp :: sp_acc)
+        ) (env0, []) fdecl.params
+      in
+      let sparams = List.rev sparams_rev in
 
-      (* Build body statements *)
-      let body_stmts = List.map (fun s -> snd (build_stmt env_par s)) fdecl.body in
+      (* --- now build the body against env_par --- *)
+      let ( _env_after, body_stmts_rev ) =
+        List.fold_left
+          (fun (e_acc, ss_acc) stmt ->
+             let (e_next, ss) = build_stmt e_acc stmt in
+             (e_next, ss :: ss_acc)
+          )
+          (env_par, [])
+          fdecl.body
+      in
+      let body_stmts = List.rev body_stmts_rev in
 
       let sf = {
         sf_name         = fdecl.name;
@@ -635,42 +653,53 @@ let analyze (prog : program) : sprogram =
     ) (env2, []) func_decls
   in
 
-  (* 4. Process struct methods *)
+  (* 4. Struct methods: register & type‐check bodies *)
   let (env4, sstructs) =
     List.fold_left (fun (env, macc) (mdecl : struct_func) ->
-      (* Ensure struct exists *)
       if not (StringMap.mem mdecl.struct_name env.types.structs) then
         error ("Method for unknown struct " ^ mdecl.struct_name);
 
-      (* Synthetic receiver signature *)
+      (* make the “recv” param *)
       let recv_sig = (TypeName mdecl.struct_name, false) in
-
-      (* Parameter signatures include receiver *)
-      let param_sigs = recv_sig ::
+      let param_sigs =
+        recv_sig ::
         List.map (fun p ->
           let tp = resolve_type env p.param_type in
           (tp, p.is_variadic)
         ) mdecl.params
       in
-
       let ret_ts = List.map (resolve_type env) mdecl.return_types in
+      let env'   = bind_method env mdecl.struct_name mdecl.name (param_sigs, ret_ts) in
 
-      (* Register method *)
-      let env' = bind_method env mdecl.struct_name mdecl.name (param_sigs, ret_ts) in
+      (* fresh scope *)
+      let env_with_returns = { env' with current_returns = Some ret_ts } in
+      let env0 = push_scope env_with_returns in
 
-      (* New scope with return types known *)
-      let env'' = { env' with current_returns = Some ret_ts } in
-      let env_par = push_scope env'' in
+      (* bind *only* the real params, skipping the synthetic recv *)
+      let (env_par, sparams_rev) =
+        List.fold_left (fun (e_acc, sp_acc) p ->
+          let tp = resolve_type env p.param_type in
+          let e_acc' = bind_local e_acc p.name tp in
+          let sp = { sp_name = p.name;
+                    sp_type = tp;
+                    sp_is_variadic = p.is_variadic }
+          in
+          (e_acc', sp :: sp_acc)
+        ) (env0, []) mdecl.params
+      in
+      let sparams = List.rev sparams_rev in
 
-      (* Bind real parameters (skip synthetic recv) *)
-      let sparams = List.map (fun p ->
-        let tp = resolve_type env p.param_type in
-        let env_par = bind_local env_par p.name tp in
-        { sp_name = p.name; sp_type = tp; sp_is_variadic = p.is_variadic }
-      ) mdecl.params in
-
-      (* Build body statements *)
-      let body_stmts = List.map (fun s -> snd (build_stmt env_par s)) mdecl.body in
+      (* build the method body *)
+      let (_env_after, body_stmts_rev) =
+        List.fold_left
+          (fun (e_acc, ss_acc) stmt ->
+             let (e_next, ss) = build_stmt e_acc stmt in
+             (e_next, ss :: ss_acc)
+          )
+          (env_par, [])
+          mdecl.body
+      in
+      let body_stmts = List.rev body_stmts_rev in
 
       let sm = {
         ss_struct       = mdecl.struct_name;
@@ -683,6 +712,7 @@ let analyze (prog : program) : sprogram =
       (env', sm :: macc)
     ) (env3, []) method_decls
   in
+
 
   (* 5. Ensure entry point ‘main’ exists *)
   if not (StringMap.mem "main" env4.funcs) then
