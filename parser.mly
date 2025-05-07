@@ -25,9 +25,7 @@
 %token <float> FLOAT_LIT
 %token <string> STRING_LIT
 %token <string> IDENT
-%token <string> IDENT_TYPE
 
-%left IDENT
 %left COMMA
 %left SEMICOLON
 %right BITAND_ASSIGN BITOR_ASSIGN BITXOR_ASSIGN LSHIFT_ASSIGN RSHIFT_ASSIGN TIMES_ASSIGN DIV_ASSIGN MOD_ASSIGN PLUS_ASSIGN MINUS_ASSIGN ASSIGN DECL_ASSIGN
@@ -42,7 +40,7 @@
 %left PLUS MINUS
 %left MULT DIV MOD
 %right NOT BITNOT INC DEC (* CAST *)
-%left DOT LBRACKET LBRACE (* FUNCTION CALLS, ARRAY SUBSCRIPTING, INC, DEC *)  
+%left DOT LBRACKET (* FUNCTION CALLS, ARRAY SUBSCRIPTING, INC, DEC *) 
 %left LPAREN
 
 %start program
@@ -145,7 +143,7 @@ type_expr_w_structs:
   | primitive_type                   { Primitive($1)  }
   | LBRACKET INT_LIT RBRACKET type_expr { Array($4, $2)  }
   | LBRACKET RBRACKET type_expr      { Slice($3)      }
-  | IDENT_TYPE                            { TypeName($1)   }
+  | IDENT                            { TypeName($1)   }
 
 opt_assign:
     /* nothing */ { None }
@@ -285,7 +283,6 @@ expr:
 | LBRACKET RBRACKET IDENT LBRACE expr_list RBRACE          { SliceLit(TypeName($3), $5)     }
 
 | LPAREN expr RPAREN                     { SubExpr($2)   }
-| IDENT                                  { Identifier($1)}
 | INT_LIT                                { IntLit($1)    }
 | BOOL_LIT                               { BoolLit($1)   }
 | CHAR_LIT                               { CharLit($1)   }
