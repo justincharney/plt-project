@@ -109,6 +109,11 @@ type token =
         string
 # 111 "parser.mli"
 )
+  | IDENT_TYPE of (
+# 28 "parser.mly"
+        string
+# 116 "parser.mli"
+)
 
 val program :
   (Lexing.lexbuf  -> token) -> Lexing.lexbuf -> Ast.program

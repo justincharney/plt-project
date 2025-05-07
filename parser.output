@@ -35,7 +35,7 @@
   24  type_expr_w_structs : primitive_type
   25                      | LBRACKET expr RBRACKET type_expr
   26                      | LBRACKET RBRACKET type_expr
-  27                      | IDENT
+  27                      | IDENT_TYPE
 
   28  opt_assign :
   29             | ASSIGN expr
@@ -130,36 +130,37 @@
  104       | LBRACKET RBRACKET type_expr LBRACE expr_list RBRACE
  105       | LBRACKET RBRACKET IDENT LBRACE expr_list RBRACE
  106       | LPAREN expr RPAREN
- 107       | INT_LIT
- 108       | BOOL_LIT
- 109       | CHAR_LIT
- 110       | FLOAT_LIT
- 111       | STRING_LIT
- 112       | BREAK
- 113       | CONTINUE
+ 107       | IDENT
+ 108       | INT_LIT
+ 109       | BOOL_LIT
+ 110       | CHAR_LIT
+ 111       | FLOAT_LIT
+ 112       | STRING_LIT
+ 113       | BREAK
+ 114       | CONTINUE
 
- 114  type_expr : primitive_type
- 115            | LBRACKET expr RBRACKET type_expr
- 116            | LBRACKET RBRACKET type_expr
+ 115  type_expr : primitive_type
+ 116            | LBRACKET expr RBRACKET type_expr
+ 117            | LBRACKET RBRACKET type_expr
 
- 117  field_expr_list : expr COLON expr
- 118                  | expr COLON expr COMMA field_expr_list
+ 118  field_expr_list : expr COLON expr
+ 119                  | expr COLON expr COMMA field_expr_list
 
- 119  primitive_type : BOOL
- 120                 | STRING
- 121                 | U8
- 122                 | U16
- 123                 | U32
- 124                 | U64
- 125                 | I8
- 126                 | I16
- 127                 | I32
- 128                 | I64
- 129                 | F32
- 130                 | F64
- 131                 | ERROR
+ 120  primitive_type : BOOL
+ 121                 | STRING
+ 122                 | U8
+ 123                 | U16
+ 124                 | U32
+ 125                 | U64
+ 126                 | I8
+ 127                 | I16
+ 128                 | I32
+ 129                 | I64
+ 130                 | F32
+ 131                 | F64
+ 132                 | ERROR
 
- 132  %entry% : '\001' program
+ 133  %entry% : '\001' program
 
 state 0
 	$accept : . %entry% $end  (0)
@@ -171,7 +172,7 @@ state 0
 
 
 state 1
-	%entry% : '\001' . program  (132)
+	%entry% : '\001' . program  (133)
 
 	PACKAGE  shift 3
 	.  error
@@ -193,9 +194,9 @@ state 3
 
 
 state 4
-	%entry% : '\001' program .  (132)
+	%entry% : '\001' program .  (133)
 
-	.  reduce 132
+	.  reduce 133
 
 
 state 5
@@ -222,6 +223,7 @@ state 5
 	F64  reduce 2
 	LBRACKET  reduce 2
 	IDENT  reduce 2
+	IDENT_TYPE  reduce 2
 
 	import_decls  goto 7
 
@@ -255,15 +257,16 @@ state 7
 	F64  shift 24
 	LBRACKET  shift 25
 	IDENT  shift 26
+	IDENT_TYPE  shift 27
 	EOF  reduce 4
 
-	all_decls  goto 27
-	type_decl  goto 28
-	var_decl  goto 29
-	func_decl  goto 30
-	struct_func_decl  goto 31
-	type_expr_w_structs  goto 32
-	primitive_type  goto 33
+	all_decls  goto 28
+	type_decl  goto 29
+	var_decl  goto 30
+	func_decl  goto 31
+	struct_func_decl  goto 32
+	type_expr_w_structs  goto 33
+	primitive_type  goto 34
 
 
 state 8
@@ -290,16 +293,17 @@ state 8
 	F64  reduce 2
 	LBRACKET  reduce 2
 	IDENT  reduce 2
+	IDENT_TYPE  reduce 2
 
-	import_decls  goto 34
+	import_decls  goto 35
 
 
 state 9
 	func_decl : FUNC . IDENT LPAREN params RPAREN return_types LBRACE stmts RBRACE  (30)
 	struct_func_decl : FUNC . LPAREN IDENT type_expr RPAREN IDENT LPAREN params RPAREN return_types LBRACE stmts RBRACE  (40)
 
-	LPAREN  shift 35
-	IDENT  shift 36
+	LPAREN  shift 36
+	IDENT  shift 37
 	.  error
 
 
@@ -307,7 +311,7 @@ state 10
 	type_decl : TYPE . IDENT STRUCT LBRACE field_list RBRACE  (9)
 	type_decl : TYPE . IDENT ASSIGN type_expr  (10)
 
-	IDENT  shift 37
+	IDENT  shift 38
 	.  error
 
 
@@ -329,97 +333,98 @@ state 11
 	F32  shift 23
 	F64  shift 24
 	LBRACKET  shift 25
-	IDENT  shift 38
+	IDENT  shift 39
+	IDENT_TYPE  shift 27
 	.  error
 
-	type_expr_w_structs  goto 39
-	primitive_type  goto 33
+	type_expr_w_structs  goto 40
+	primitive_type  goto 34
 
 
 state 12
-	primitive_type : ERROR .  (131)
+	primitive_type : ERROR .  (132)
 
-	.  reduce 131
+	.  reduce 132
 
 
 state 13
-	primitive_type : BOOL .  (119)
-
-	.  reduce 119
-
-
-state 14
-	primitive_type : STRING .  (120)
+	primitive_type : BOOL .  (120)
 
 	.  reduce 120
 
 
-state 15
-	primitive_type : U8 .  (121)
+state 14
+	primitive_type : STRING .  (121)
 
 	.  reduce 121
 
 
-state 16
-	primitive_type : U16 .  (122)
+state 15
+	primitive_type : U8 .  (122)
 
 	.  reduce 122
 
 
-state 17
-	primitive_type : U32 .  (123)
+state 16
+	primitive_type : U16 .  (123)
 
 	.  reduce 123
 
 
-state 18
-	primitive_type : U64 .  (124)
+state 17
+	primitive_type : U32 .  (124)
 
 	.  reduce 124
 
 
-state 19
-	primitive_type : I8 .  (125)
+state 18
+	primitive_type : U64 .  (125)
 
 	.  reduce 125
 
 
-state 20
-	primitive_type : I16 .  (126)
+state 19
+	primitive_type : I8 .  (126)
 
 	.  reduce 126
 
 
-state 21
-	primitive_type : I32 .  (127)
+state 20
+	primitive_type : I16 .  (127)
 
 	.  reduce 127
 
 
-state 22
-	primitive_type : I64 .  (128)
+state 21
+	primitive_type : I32 .  (128)
 
 	.  reduce 128
 
 
-state 23
-	primitive_type : F32 .  (129)
+state 22
+	primitive_type : I64 .  (129)
 
 	.  reduce 129
 
 
-state 24
-	primitive_type : F64 .  (130)
+state 23
+	primitive_type : F32 .  (130)
 
 	.  reduce 130
+
+
+state 24
+	primitive_type : F64 .  (131)
+
+	.  reduce 131
 
 
 state 25
 	type_expr_w_structs : LBRACKET . expr RBRACKET type_expr  (25)
 	type_expr_w_structs : LBRACKET . RBRACKET type_expr  (26)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -433,41 +438,46 @@ state 25
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	RBRACKET  shift 48
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	RBRACKET  shift 49
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
-	expr  goto 55
-	primitive_type  goto 56
+	expr  goto 56
+	primitive_type  goto 57
 
 
 state 26
 	var_decl : IDENT . DECL_ASSIGN expr  (23)
-	type_expr_w_structs : IDENT .  (27)
 
-	DECL_ASSIGN  shift 57
-	IDENT  reduce 27
-
-
-state 27
-	program : PACKAGE IDENT import_decls all_decls . EOF  (1)
-
-	EOF  shift 58
+	DECL_ASSIGN  shift 58
 	.  error
 
 
+state 27
+	type_expr_w_structs : IDENT_TYPE .  (27)
+
+	.  reduce 27
+
+
 state 28
+	program : PACKAGE IDENT import_decls all_decls . EOF  (1)
+
+	EOF  shift 59
+	.  error
+
+
+state 29
 	all_decls : type_decl . all_decls  (5)
 	all_decls : .  (4)
 
@@ -489,18 +499,19 @@ state 28
 	F64  shift 24
 	LBRACKET  shift 25
 	IDENT  shift 26
+	IDENT_TYPE  shift 27
 	EOF  reduce 4
 
-	all_decls  goto 59
-	type_decl  goto 28
-	var_decl  goto 29
-	func_decl  goto 30
-	struct_func_decl  goto 31
-	type_expr_w_structs  goto 32
-	primitive_type  goto 33
+	all_decls  goto 60
+	type_decl  goto 29
+	var_decl  goto 30
+	func_decl  goto 31
+	struct_func_decl  goto 32
+	type_expr_w_structs  goto 33
+	primitive_type  goto 34
 
 
-state 29
+state 30
 	all_decls : var_decl . all_decls  (6)
 	all_decls : .  (4)
 
@@ -522,18 +533,19 @@ state 29
 	F64  shift 24
 	LBRACKET  shift 25
 	IDENT  shift 26
+	IDENT_TYPE  shift 27
 	EOF  reduce 4
 
-	all_decls  goto 60
-	type_decl  goto 28
-	var_decl  goto 29
-	func_decl  goto 30
-	struct_func_decl  goto 31
-	type_expr_w_structs  goto 32
-	primitive_type  goto 33
+	all_decls  goto 61
+	type_decl  goto 29
+	var_decl  goto 30
+	func_decl  goto 31
+	struct_func_decl  goto 32
+	type_expr_w_structs  goto 33
+	primitive_type  goto 34
 
 
-state 30
+state 31
 	all_decls : func_decl . all_decls  (7)
 	all_decls : .  (4)
 
@@ -555,18 +567,19 @@ state 30
 	F64  shift 24
 	LBRACKET  shift 25
 	IDENT  shift 26
+	IDENT_TYPE  shift 27
 	EOF  reduce 4
 
-	all_decls  goto 61
-	type_decl  goto 28
-	var_decl  goto 29
-	func_decl  goto 30
-	struct_func_decl  goto 31
-	type_expr_w_structs  goto 32
-	primitive_type  goto 33
+	all_decls  goto 62
+	type_decl  goto 29
+	var_decl  goto 30
+	func_decl  goto 31
+	struct_func_decl  goto 32
+	type_expr_w_structs  goto 33
+	primitive_type  goto 34
 
 
-state 31
+state 32
 	all_decls : struct_func_decl . all_decls  (8)
 	all_decls : .  (4)
 
@@ -588,127 +601,91 @@ state 31
 	F64  shift 24
 	LBRACKET  shift 25
 	IDENT  shift 26
+	IDENT_TYPE  shift 27
 	EOF  reduce 4
 
-	all_decls  goto 62
-	type_decl  goto 28
-	var_decl  goto 29
-	func_decl  goto 30
-	struct_func_decl  goto 31
-	type_expr_w_structs  goto 32
-	primitive_type  goto 33
-
-
-state 32
-	var_decl : type_expr_w_structs . IDENT opt_assign  (21)
-
-	IDENT  shift 63
-	.  error
+	all_decls  goto 63
+	type_decl  goto 29
+	var_decl  goto 30
+	func_decl  goto 31
+	struct_func_decl  goto 32
+	type_expr_w_structs  goto 33
+	primitive_type  goto 34
 
 
 state 33
-	type_expr_w_structs : primitive_type .  (24)
-
-	.  reduce 24
-
-
-state 34
-	import_decls : IMPORT STRING_LIT import_decls .  (3)
-
-	.  reduce 3
-
-
-state 35
-	struct_func_decl : FUNC LPAREN . IDENT type_expr RPAREN IDENT LPAREN params RPAREN return_types LBRACE stmts RBRACE  (40)
+	var_decl : type_expr_w_structs . IDENT opt_assign  (21)
 
 	IDENT  shift 64
 	.  error
 
 
-state 36
-	func_decl : FUNC IDENT . LPAREN params RPAREN return_types LBRACE stmts RBRACE  (30)
+state 34
+	type_expr_w_structs : primitive_type .  (24)
 
-	LPAREN  shift 65
+	.  reduce 24
+
+
+state 35
+	import_decls : IMPORT STRING_LIT import_decls .  (3)
+
+	.  reduce 3
+
+
+state 36
+	struct_func_decl : FUNC LPAREN . IDENT type_expr RPAREN IDENT LPAREN params RPAREN return_types LBRACE stmts RBRACE  (40)
+
+	IDENT  shift 65
 	.  error
 
 
 state 37
-	type_decl : TYPE IDENT . STRUCT LBRACE field_list RBRACE  (9)
-	type_decl : TYPE IDENT . ASSIGN type_expr  (10)
+	func_decl : FUNC IDENT . LPAREN params RPAREN return_types LBRACE stmts RBRACE  (30)
 
-	STRUCT  shift 66
-	ASSIGN  shift 67
+	LPAREN  shift 66
 	.  error
 
 
 state 38
-	var_decl : CONST IDENT . DECL_ASSIGN expr  (22)
-	type_expr_w_structs : IDENT .  (27)
+	type_decl : TYPE IDENT . STRUCT LBRACE field_list RBRACE  (9)
+	type_decl : TYPE IDENT . ASSIGN type_expr  (10)
 
-	DECL_ASSIGN  shift 68
-	IDENT  reduce 27
+	STRUCT  shift 67
+	ASSIGN  shift 68
+	.  error
 
 
 state 39
-	var_decl : CONST type_expr_w_structs . IDENT opt_assign  (20)
+	var_decl : CONST IDENT . DECL_ASSIGN expr  (22)
 
-	IDENT  shift 69
+	DECL_ASSIGN  shift 69
 	.  error
 
 
 state 40
-	expr : BREAK .  (112)
+	var_decl : CONST type_expr_w_structs . IDENT opt_assign  (20)
 
-	.  reduce 112
+	IDENT  shift 70
+	.  error
 
 
 state 41
-	expr : CONTINUE .  (113)
+	expr : BREAK .  (113)
 
 	.  reduce 113
 
 
 state 42
-	expr : BITNOT . expr  (89)
+	expr : CONTINUE .  (114)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
-	ERROR  shift 12
-	BOOL  shift 13
-	STRING  shift 14
-	U8  shift 15
-	U16  shift 16
-	U32  shift 17
-	U64  shift 18
-	I8  shift 19
-	I16  shift 20
-	I32  shift 21
-	I64  shift 22
-	F32  shift 23
-	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
-	.  error
-
-	expr  goto 70
-	primitive_type  goto 56
+	.  reduce 114
 
 
 state 43
-	expr : NOT . expr  (90)
+	expr : BITNOT . expr  (89)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -722,29 +699,29 @@ state 43
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 71
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 44
-	expr : INC . expr  (91)
+	expr : NOT . expr  (90)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -758,29 +735,29 @@ state 44
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 72
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 45
-	expr : DEC . expr  (92)
+	expr : INC . expr  (91)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -794,30 +771,29 @@ state 45
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 73
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 46
-	expr : LPAREN . MINUS expr RPAREN  (93)
-	expr : LPAREN . expr RPAREN  (106)
+	expr : DEC . expr  (92)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -831,33 +807,70 @@ state 46
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	MINUS  shift 74
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
-	expr  goto 75
-	primitive_type  goto 56
+	expr  goto 74
+	primitive_type  goto 57
 
 
 state 47
+	expr : LPAREN . MINUS expr RPAREN  (93)
+	expr : LPAREN . expr RPAREN  (106)
+
+	BREAK  shift 41
+	CONTINUE  shift 42
+	ERROR  shift 12
+	BOOL  shift 13
+	STRING  shift 14
+	U8  shift 15
+	U16  shift 16
+	U32  shift 17
+	U64  shift 18
+	I8  shift 19
+	I16  shift 20
+	I32  shift 21
+	I64  shift 22
+	F32  shift 23
+	F64  shift 24
+	MINUS  shift 75
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
+	.  error
+
+	expr  goto 76
+	primitive_type  goto 57
+
+
+state 48
 	expr : LBRACKET . expr RBRACKET type_expr LBRACE expr_list RBRACE  (101)
 	expr : LBRACKET . expr RBRACKET IDENT LBRACE expr_list RBRACE  (102)
 	expr : LBRACKET . RBRACKET type_expr LBRACE expr_list RBRACE  (104)
 	expr : LBRACKET . RBRACKET IDENT LBRACE expr_list RBRACE  (105)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -871,26 +884,26 @@ state 47
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	RBRACKET  shift 76
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	RBRACKET  shift 77
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
-	expr  goto 77
-	primitive_type  goto 56
+	expr  goto 78
+	primitive_type  goto 57
 
 
-state 48
+state 49
 	type_expr_w_structs : LBRACKET RBRACKET . type_expr  (26)
 
 	ERROR  shift 12
@@ -906,44 +919,44 @@ state 48
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	LBRACKET  shift 78
+	LBRACKET  shift 79
 	.  error
 
-	type_expr  goto 79
-	primitive_type  goto 80
-
-
-state 49
-	expr : INT_LIT .  (107)
-
-	.  reduce 107
+	type_expr  goto 80
+	primitive_type  goto 81
 
 
 state 50
-	expr : BOOL_LIT .  (108)
+	expr : INT_LIT .  (108)
 
 	.  reduce 108
 
 
 state 51
-	expr : CHAR_LIT .  (109)
+	expr : BOOL_LIT .  (109)
 
 	.  reduce 109
 
 
 state 52
-	expr : FLOAT_LIT .  (110)
+	expr : CHAR_LIT .  (110)
 
 	.  reduce 110
 
 
 state 53
-	expr : STRING_LIT .  (111)
+	expr : FLOAT_LIT .  (111)
 
 	.  reduce 111
 
 
 state 54
+	expr : STRING_LIT .  (112)
+
+	.  reduce 112
+
+
+state 55
 	expr : IDENT . DOUBLECOLON IDENT  (94)
 	expr : IDENT . LBRACKET expr RBRACKET  (95)
 	expr : IDENT . LBRACKET expr COLON expr RBRACKET  (96)
@@ -951,16 +964,89 @@ state 54
 	expr : IDENT . LPAREN expr_list RPAREN  (98)
 	expr : IDENT . DOT IDENT LPAREN expr_list RPAREN  (99)
 	expr : IDENT . LBRACE field_expr_list RBRACE  (103)
+	expr : IDENT .  (107)
 
-	DOUBLECOLON  shift 81
-	LPAREN  shift 82
-	LBRACE  shift 83
-	LBRACKET  shift 84
-	DOT  shift 85
-	.  error
+	DOUBLECOLON  shift 82
+	LPAREN  shift 83
+	LBRACE  shift 84
+	LBRACKET  shift 85
+	DOT  shift 86
+	EOF  reduce 107
+	FUNC  reduce 107
+	TYPE  reduce 107
+	RETURN  reduce 107
+	BREAK  reduce 107
+	IF  reduce 107
+	CONTINUE  reduce 107
+	FOR  reduce 107
+	WHILE  reduce 107
+	CONST  reduce 107
+	ERROR  reduce 107
+	FINAL  reduce 107
+	MUT  reduce 107
+	LATE  reduce 107
+	PRIVATE  reduce 107
+	BOOL  reduce 107
+	STRING  reduce 107
+	U8  reduce 107
+	U16  reduce 107
+	U32  reduce 107
+	U64  reduce 107
+	I8  reduce 107
+	I16  reduce 107
+	I32  reduce 107
+	I64  reduce 107
+	F32  reduce 107
+	F64  reduce 107
+	PLUS  reduce 107
+	MINUS  reduce 107
+	DIV  reduce 107
+	MULT  reduce 107
+	MOD  reduce 107
+	LSHIFT  reduce 107
+	RSHIFT  reduce 107
+	BITXOR  reduce 107
+	BITOR  reduce 107
+	BITNOT  reduce 107
+	BITAND  reduce 107
+	ASSIGN  reduce 107
+	PLUS_ASSIGN  reduce 107
+	MINUS_ASSIGN  reduce 107
+	TIMES_ASSIGN  reduce 107
+	DIV_ASSIGN  reduce 107
+	MOD_ASSIGN  reduce 107
+	LSHIFT_ASSIGN  reduce 107
+	RSHIFT_ASSIGN  reduce 107
+	BITAND_ASSIGN  reduce 107
+	BITXOR_ASSIGN  reduce 107
+	BITOR_ASSIGN  reduce 107
+	EQ  reduce 107
+	NEQ  reduce 107
+	LT  reduce 107
+	LE  reduce 107
+	GT  reduce 107
+	GE  reduce 107
+	AND  reduce 107
+	OR  reduce 107
+	NOT  reduce 107
+	INC  reduce 107
+	DEC  reduce 107
+	RPAREN  reduce 107
+	RBRACE  reduce 107
+	RBRACKET  reduce 107
+	SEMICOLON  reduce 107
+	COLON  reduce 107
+	COMMA  reduce 107
+	INT_LIT  reduce 107
+	BOOL_LIT  reduce 107
+	CHAR_LIT  reduce 107
+	FLOAT_LIT  reduce 107
+	STRING_LIT  reduce 107
+	IDENT  reduce 107
+	IDENT_TYPE  reduce 107
 
 
-state 55
+state 56
 	type_expr_w_structs : LBRACKET expr . RBRACKET type_expr  (25)
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
@@ -992,51 +1078,51 @@ state 55
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
-	RBRACKET  shift 115
-	.  error
-
-
-state 56
-	expr : primitive_type . LPAREN expr RPAREN  (100)
-
-	LPAREN  shift 116
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
+	RBRACKET  shift 116
 	.  error
 
 
 state 57
+	expr : primitive_type . LPAREN expr RPAREN  (100)
+
+	LPAREN  shift 117
+	.  error
+
+
+state 58
 	var_decl : IDENT DECL_ASSIGN . expr  (23)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -1050,59 +1136,59 @@ state 57
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
-	expr  goto 117
-	primitive_type  goto 56
+	expr  goto 118
+	primitive_type  goto 57
 
 
-state 58
+state 59
 	program : PACKAGE IDENT import_decls all_decls EOF .  (1)
 
 	.  reduce 1
 
 
-state 59
+state 60
 	all_decls : type_decl all_decls .  (5)
 
 	.  reduce 5
 
 
-state 60
+state 61
 	all_decls : var_decl all_decls .  (6)
 
 	.  reduce 6
 
 
-state 61
+state 62
 	all_decls : func_decl all_decls .  (7)
 
 	.  reduce 7
 
 
-state 62
+state 63
 	all_decls : struct_func_decl all_decls .  (8)
 
 	.  reduce 8
 
 
-state 63
+state 64
 	var_decl : type_expr_w_structs IDENT . opt_assign  (21)
 	opt_assign : .  (28)
 
-	ASSIGN  shift 118
+	ASSIGN  shift 119
 	EOF  reduce 28
 	FUNC  reduce 28
 	TYPE  reduce 28
@@ -1140,11 +1226,12 @@ state 63
 	FLOAT_LIT  reduce 28
 	STRING_LIT  reduce 28
 	IDENT  reduce 28
+	IDENT_TYPE  reduce 28
 
-	opt_assign  goto 119
+	opt_assign  goto 120
 
 
-state 64
+state 65
 	struct_func_decl : FUNC LPAREN IDENT . type_expr RPAREN IDENT LPAREN params RPAREN return_types LBRACE stmts RBRACE  (40)
 
 	ERROR  shift 12
@@ -1160,32 +1247,32 @@ state 64
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	LBRACKET  shift 78
+	LBRACKET  shift 79
 	.  error
 
-	type_expr  goto 120
-	primitive_type  goto 80
-
-
-state 65
-	func_decl : FUNC IDENT LPAREN . params RPAREN return_types LBRACE stmts RBRACE  (30)
-	params : .  (31)
-
-	IDENT  shift 121
-	RPAREN  reduce 31
-
-	params  goto 122
-	param  goto 123
+	type_expr  goto 121
+	primitive_type  goto 81
 
 
 state 66
-	type_decl : TYPE IDENT STRUCT . LBRACE field_list RBRACE  (9)
+	func_decl : FUNC IDENT LPAREN . params RPAREN return_types LBRACE stmts RBRACE  (30)
+	params : .  (31)
 
-	LBRACE  shift 124
-	.  error
+	IDENT  shift 122
+	RPAREN  reduce 31
+
+	params  goto 123
+	param  goto 124
 
 
 state 67
+	type_decl : TYPE IDENT STRUCT . LBRACE field_list RBRACE  (9)
+
+	LBRACE  shift 125
+	.  error
+
+
+state 68
 	type_decl : TYPE IDENT ASSIGN . type_expr  (10)
 
 	ERROR  shift 12
@@ -1201,18 +1288,18 @@ state 67
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	LBRACKET  shift 78
+	LBRACKET  shift 79
 	.  error
 
-	type_expr  goto 125
-	primitive_type  goto 80
+	type_expr  goto 126
+	primitive_type  goto 81
 
 
-state 68
+state 69
 	var_decl : CONST IDENT DECL_ASSIGN . expr  (22)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -1226,29 +1313,29 @@ state 68
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
-	expr  goto 126
-	primitive_type  goto 56
+	expr  goto 127
+	primitive_type  goto 57
 
 
-state 69
+state 70
 	var_decl : CONST type_expr_w_structs IDENT . opt_assign  (20)
 	opt_assign : .  (28)
 
-	ASSIGN  shift 118
+	ASSIGN  shift 119
 	EOF  reduce 28
 	FUNC  reduce 28
 	TYPE  reduce 28
@@ -1286,11 +1373,12 @@ state 69
 	FLOAT_LIT  reduce 28
 	STRING_LIT  reduce 28
 	IDENT  reduce 28
+	IDENT_TYPE  reduce 28
 
-	opt_assign  goto 127
+	opt_assign  goto 128
 
 
-state 70
+state 71
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -1325,7 +1413,7 @@ state 70
 	.  reduce 89
 
 
-state 71
+state 72
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -1360,7 +1448,7 @@ state 71
 	.  reduce 90
 
 
-state 72
+state 73
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -1395,7 +1483,7 @@ state 72
 	.  reduce 91
 
 
-state 73
+state 74
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -1430,11 +1518,11 @@ state 73
 	.  reduce 92
 
 
-state 74
+state 75
 	expr : LPAREN MINUS . expr RPAREN  (93)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -1448,25 +1536,25 @@ state 74
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
-	expr  goto 128
-	primitive_type  goto 56
+	expr  goto 129
+	primitive_type  goto 57
 
 
-state 75
+state 76
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -1498,40 +1586,40 @@ state 75
 	expr : expr . BITOR_ASSIGN expr  (88)
 	expr : LPAREN expr . RPAREN  (106)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
-	RPAREN  shift 129
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
+	RPAREN  shift 130
 	.  error
 
 
-state 76
+state 77
 	expr : LBRACKET RBRACKET . type_expr LBRACE expr_list RBRACE  (104)
 	expr : LBRACKET RBRACKET . IDENT LBRACE expr_list RBRACE  (105)
 
@@ -1548,15 +1636,15 @@ state 76
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	LBRACKET  shift 78
-	IDENT  shift 130
+	LBRACKET  shift 79
+	IDENT  shift 131
 	.  error
 
-	type_expr  goto 131
-	primitive_type  goto 80
+	type_expr  goto 132
+	primitive_type  goto 81
 
 
-state 77
+state 78
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -1589,45 +1677,45 @@ state 77
 	expr : LBRACKET expr . RBRACKET type_expr LBRACE expr_list RBRACE  (101)
 	expr : LBRACKET expr . RBRACKET IDENT LBRACE expr_list RBRACE  (102)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
-	RBRACKET  shift 132
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
+	RBRACKET  shift 133
 	.  error
 
 
-state 78
-	type_expr : LBRACKET . expr RBRACKET type_expr  (115)
-	type_expr : LBRACKET . RBRACKET type_expr  (116)
+state 79
+	type_expr : LBRACKET . expr RBRACKET type_expr  (116)
+	type_expr : LBRACKET . RBRACKET type_expr  (117)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -1641,86 +1729,49 @@ state 78
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	RBRACKET  shift 133
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	RBRACKET  shift 134
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
-	expr  goto 134
-	primitive_type  goto 56
+	expr  goto 135
+	primitive_type  goto 57
 
 
-state 79
+state 80
 	type_expr_w_structs : LBRACKET RBRACKET type_expr .  (26)
 
 	.  reduce 26
 
 
-state 80
-	type_expr : primitive_type .  (114)
-
-	.  reduce 114
-
-
 state 81
-	expr : IDENT DOUBLECOLON . IDENT  (94)
+	type_expr : primitive_type .  (115)
 
-	IDENT  shift 135
-	.  error
+	.  reduce 115
 
 
 state 82
-	expr : IDENT LPAREN . expr_list RPAREN  (98)
+	expr : IDENT DOUBLECOLON . IDENT  (94)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
-	ERROR  shift 12
-	BOOL  shift 13
-	STRING  shift 14
-	U8  shift 15
-	U16  shift 16
-	U32  shift 17
-	U64  shift 18
-	I8  shift 19
-	I16  shift 20
-	I32  shift 21
-	I64  shift 22
-	F32  shift 23
-	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	IDENT  shift 136
 	.  error
-
-	expr  goto 136
-	primitive_type  goto 56
-	expr_list  goto 137
 
 
 state 83
-	expr : IDENT LBRACE . field_expr_list RBRACE  (103)
+	expr : IDENT LPAREN . expr_list RPAREN  (98)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -1734,32 +1785,69 @@ state 83
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
-	expr  goto 138
-	primitive_type  goto 56
-	field_expr_list  goto 139
+	expr  goto 137
+	primitive_type  goto 57
+	expr_list  goto 138
 
 
 state 84
+	expr : IDENT LBRACE . field_expr_list RBRACE  (103)
+
+	BREAK  shift 41
+	CONTINUE  shift 42
+	ERROR  shift 12
+	BOOL  shift 13
+	STRING  shift 14
+	U8  shift 15
+	U16  shift 16
+	U32  shift 17
+	U64  shift 18
+	I8  shift 19
+	I16  shift 20
+	I32  shift 21
+	I64  shift 22
+	F32  shift 23
+	F64  shift 24
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
+	.  error
+
+	expr  goto 139
+	primitive_type  goto 57
+	field_expr_list  goto 140
+
+
+state 85
 	expr : IDENT LBRACKET . expr RBRACKET  (95)
 	expr : IDENT LBRACKET . expr COLON expr RBRACKET  (96)
 	expr : IDENT LBRACKET . expr COLON RBRACKET  (97)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -1773,72 +1861,36 @@ state 84
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
-	expr  goto 140
-	primitive_type  goto 56
-
-
-state 85
-	expr : IDENT DOT . IDENT LPAREN expr_list RPAREN  (99)
-
-	IDENT  shift 141
-	.  error
+	expr  goto 141
+	primitive_type  goto 57
 
 
 state 86
-	expr : expr PLUS . expr  (60)
+	expr : IDENT DOT . IDENT LPAREN expr_list RPAREN  (99)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
-	ERROR  shift 12
-	BOOL  shift 13
-	STRING  shift 14
-	U8  shift 15
-	U16  shift 16
-	U32  shift 17
-	U64  shift 18
-	I8  shift 19
-	I16  shift 20
-	I32  shift 21
-	I64  shift 22
-	F32  shift 23
-	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	IDENT  shift 142
 	.  error
-
-	expr  goto 142
-	primitive_type  goto 56
 
 
 state 87
-	expr : expr MINUS . expr  (61)
+	expr : expr PLUS . expr  (60)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -1852,29 +1904,29 @@ state 87
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 143
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 88
-	expr : expr DIV . expr  (63)
+	expr : expr MINUS . expr  (61)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -1888,29 +1940,29 @@ state 88
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 144
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 89
-	expr : expr MULT . expr  (62)
+	expr : expr DIV . expr  (63)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -1924,29 +1976,29 @@ state 89
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 145
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 90
-	expr : expr MOD . expr  (64)
+	expr : expr MULT . expr  (62)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -1960,29 +2012,29 @@ state 90
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 146
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 91
-	expr : expr LSHIFT . expr  (65)
+	expr : expr MOD . expr  (64)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -1996,29 +2048,29 @@ state 91
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 147
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 92
-	expr : expr RSHIFT . expr  (66)
+	expr : expr LSHIFT . expr  (65)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -2032,29 +2084,29 @@ state 92
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 148
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 93
-	expr : expr BITXOR . expr  (67)
+	expr : expr RSHIFT . expr  (66)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -2068,29 +2120,29 @@ state 93
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 149
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 94
-	expr : expr BITOR . expr  (68)
+	expr : expr BITXOR . expr  (67)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -2104,29 +2156,29 @@ state 94
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 150
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 95
-	expr : expr BITAND . expr  (69)
+	expr : expr BITOR . expr  (68)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -2140,29 +2192,29 @@ state 95
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 151
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 96
-	expr : expr ASSIGN . expr  (78)
+	expr : expr BITAND . expr  (69)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -2176,29 +2228,29 @@ state 96
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 152
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 97
-	expr : expr PLUS_ASSIGN . expr  (79)
+	expr : expr ASSIGN . expr  (78)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -2212,29 +2264,29 @@ state 97
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 153
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 98
-	expr : expr MINUS_ASSIGN . expr  (80)
+	expr : expr PLUS_ASSIGN . expr  (79)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -2248,29 +2300,29 @@ state 98
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 154
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 99
-	expr : expr TIMES_ASSIGN . expr  (81)
+	expr : expr MINUS_ASSIGN . expr  (80)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -2284,29 +2336,29 @@ state 99
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 155
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 100
-	expr : expr DIV_ASSIGN . expr  (82)
+	expr : expr TIMES_ASSIGN . expr  (81)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -2320,29 +2372,29 @@ state 100
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 156
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 101
-	expr : expr MOD_ASSIGN . expr  (83)
+	expr : expr DIV_ASSIGN . expr  (82)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -2356,29 +2408,29 @@ state 101
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 157
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 102
-	expr : expr LSHIFT_ASSIGN . expr  (84)
+	expr : expr MOD_ASSIGN . expr  (83)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -2392,29 +2444,29 @@ state 102
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 158
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 103
-	expr : expr RSHIFT_ASSIGN . expr  (85)
+	expr : expr LSHIFT_ASSIGN . expr  (84)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -2428,29 +2480,29 @@ state 103
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 159
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 104
-	expr : expr BITAND_ASSIGN . expr  (86)
+	expr : expr RSHIFT_ASSIGN . expr  (85)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -2464,29 +2516,29 @@ state 104
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 160
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 105
-	expr : expr BITXOR_ASSIGN . expr  (87)
+	expr : expr BITAND_ASSIGN . expr  (86)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -2500,29 +2552,29 @@ state 105
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 161
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 106
-	expr : expr BITOR_ASSIGN . expr  (88)
+	expr : expr BITXOR_ASSIGN . expr  (87)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -2536,29 +2588,29 @@ state 106
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 162
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 107
-	expr : expr EQ . expr  (70)
+	expr : expr BITOR_ASSIGN . expr  (88)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -2572,29 +2624,29 @@ state 107
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 163
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 108
-	expr : expr NEQ . expr  (71)
+	expr : expr EQ . expr  (70)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -2608,29 +2660,29 @@ state 108
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 164
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 109
-	expr : expr LT . expr  (72)
+	expr : expr NEQ . expr  (71)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -2644,29 +2696,29 @@ state 109
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 165
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 110
-	expr : expr LE . expr  (73)
+	expr : expr LT . expr  (72)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -2680,29 +2732,29 @@ state 110
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 166
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 111
-	expr : expr GT . expr  (74)
+	expr : expr LE . expr  (73)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -2716,29 +2768,29 @@ state 111
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 167
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 112
-	expr : expr GE . expr  (75)
+	expr : expr GT . expr  (74)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -2752,29 +2804,29 @@ state 112
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 168
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 113
-	expr : expr AND . expr  (76)
+	expr : expr GE . expr  (75)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -2788,29 +2840,29 @@ state 113
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 169
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 114
-	expr : expr OR . expr  (77)
+	expr : expr AND . expr  (76)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -2824,25 +2876,61 @@ state 114
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
 	expr  goto 170
-	primitive_type  goto 56
+	primitive_type  goto 57
 
 
 state 115
+	expr : expr OR . expr  (77)
+
+	BREAK  shift 41
+	CONTINUE  shift 42
+	ERROR  shift 12
+	BOOL  shift 13
+	STRING  shift 14
+	U8  shift 15
+	U16  shift 16
+	U32  shift 17
+	U64  shift 18
+	I8  shift 19
+	I16  shift 20
+	I32  shift 21
+	I64  shift 22
+	F32  shift 23
+	F64  shift 24
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
+	.  error
+
+	expr  goto 171
+	primitive_type  goto 57
+
+
+state 116
 	type_expr_w_structs : LBRACKET expr RBRACKET . type_expr  (25)
 
 	ERROR  shift 12
@@ -2858,18 +2946,18 @@ state 115
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	LBRACKET  shift 78
+	LBRACKET  shift 79
 	.  error
 
-	type_expr  goto 171
-	primitive_type  goto 80
+	type_expr  goto 172
+	primitive_type  goto 81
 
 
-state 116
+state 117
 	expr : primitive_type LPAREN . expr RPAREN  (100)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -2883,25 +2971,25 @@ state 116
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
-	expr  goto 172
-	primitive_type  goto 56
+	expr  goto 173
+	primitive_type  goto 57
 
 
-state 117
+state 118
 	var_decl : IDENT DECL_ASSIGN expr .  (23)
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
@@ -2933,35 +3021,35 @@ state 117
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
 	EOF  reduce 23
 	FUNC  reduce 23
 	TYPE  reduce 23
@@ -2999,13 +3087,14 @@ state 117
 	FLOAT_LIT  reduce 23
 	STRING_LIT  reduce 23
 	IDENT  reduce 23
+	IDENT_TYPE  reduce 23
 
 
-state 118
+state 119
 	opt_assign : ASSIGN . expr  (29)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -3019,38 +3108,38 @@ state 118
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
-	expr  goto 173
-	primitive_type  goto 56
+	expr  goto 174
+	primitive_type  goto 57
 
 
-state 119
+state 120
 	var_decl : type_expr_w_structs IDENT opt_assign .  (21)
 
 	.  reduce 21
 
 
-state 120
+state 121
 	struct_func_decl : FUNC LPAREN IDENT type_expr . RPAREN IDENT LPAREN params RPAREN return_types LBRACE stmts RBRACE  (40)
 
-	RPAREN  shift 174
+	RPAREN  shift 175
 	.  error
 
 
-state 121
+state 122
 	param : IDENT . type_expr  (34)
 	param : IDENT . TRIPLEDOT type_expr  (35)
 
@@ -3067,51 +3156,51 @@ state 121
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	LBRACKET  shift 78
-	TRIPLEDOT  shift 175
+	LBRACKET  shift 79
+	TRIPLEDOT  shift 176
 	.  error
 
-	type_expr  goto 176
-	primitive_type  goto 80
-
-
-state 122
-	func_decl : FUNC IDENT LPAREN params . RPAREN return_types LBRACE stmts RBRACE  (30)
-
-	RPAREN  shift 177
-	.  error
+	type_expr  goto 177
+	primitive_type  goto 81
 
 
 state 123
-	params : param .  (32)
-	params : param . COMMA params  (33)
+	func_decl : FUNC IDENT LPAREN params . RPAREN return_types LBRACE stmts RBRACE  (30)
 
-	COMMA  shift 178
-	RPAREN  reduce 32
+	RPAREN  shift 178
+	.  error
 
 
 state 124
-	type_decl : TYPE IDENT STRUCT LBRACE . field_list RBRACE  (9)
-	field_list : .  (11)
+	params : param .  (32)
+	params : param . COMMA params  (33)
 
-	FINAL  shift 179
-	MUT  shift 180
-	LATE  shift 181
-	PRIVATE  shift 182
-	RBRACE  reduce 11
-
-	field_list  goto 183
-	field_decl  goto 184
-	modifier  goto 185
+	COMMA  shift 179
+	RPAREN  reduce 32
 
 
 state 125
+	type_decl : TYPE IDENT STRUCT LBRACE . field_list RBRACE  (9)
+	field_list : .  (11)
+
+	FINAL  shift 180
+	MUT  shift 181
+	LATE  shift 182
+	PRIVATE  shift 183
+	RBRACE  reduce 11
+
+	field_list  goto 184
+	field_decl  goto 185
+	modifier  goto 186
+
+
+state 126
 	type_decl : TYPE IDENT ASSIGN type_expr .  (10)
 
 	.  reduce 10
 
 
-state 126
+state 127
 	var_decl : CONST IDENT DECL_ASSIGN expr .  (22)
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
@@ -3143,35 +3232,35 @@ state 126
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
 	EOF  reduce 22
 	FUNC  reduce 22
 	TYPE  reduce 22
@@ -3209,15 +3298,16 @@ state 126
 	FLOAT_LIT  reduce 22
 	STRING_LIT  reduce 22
 	IDENT  reduce 22
+	IDENT_TYPE  reduce 22
 
 
-state 127
+state 128
 	var_decl : CONST type_expr_w_structs IDENT opt_assign .  (20)
 
 	.  reduce 20
 
 
-state 128
+state 129
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -3249,60 +3339,60 @@ state 128
 	expr : expr . BITOR_ASSIGN expr  (88)
 	expr : LPAREN MINUS expr . RPAREN  (93)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
-	RPAREN  shift 186
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
+	RPAREN  shift 187
 	.  error
 
 
-state 129
+state 130
 	expr : LPAREN expr RPAREN .  (106)
 
 	.  reduce 106
 
 
-state 130
-	expr : LBRACKET RBRACKET IDENT . LBRACE expr_list RBRACE  (105)
-
-	LBRACE  shift 187
-	.  error
-
-
 state 131
-	expr : LBRACKET RBRACKET type_expr . LBRACE expr_list RBRACE  (104)
+	expr : LBRACKET RBRACKET IDENT . LBRACE expr_list RBRACE  (105)
 
 	LBRACE  shift 188
 	.  error
 
 
 state 132
+	expr : LBRACKET RBRACKET type_expr . LBRACE expr_list RBRACE  (104)
+
+	LBRACE  shift 189
+	.  error
+
+
+state 133
 	expr : LBRACKET expr RBRACKET . type_expr LBRACE expr_list RBRACE  (101)
 	expr : LBRACKET expr RBRACKET . IDENT LBRACE expr_list RBRACE  (102)
 
@@ -3319,16 +3409,16 @@ state 132
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	LBRACKET  shift 78
-	IDENT  shift 189
+	LBRACKET  shift 79
+	IDENT  shift 190
 	.  error
 
-	type_expr  goto 190
-	primitive_type  goto 80
+	type_expr  goto 191
+	primitive_type  goto 81
 
 
-state 133
-	type_expr : LBRACKET RBRACKET . type_expr  (116)
+state 134
+	type_expr : LBRACKET RBRACKET . type_expr  (117)
 
 	ERROR  shift 12
 	BOOL  shift 13
@@ -3343,14 +3433,14 @@ state 133
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	LBRACKET  shift 78
+	LBRACKET  shift 79
 	.  error
 
-	type_expr  goto 191
-	primitive_type  goto 80
+	type_expr  goto 192
+	primitive_type  goto 81
 
 
-state 134
+state 135
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -3380,48 +3470,48 @@ state 134
 	expr : expr . BITAND_ASSIGN expr  (86)
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
-	type_expr : LBRACKET expr . RBRACKET type_expr  (115)
+	type_expr : LBRACKET expr . RBRACKET type_expr  (116)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
-	RBRACKET  shift 192
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
+	RBRACKET  shift 193
 	.  error
 
 
-state 135
+state 136
 	expr : IDENT DOUBLECOLON IDENT .  (94)
 
 	.  reduce 94
 
 
-state 136
+state 137
 	expr_list : expr .  (58)
 	expr_list : expr . COMMA expr_list  (59)
 	expr : expr . PLUS expr  (60)
@@ -3454,36 +3544,36 @@ state 136
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
-	COMMA  shift 193
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
+	COMMA  shift 194
 	RETURN  reduce 58
 	BREAK  reduce 58
 	IF  reduce 58
@@ -3518,16 +3608,17 @@ state 136
 	FLOAT_LIT  reduce 58
 	STRING_LIT  reduce 58
 	IDENT  reduce 58
-
-
-state 137
-	expr : IDENT LPAREN expr_list . RPAREN  (98)
-
-	RPAREN  shift 194
-	.  error
+	IDENT_TYPE  reduce 58
 
 
 state 138
+	expr : IDENT LPAREN expr_list . RPAREN  (98)
+
+	RPAREN  shift 195
+	.  error
+
+
+state 139
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -3557,50 +3648,50 @@ state 138
 	expr : expr . BITAND_ASSIGN expr  (86)
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
-	field_expr_list : expr . COLON expr  (117)
-	field_expr_list : expr . COLON expr COMMA field_expr_list  (118)
+	field_expr_list : expr . COLON expr  (118)
+	field_expr_list : expr . COLON expr COMMA field_expr_list  (119)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
-	COLON  shift 195
-	.  error
-
-
-state 139
-	expr : IDENT LBRACE field_expr_list . RBRACE  (103)
-
-	RBRACE  shift 196
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
+	COLON  shift 196
 	.  error
 
 
 state 140
+	expr : IDENT LBRACE field_expr_list . RBRACE  (103)
+
+	RBRACE  shift 197
+	.  error
+
+
+state 141
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -3634,48 +3725,48 @@ state 140
 	expr : IDENT LBRACKET expr . COLON expr RBRACKET  (96)
 	expr : IDENT LBRACKET expr . COLON RBRACKET  (97)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
-	RBRACKET  shift 197
-	COLON  shift 198
-	.  error
-
-
-state 141
-	expr : IDENT DOT IDENT . LPAREN expr_list RPAREN  (99)
-
-	LPAREN  shift 199
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
+	RBRACKET  shift 198
+	COLON  shift 199
 	.  error
 
 
 state 142
+	expr : IDENT DOT IDENT . LPAREN expr_list RPAREN  (99)
+
+	LPAREN  shift 200
+	.  error
+
+
+state 143
 	expr : expr . PLUS expr  (60)
 	expr : expr PLUS expr .  (60)
 	expr : expr . MINUS expr  (61)
@@ -3707,9 +3798,9 @@ state 142
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
 	EOF  reduce 60
 	FUNC  reduce 60
 	TYPE  reduce 60
@@ -3782,9 +3873,10 @@ state 142
 	FLOAT_LIT  reduce 60
 	STRING_LIT  reduce 60
 	IDENT  reduce 60
+	IDENT_TYPE  reduce 60
 
 
-state 143
+state 144
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr MINUS expr .  (61)
@@ -3816,9 +3908,9 @@ state 143
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
 	EOF  reduce 61
 	FUNC  reduce 61
 	TYPE  reduce 61
@@ -3891,9 +3983,10 @@ state 143
 	FLOAT_LIT  reduce 61
 	STRING_LIT  reduce 61
 	IDENT  reduce 61
+	IDENT_TYPE  reduce 61
 
 
-state 144
+state 145
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -3928,7 +4021,7 @@ state 144
 	.  reduce 63
 
 
-state 145
+state 146
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -3963,7 +4056,7 @@ state 145
 	.  reduce 62
 
 
-state 146
+state 147
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -3998,7 +4091,7 @@ state 146
 	.  reduce 64
 
 
-state 147
+state 148
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -4030,11 +4123,11 @@ state 147
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
 	EOF  reduce 65
 	FUNC  reduce 65
 	TYPE  reduce 65
@@ -4105,9 +4198,10 @@ state 147
 	FLOAT_LIT  reduce 65
 	STRING_LIT  reduce 65
 	IDENT  reduce 65
+	IDENT_TYPE  reduce 65
 
 
-state 148
+state 149
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -4139,11 +4233,11 @@ state 148
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
 	EOF  reduce 66
 	FUNC  reduce 66
 	TYPE  reduce 66
@@ -4214,9 +4308,10 @@ state 148
 	FLOAT_LIT  reduce 66
 	STRING_LIT  reduce 66
 	IDENT  reduce 66
+	IDENT_TYPE  reduce 66
 
 
-state 149
+state 150
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -4248,20 +4343,20 @@ state 149
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITAND  shift 95
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITAND  shift 96
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
 	EOF  reduce 67
 	FUNC  reduce 67
 	TYPE  reduce 67
@@ -4323,9 +4418,10 @@ state 149
 	FLOAT_LIT  reduce 67
 	STRING_LIT  reduce 67
 	IDENT  reduce 67
+	IDENT_TYPE  reduce 67
 
 
-state 150
+state 151
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -4357,21 +4453,21 @@ state 150
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITAND  shift 95
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITAND  shift 96
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
 	EOF  reduce 68
 	FUNC  reduce 68
 	TYPE  reduce 68
@@ -4432,9 +4528,10 @@ state 150
 	FLOAT_LIT  reduce 68
 	STRING_LIT  reduce 68
 	IDENT  reduce 68
+	IDENT_TYPE  reduce 68
 
 
-state 151
+state 152
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -4466,19 +4563,19 @@ state 151
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
 	EOF  reduce 69
 	FUNC  reduce 69
 	TYPE  reduce 69
@@ -4541,9 +4638,10 @@ state 151
 	FLOAT_LIT  reduce 69
 	STRING_LIT  reduce 69
 	IDENT  reduce 69
+	IDENT_TYPE  reduce 69
 
 
-state 152
+state 153
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -4575,35 +4673,35 @@ state 152
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
 	EOF  reduce 78
 	FUNC  reduce 78
 	TYPE  reduce 78
@@ -4650,9 +4748,10 @@ state 152
 	FLOAT_LIT  reduce 78
 	STRING_LIT  reduce 78
 	IDENT  reduce 78
+	IDENT_TYPE  reduce 78
 
 
-state 153
+state 154
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -4684,35 +4783,35 @@ state 153
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
 	EOF  reduce 79
 	FUNC  reduce 79
 	TYPE  reduce 79
@@ -4759,9 +4858,10 @@ state 153
 	FLOAT_LIT  reduce 79
 	STRING_LIT  reduce 79
 	IDENT  reduce 79
+	IDENT_TYPE  reduce 79
 
 
-state 154
+state 155
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -4793,35 +4893,35 @@ state 154
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
 	EOF  reduce 80
 	FUNC  reduce 80
 	TYPE  reduce 80
@@ -4868,9 +4968,10 @@ state 154
 	FLOAT_LIT  reduce 80
 	STRING_LIT  reduce 80
 	IDENT  reduce 80
+	IDENT_TYPE  reduce 80
 
 
-state 155
+state 156
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -4902,35 +5003,35 @@ state 155
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
 	EOF  reduce 81
 	FUNC  reduce 81
 	TYPE  reduce 81
@@ -4977,9 +5078,10 @@ state 155
 	FLOAT_LIT  reduce 81
 	STRING_LIT  reduce 81
 	IDENT  reduce 81
+	IDENT_TYPE  reduce 81
 
 
-state 156
+state 157
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -5011,35 +5113,35 @@ state 156
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
 	EOF  reduce 82
 	FUNC  reduce 82
 	TYPE  reduce 82
@@ -5086,9 +5188,10 @@ state 156
 	FLOAT_LIT  reduce 82
 	STRING_LIT  reduce 82
 	IDENT  reduce 82
+	IDENT_TYPE  reduce 82
 
 
-state 157
+state 158
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -5120,35 +5223,35 @@ state 157
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
 	EOF  reduce 83
 	FUNC  reduce 83
 	TYPE  reduce 83
@@ -5195,9 +5298,10 @@ state 157
 	FLOAT_LIT  reduce 83
 	STRING_LIT  reduce 83
 	IDENT  reduce 83
+	IDENT_TYPE  reduce 83
 
 
-state 158
+state 159
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -5229,35 +5333,35 @@ state 158
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
 	EOF  reduce 84
 	FUNC  reduce 84
 	TYPE  reduce 84
@@ -5304,9 +5408,10 @@ state 158
 	FLOAT_LIT  reduce 84
 	STRING_LIT  reduce 84
 	IDENT  reduce 84
+	IDENT_TYPE  reduce 84
 
 
-state 159
+state 160
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -5338,35 +5443,35 @@ state 159
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
 	EOF  reduce 85
 	FUNC  reduce 85
 	TYPE  reduce 85
@@ -5413,9 +5518,10 @@ state 159
 	FLOAT_LIT  reduce 85
 	STRING_LIT  reduce 85
 	IDENT  reduce 85
+	IDENT_TYPE  reduce 85
 
 
-state 160
+state 161
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -5447,35 +5553,35 @@ state 160
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
 	EOF  reduce 86
 	FUNC  reduce 86
 	TYPE  reduce 86
@@ -5522,9 +5628,10 @@ state 160
 	FLOAT_LIT  reduce 86
 	STRING_LIT  reduce 86
 	IDENT  reduce 86
+	IDENT_TYPE  reduce 86
 
 
-state 161
+state 162
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -5556,35 +5663,35 @@ state 161
 	expr : expr BITXOR_ASSIGN expr .  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
 	EOF  reduce 87
 	FUNC  reduce 87
 	TYPE  reduce 87
@@ -5631,9 +5738,10 @@ state 161
 	FLOAT_LIT  reduce 87
 	STRING_LIT  reduce 87
 	IDENT  reduce 87
+	IDENT_TYPE  reduce 87
 
 
-state 162
+state 163
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -5665,35 +5773,35 @@ state 162
 	expr : expr . BITOR_ASSIGN expr  (88)
 	expr : expr BITOR_ASSIGN expr .  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
 	EOF  reduce 88
 	FUNC  reduce 88
 	TYPE  reduce 88
@@ -5740,9 +5848,10 @@ state 162
 	FLOAT_LIT  reduce 88
 	STRING_LIT  reduce 88
 	IDENT  reduce 88
+	IDENT_TYPE  reduce 88
 
 
-state 163
+state 164
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -5774,17 +5883,17 @@ state 163
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
 	EOF  reduce 70
 	FUNC  reduce 70
 	TYPE  reduce 70
@@ -5849,9 +5958,10 @@ state 163
 	FLOAT_LIT  reduce 70
 	STRING_LIT  reduce 70
 	IDENT  reduce 70
+	IDENT_TYPE  reduce 70
 
 
-state 164
+state 165
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -5883,17 +5993,17 @@ state 164
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
 	EOF  reduce 71
 	FUNC  reduce 71
 	TYPE  reduce 71
@@ -5958,9 +6068,10 @@ state 164
 	FLOAT_LIT  reduce 71
 	STRING_LIT  reduce 71
 	IDENT  reduce 71
+	IDENT_TYPE  reduce 71
 
 
-state 165
+state 166
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -5992,13 +6103,13 @@ state 165
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
 	EOF  reduce 72
 	FUNC  reduce 72
 	TYPE  reduce 72
@@ -6067,9 +6178,10 @@ state 165
 	FLOAT_LIT  reduce 72
 	STRING_LIT  reduce 72
 	IDENT  reduce 72
+	IDENT_TYPE  reduce 72
 
 
-state 166
+state 167
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -6101,13 +6213,13 @@ state 166
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
 	EOF  reduce 73
 	FUNC  reduce 73
 	TYPE  reduce 73
@@ -6176,9 +6288,10 @@ state 166
 	FLOAT_LIT  reduce 73
 	STRING_LIT  reduce 73
 	IDENT  reduce 73
+	IDENT_TYPE  reduce 73
 
 
-state 167
+state 168
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -6210,13 +6323,13 @@ state 167
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
 	EOF  reduce 74
 	FUNC  reduce 74
 	TYPE  reduce 74
@@ -6285,9 +6398,10 @@ state 167
 	FLOAT_LIT  reduce 74
 	STRING_LIT  reduce 74
 	IDENT  reduce 74
+	IDENT_TYPE  reduce 74
 
 
-state 168
+state 169
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -6319,13 +6433,13 @@ state 168
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
 	EOF  reduce 75
 	FUNC  reduce 75
 	TYPE  reduce 75
@@ -6394,9 +6508,10 @@ state 168
 	FLOAT_LIT  reduce 75
 	STRING_LIT  reduce 75
 	IDENT  reduce 75
+	IDENT_TYPE  reduce 75
 
 
-state 169
+state 170
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -6428,22 +6543,22 @@ state 169
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
 	EOF  reduce 76
 	FUNC  reduce 76
 	TYPE  reduce 76
@@ -6503,9 +6618,10 @@ state 169
 	FLOAT_LIT  reduce 76
 	STRING_LIT  reduce 76
 	IDENT  reduce 76
+	IDENT_TYPE  reduce 76
 
 
-state 170
+state 171
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -6537,23 +6653,23 @@ state 170
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
 	EOF  reduce 77
 	FUNC  reduce 77
 	TYPE  reduce 77
@@ -6612,15 +6728,16 @@ state 170
 	FLOAT_LIT  reduce 77
 	STRING_LIT  reduce 77
 	IDENT  reduce 77
+	IDENT_TYPE  reduce 77
 
 
-state 171
+state 172
 	type_expr_w_structs : LBRACKET expr RBRACKET type_expr .  (25)
 
 	.  reduce 25
 
 
-state 172
+state 173
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -6652,40 +6769,40 @@ state 172
 	expr : expr . BITOR_ASSIGN expr  (88)
 	expr : primitive_type LPAREN expr . RPAREN  (100)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
-	RPAREN  shift 200
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
+	RPAREN  shift 201
 	.  error
 
 
-state 173
+state 174
 	opt_assign : ASSIGN expr .  (29)
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
@@ -6717,35 +6834,35 @@ state 173
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
 	EOF  reduce 29
 	FUNC  reduce 29
 	TYPE  reduce 29
@@ -6783,16 +6900,17 @@ state 173
 	FLOAT_LIT  reduce 29
 	STRING_LIT  reduce 29
 	IDENT  reduce 29
-
-
-state 174
-	struct_func_decl : FUNC LPAREN IDENT type_expr RPAREN . IDENT LPAREN params RPAREN return_types LBRACE stmts RBRACE  (40)
-
-	IDENT  shift 201
-	.  error
+	IDENT_TYPE  reduce 29
 
 
 state 175
+	struct_func_decl : FUNC LPAREN IDENT type_expr RPAREN . IDENT LPAREN params RPAREN return_types LBRACE stmts RBRACE  (40)
+
+	IDENT  shift 202
+	.  error
+
+
+state 176
 	param : IDENT TRIPLEDOT . type_expr  (35)
 
 	ERROR  shift 12
@@ -6808,20 +6926,20 @@ state 175
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	LBRACKET  shift 78
+	LBRACKET  shift 79
 	.  error
 
-	type_expr  goto 202
-	primitive_type  goto 80
+	type_expr  goto 203
+	primitive_type  goto 81
 
 
-state 176
+state 177
 	param : IDENT type_expr .  (34)
 
 	.  reduce 34
 
 
-state 177
+state 178
 	func_decl : FUNC IDENT LPAREN params RPAREN . return_types LBRACE stmts RBRACE  (30)
 	return_types : .  (36)
 
@@ -6838,90 +6956,90 @@ state 177
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	LBRACKET  shift 78
+	LBRACKET  shift 79
 	LBRACE  reduce 36
 
-	type_expr  goto 203
-	primitive_type  goto 80
-	return_types  goto 204
-	type_expr_list  goto 205
-
-
-state 178
-	params : param COMMA . params  (33)
-	params : .  (31)
-
-	IDENT  shift 121
-	RPAREN  reduce 31
-
-	params  goto 206
-	param  goto 123
+	type_expr  goto 204
+	primitive_type  goto 81
+	return_types  goto 205
+	type_expr_list  goto 206
 
 
 state 179
+	params : param COMMA . params  (33)
+	params : .  (31)
+
+	IDENT  shift 122
+	RPAREN  reduce 31
+
+	params  goto 207
+	param  goto 124
+
+
+state 180
 	modifier : FINAL .  (16)
 
 	.  reduce 16
 
 
-state 180
+state 181
 	modifier : MUT .  (15)
 
 	.  reduce 15
 
 
-state 181
+state 182
 	modifier : LATE .  (17)
 
 	.  reduce 17
 
 
-state 182
+state 183
 	modifier : PRIVATE .  (14)
 
 	.  reduce 14
 
 
-state 183
+state 184
 	type_decl : TYPE IDENT STRUCT LBRACE field_list . RBRACE  (9)
 
-	RBRACE  shift 207
+	RBRACE  shift 208
 	.  error
-
-
-state 184
-	field_list : field_decl . field_list  (12)
-	field_list : .  (11)
-
-	FINAL  shift 179
-	MUT  shift 180
-	LATE  shift 181
-	PRIVATE  shift 182
-	RBRACE  reduce 11
-
-	field_list  goto 208
-	field_decl  goto 184
-	modifier  goto 185
 
 
 state 185
-	field_decl : modifier . IDENT type_expr opt_default  (13)
+	field_list : field_decl . field_list  (12)
+	field_list : .  (11)
 
-	IDENT  shift 209
-	.  error
+	FINAL  shift 180
+	MUT  shift 181
+	LATE  shift 182
+	PRIVATE  shift 183
+	RBRACE  reduce 11
+
+	field_list  goto 209
+	field_decl  goto 185
+	modifier  goto 186
 
 
 state 186
+	field_decl : modifier . IDENT type_expr opt_default  (13)
+
+	IDENT  shift 210
+	.  error
+
+
+state 187
 	expr : LPAREN MINUS expr RPAREN .  (93)
 
 	.  reduce 93
 
 
-state 187
+state 188
 	expr : LBRACKET RBRACKET IDENT LBRACE . expr_list RBRACE  (105)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -6935,110 +7053,85 @@ state 187
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
-	expr  goto 136
-	primitive_type  goto 56
-	expr_list  goto 210
-
-
-state 188
-	expr : LBRACKET RBRACKET type_expr LBRACE . expr_list RBRACE  (104)
-
-	BREAK  shift 40
-	CONTINUE  shift 41
-	ERROR  shift 12
-	BOOL  shift 13
-	STRING  shift 14
-	U8  shift 15
-	U16  shift 16
-	U32  shift 17
-	U64  shift 18
-	I8  shift 19
-	I16  shift 20
-	I32  shift 21
-	I64  shift 22
-	F32  shift 23
-	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
-	.  error
-
-	expr  goto 136
-	primitive_type  goto 56
+	expr  goto 137
+	primitive_type  goto 57
 	expr_list  goto 211
 
 
 state 189
-	expr : LBRACKET expr RBRACKET IDENT . LBRACE expr_list RBRACE  (102)
+	expr : LBRACKET RBRACKET type_expr LBRACE . expr_list RBRACE  (104)
 
-	LBRACE  shift 212
+	BREAK  shift 41
+	CONTINUE  shift 42
+	ERROR  shift 12
+	BOOL  shift 13
+	STRING  shift 14
+	U8  shift 15
+	U16  shift 16
+	U32  shift 17
+	U64  shift 18
+	I8  shift 19
+	I16  shift 20
+	I32  shift 21
+	I64  shift 22
+	F32  shift 23
+	F64  shift 24
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
+
+	expr  goto 137
+	primitive_type  goto 57
+	expr_list  goto 212
 
 
 state 190
-	expr : LBRACKET expr RBRACKET type_expr . LBRACE expr_list RBRACE  (101)
+	expr : LBRACKET expr RBRACKET IDENT . LBRACE expr_list RBRACE  (102)
 
 	LBRACE  shift 213
 	.  error
 
 
 state 191
-	type_expr : LBRACKET RBRACKET type_expr .  (116)
+	expr : LBRACKET expr RBRACKET type_expr . LBRACE expr_list RBRACE  (101)
 
-	.  reduce 116
+	LBRACE  shift 214
+	.  error
 
 
 state 192
-	type_expr : LBRACKET expr RBRACKET . type_expr  (115)
+	type_expr : LBRACKET RBRACKET type_expr .  (117)
 
-	ERROR  shift 12
-	BOOL  shift 13
-	STRING  shift 14
-	U8  shift 15
-	U16  shift 16
-	U32  shift 17
-	U64  shift 18
-	I8  shift 19
-	I16  shift 20
-	I32  shift 21
-	I64  shift 22
-	F32  shift 23
-	F64  shift 24
-	LBRACKET  shift 78
-	.  error
-
-	type_expr  goto 214
-	primitive_type  goto 80
+	.  reduce 117
 
 
 state 193
-	expr_list : expr COMMA . expr_list  (59)
+	type_expr : LBRACKET expr RBRACKET . type_expr  (116)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -7052,37 +7145,62 @@ state 193
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	LBRACKET  shift 79
 	.  error
 
-	expr  goto 136
-	primitive_type  goto 56
-	expr_list  goto 215
+	type_expr  goto 215
+	primitive_type  goto 81
 
 
 state 194
+	expr_list : expr COMMA . expr_list  (59)
+
+	BREAK  shift 41
+	CONTINUE  shift 42
+	ERROR  shift 12
+	BOOL  shift 13
+	STRING  shift 14
+	U8  shift 15
+	U16  shift 16
+	U32  shift 17
+	U64  shift 18
+	I8  shift 19
+	I16  shift 20
+	I32  shift 21
+	I64  shift 22
+	F32  shift 23
+	F64  shift 24
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
+	.  error
+
+	expr  goto 137
+	primitive_type  goto 57
+	expr_list  goto 216
+
+
+state 195
 	expr : IDENT LPAREN expr_list RPAREN .  (98)
 
 	.  reduce 98
 
 
-state 195
-	field_expr_list : expr COLON . expr  (117)
-	field_expr_list : expr COLON . expr COMMA field_expr_list  (118)
+state 196
+	field_expr_list : expr COLON . expr  (118)
+	field_expr_list : expr COLON . expr COMMA field_expr_list  (119)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -7096,42 +7214,42 @@ state 195
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
-	expr  goto 216
-	primitive_type  goto 56
+	expr  goto 217
+	primitive_type  goto 57
 
 
-state 196
+state 197
 	expr : IDENT LBRACE field_expr_list RBRACE .  (103)
 
 	.  reduce 103
 
 
-state 197
+state 198
 	expr : IDENT LBRACKET expr RBRACKET .  (95)
 
 	.  reduce 95
 
 
-state 198
+state 199
 	expr : IDENT LBRACKET expr COLON . expr RBRACKET  (96)
 	expr : IDENT LBRACKET expr COLON . RBRACKET  (97)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -7145,121 +7263,121 @@ state 198
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	RBRACKET  shift 217
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	RBRACKET  shift 218
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
-	expr  goto 218
-	primitive_type  goto 56
-
-
-state 199
-	expr : IDENT DOT IDENT LPAREN . expr_list RPAREN  (99)
-
-	BREAK  shift 40
-	CONTINUE  shift 41
-	ERROR  shift 12
-	BOOL  shift 13
-	STRING  shift 14
-	U8  shift 15
-	U16  shift 16
-	U32  shift 17
-	U64  shift 18
-	I8  shift 19
-	I16  shift 20
-	I32  shift 21
-	I64  shift 22
-	F32  shift 23
-	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
-	.  error
-
-	expr  goto 136
-	primitive_type  goto 56
-	expr_list  goto 219
+	expr  goto 219
+	primitive_type  goto 57
 
 
 state 200
+	expr : IDENT DOT IDENT LPAREN . expr_list RPAREN  (99)
+
+	BREAK  shift 41
+	CONTINUE  shift 42
+	ERROR  shift 12
+	BOOL  shift 13
+	STRING  shift 14
+	U8  shift 15
+	U16  shift 16
+	U32  shift 17
+	U64  shift 18
+	I8  shift 19
+	I16  shift 20
+	I32  shift 21
+	I64  shift 22
+	F32  shift 23
+	F64  shift 24
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
+	.  error
+
+	expr  goto 137
+	primitive_type  goto 57
+	expr_list  goto 220
+
+
+state 201
 	expr : primitive_type LPAREN expr RPAREN .  (100)
 
 	.  reduce 100
 
 
-state 201
+state 202
 	struct_func_decl : FUNC LPAREN IDENT type_expr RPAREN IDENT . LPAREN params RPAREN return_types LBRACE stmts RBRACE  (40)
 
-	LPAREN  shift 220
+	LPAREN  shift 221
 	.  error
 
 
-state 202
+state 203
 	param : IDENT TRIPLEDOT type_expr .  (35)
 
 	.  reduce 35
 
 
-state 203
+state 204
 	type_expr_list : type_expr .  (38)
 
 	.  reduce 38
 
 
-state 204
+state 205
 	func_decl : FUNC IDENT LPAREN params RPAREN return_types . LBRACE stmts RBRACE  (30)
 
-	LBRACE  shift 221
+	LBRACE  shift 222
 	.  error
 
 
-state 205
+state 206
 	return_types : type_expr_list .  (37)
 	type_expr_list : type_expr_list . COMMA type_expr  (39)
 
-	COMMA  shift 222
+	COMMA  shift 223
 	LBRACE  reduce 37
 
 
-state 206
+state 207
 	params : param COMMA params .  (33)
 
 	.  reduce 33
 
 
-state 207
+state 208
 	type_decl : TYPE IDENT STRUCT LBRACE field_list RBRACE .  (9)
 
 	.  reduce 9
 
 
-state 208
+state 209
 	field_list : field_decl field_list .  (12)
 
 	.  reduce 12
 
 
-state 209
+state 210
 	field_decl : modifier IDENT . type_expr opt_default  (13)
 
 	ERROR  shift 12
@@ -7275,69 +7393,32 @@ state 209
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	LBRACKET  shift 78
+	LBRACKET  shift 79
 	.  error
 
-	type_expr  goto 223
-	primitive_type  goto 80
-
-
-state 210
-	expr : LBRACKET RBRACKET IDENT LBRACE expr_list . RBRACE  (105)
-
-	RBRACE  shift 224
-	.  error
+	type_expr  goto 224
+	primitive_type  goto 81
 
 
 state 211
-	expr : LBRACKET RBRACKET type_expr LBRACE expr_list . RBRACE  (104)
+	expr : LBRACKET RBRACKET IDENT LBRACE expr_list . RBRACE  (105)
 
 	RBRACE  shift 225
 	.  error
 
 
 state 212
-	expr : LBRACKET expr RBRACKET IDENT LBRACE . expr_list RBRACE  (102)
+	expr : LBRACKET RBRACKET type_expr LBRACE expr_list . RBRACE  (104)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
-	ERROR  shift 12
-	BOOL  shift 13
-	STRING  shift 14
-	U8  shift 15
-	U16  shift 16
-	U32  shift 17
-	U64  shift 18
-	I8  shift 19
-	I16  shift 20
-	I32  shift 21
-	I64  shift 22
-	F32  shift 23
-	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	RBRACE  shift 226
 	.  error
-
-	expr  goto 136
-	primitive_type  goto 56
-	expr_list  goto 226
 
 
 state 213
-	expr : LBRACKET expr RBRACKET type_expr LBRACE . expr_list RBRACE  (101)
+	expr : LBRACKET expr RBRACKET IDENT LBRACE . expr_list RBRACE  (102)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -7351,38 +7432,75 @@ state 213
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
-	expr  goto 136
-	primitive_type  goto 56
+	expr  goto 137
+	primitive_type  goto 57
 	expr_list  goto 227
 
 
 state 214
-	type_expr : LBRACKET expr RBRACKET type_expr .  (115)
+	expr : LBRACKET expr RBRACKET type_expr LBRACE . expr_list RBRACE  (101)
 
-	.  reduce 115
+	BREAK  shift 41
+	CONTINUE  shift 42
+	ERROR  shift 12
+	BOOL  shift 13
+	STRING  shift 14
+	U8  shift 15
+	U16  shift 16
+	U32  shift 17
+	U64  shift 18
+	I8  shift 19
+	I16  shift 20
+	I32  shift 21
+	I64  shift 22
+	F32  shift 23
+	F64  shift 24
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
+	.  error
+
+	expr  goto 137
+	primitive_type  goto 57
+	expr_list  goto 228
 
 
 state 215
+	type_expr : LBRACKET expr RBRACKET type_expr .  (116)
+
+	.  reduce 116
+
+
+state 216
 	expr_list : expr COMMA expr_list .  (59)
 
 	.  reduce 59
 
 
-state 216
+state 217
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -7412,49 +7530,49 @@ state 216
 	expr : expr . BITAND_ASSIGN expr  (86)
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
-	field_expr_list : expr COLON expr .  (117)
-	field_expr_list : expr COLON expr . COMMA field_expr_list  (118)
+	field_expr_list : expr COLON expr .  (118)
+	field_expr_list : expr COLON expr . COMMA field_expr_list  (119)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
-	COMMA  shift 228
-	RBRACE  reduce 117
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
+	COMMA  shift 229
+	RBRACE  reduce 118
 
 
-state 217
+state 218
 	expr : IDENT LBRACKET expr COLON RBRACKET .  (97)
 
 	.  reduce 97
 
 
-state 218
+state 219
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
 	expr : expr . MULT expr  (62)
@@ -7486,67 +7604,67 @@ state 218
 	expr : expr . BITOR_ASSIGN expr  (88)
 	expr : IDENT LBRACKET expr COLON expr . RBRACKET  (96)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
-	RBRACKET  shift 229
-	.  error
-
-
-state 219
-	expr : IDENT DOT IDENT LPAREN expr_list . RPAREN  (99)
-
-	RPAREN  shift 230
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
+	RBRACKET  shift 230
 	.  error
 
 
 state 220
-	struct_func_decl : FUNC LPAREN IDENT type_expr RPAREN IDENT LPAREN . params RPAREN return_types LBRACE stmts RBRACE  (40)
-	params : .  (31)
+	expr : IDENT DOT IDENT LPAREN expr_list . RPAREN  (99)
 
-	IDENT  shift 121
-	RPAREN  reduce 31
-
-	params  goto 231
-	param  goto 123
+	RPAREN  shift 231
+	.  error
 
 
 state 221
+	struct_func_decl : FUNC LPAREN IDENT type_expr RPAREN IDENT LPAREN . params RPAREN return_types LBRACE stmts RBRACE  (40)
+	params : .  (31)
+
+	IDENT  shift 122
+	RPAREN  reduce 31
+
+	params  goto 232
+	param  goto 124
+
+
+state 222
 	func_decl : FUNC IDENT LPAREN params RPAREN return_types LBRACE . stmts RBRACE  (30)
 	stmts : .  (41)
 
-	RETURN  shift 232
-	BREAK  shift 40
-	IF  shift 233
-	CONTINUE  shift 41
-	FOR  shift 234
-	WHILE  shift 235
+	RETURN  shift 233
+	BREAK  shift 41
+	IF  shift 234
+	CONTINUE  shift 42
+	FOR  shift 235
+	WHILE  shift 236
 	CONST  shift 11
 	ERROR  shift 12
 	BOOL  shift 13
@@ -7561,29 +7679,30 @@ state 221
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 236
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 237
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 237
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 238
+	IDENT_TYPE  shift 27
 	RBRACE  reduce 41
 
-	var_decl  goto 238
-	expr  goto 239
-	type_expr_w_structs  goto 32
-	primitive_type  goto 240
-	stmts  goto 241
-	stmt  goto 242
+	var_decl  goto 239
+	expr  goto 240
+	type_expr_w_structs  goto 33
+	primitive_type  goto 241
+	stmts  goto 242
+	stmt  goto 243
 
 
-state 222
+state 223
 	type_expr_list : type_expr_list COMMA . type_expr  (39)
 
 	ERROR  shift 12
@@ -7599,58 +7718,58 @@ state 222
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	LBRACKET  shift 78
+	LBRACKET  shift 79
 	.  error
 
-	type_expr  goto 243
-	primitive_type  goto 80
+	type_expr  goto 244
+	primitive_type  goto 81
 
 
-state 223
+state 224
 	field_decl : modifier IDENT type_expr . opt_default  (13)
 	opt_default : .  (18)
 
-	ASSIGN  shift 244
+	ASSIGN  shift 245
 	FINAL  reduce 18
 	MUT  reduce 18
 	LATE  reduce 18
 	PRIVATE  reduce 18
 	RBRACE  reduce 18
 
-	opt_default  goto 245
+	opt_default  goto 246
 
 
-state 224
+state 225
 	expr : LBRACKET RBRACKET IDENT LBRACE expr_list RBRACE .  (105)
 
 	.  reduce 105
 
 
-state 225
+state 226
 	expr : LBRACKET RBRACKET type_expr LBRACE expr_list RBRACE .  (104)
 
 	.  reduce 104
 
 
-state 226
-	expr : LBRACKET expr RBRACKET IDENT LBRACE expr_list . RBRACE  (102)
-
-	RBRACE  shift 246
-	.  error
-
-
 state 227
-	expr : LBRACKET expr RBRACKET type_expr LBRACE expr_list . RBRACE  (101)
+	expr : LBRACKET expr RBRACKET IDENT LBRACE expr_list . RBRACE  (102)
 
 	RBRACE  shift 247
 	.  error
 
 
 state 228
-	field_expr_list : expr COLON expr COMMA . field_expr_list  (118)
+	expr : LBRACKET expr RBRACKET type_expr LBRACE expr_list . RBRACE  (101)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	RBRACE  shift 248
+	.  error
+
+
+state 229
+	field_expr_list : expr COLON expr COMMA . field_expr_list  (119)
+
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -7664,88 +7783,88 @@ state 228
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
-	expr  goto 138
-	primitive_type  goto 56
-	field_expr_list  goto 248
+	expr  goto 139
+	primitive_type  goto 57
+	field_expr_list  goto 249
 
 
-state 229
+state 230
 	expr : IDENT LBRACKET expr COLON expr RBRACKET .  (96)
 
 	.  reduce 96
 
 
-state 230
+state 231
 	expr : IDENT DOT IDENT LPAREN expr_list RPAREN .  (99)
 
 	.  reduce 99
 
 
-state 231
+state 232
 	struct_func_decl : FUNC LPAREN IDENT type_expr RPAREN IDENT LPAREN params . RPAREN return_types LBRACE stmts RBRACE  (40)
 
-	RPAREN  shift 249
+	RPAREN  shift 250
 	.  error
-
-
-state 232
-	stmt : RETURN . opt_expr_list  (48)
-	stmt : RETURN . NULL  (49)
-
-	BREAK  shift 40
-	CONTINUE  shift 41
-	ERROR  shift 12
-	NULL  shift 250
-	BOOL  shift 13
-	STRING  shift 14
-	U8  shift 15
-	U16  shift 16
-	U32  shift 17
-	U64  shift 18
-	I8  shift 19
-	I16  shift 20
-	I32  shift 21
-	I64  shift 22
-	F32  shift 23
-	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
-	.  error
-
-	expr  goto 251
-	primitive_type  goto 56
-	opt_expr_list  goto 252
 
 
 state 233
+	stmt : RETURN . opt_expr_list  (48)
+	stmt : RETURN . NULL  (49)
+
+	BREAK  shift 41
+	CONTINUE  shift 42
+	ERROR  shift 12
+	NULL  shift 251
+	BOOL  shift 13
+	STRING  shift 14
+	U8  shift 15
+	U16  shift 16
+	U32  shift 17
+	U64  shift 18
+	I8  shift 19
+	I16  shift 20
+	I32  shift 21
+	I64  shift 22
+	F32  shift 23
+	F64  shift 24
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
+	.  error
+
+	expr  goto 252
+	primitive_type  goto 57
+	opt_expr_list  goto 253
+
+
+state 234
 	stmt : IF . expr LBRACE stmts RBRACE else_block  (45)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -7759,25 +7878,25 @@ state 233
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
-	expr  goto 253
-	primitive_type  goto 56
+	expr  goto 254
+	primitive_type  goto 57
 
 
-state 234
+state 235
 	stmt : FOR . opt_stmt SEMICOLON opt_expr SEMICOLON opt_expr LBRACE stmts RBRACE  (46)
 	opt_stmt : .  (54)
 
@@ -7797,19 +7916,20 @@ state 234
 	F64  shift 24
 	LBRACKET  shift 25
 	IDENT  shift 26
+	IDENT_TYPE  shift 27
 	SEMICOLON  reduce 54
 
-	var_decl  goto 254
-	type_expr_w_structs  goto 32
-	primitive_type  goto 33
-	opt_stmt  goto 255
+	var_decl  goto 255
+	type_expr_w_structs  goto 33
+	primitive_type  goto 34
+	opt_stmt  goto 256
 
 
-state 235
+state 236
 	stmt : WHILE . expr LBRACE stmts RBRACE  (47)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -7823,25 +7943,25 @@ state 235
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
-	expr  goto 256
-	primitive_type  goto 56
+	expr  goto 257
+	primitive_type  goto 57
 
 
-state 236
+state 237
 	type_expr_w_structs : LBRACKET . expr RBRACKET type_expr  (25)
 	type_expr_w_structs : LBRACKET . RBRACKET type_expr  (26)
 	expr : LBRACKET . expr RBRACKET type_expr LBRACE expr_list RBRACE  (101)
@@ -7849,8 +7969,8 @@ state 236
 	expr : LBRACKET . RBRACKET type_expr LBRACE expr_list RBRACE  (104)
 	expr : LBRACKET . RBRACKET IDENT LBRACE expr_list RBRACE  (105)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -7864,28 +7984,27 @@ state 236
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	RBRACKET  shift 257
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	RBRACKET  shift 258
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
-	expr  goto 258
-	primitive_type  goto 56
+	expr  goto 259
+	primitive_type  goto 57
 
 
-state 237
+state 238
 	var_decl : IDENT . DECL_ASSIGN expr  (23)
-	type_expr_w_structs : IDENT .  (27)
 	expr : IDENT . DOUBLECOLON IDENT  (94)
 	expr : IDENT . LBRACKET expr RBRACKET  (95)
 	expr : IDENT . LBRACKET expr COLON expr RBRACKET  (96)
@@ -7893,23 +8012,84 @@ state 237
 	expr : IDENT . LPAREN expr_list RPAREN  (98)
 	expr : IDENT . DOT IDENT LPAREN expr_list RPAREN  (99)
 	expr : IDENT . LBRACE field_expr_list RBRACE  (103)
+	expr : IDENT .  (107)
 
-	DOUBLECOLON  shift 81
-	DECL_ASSIGN  shift 57
-	LPAREN  shift 82
-	LBRACE  shift 83
-	LBRACKET  shift 84
-	DOT  shift 85
-	IDENT  reduce 27
+	DOUBLECOLON  shift 82
+	DECL_ASSIGN  shift 58
+	LPAREN  shift 83
+	LBRACE  shift 84
+	LBRACKET  shift 85
+	DOT  shift 86
+	RETURN  reduce 107
+	BREAK  reduce 107
+	IF  reduce 107
+	CONTINUE  reduce 107
+	FOR  reduce 107
+	WHILE  reduce 107
+	CONST  reduce 107
+	ERROR  reduce 107
+	BOOL  reduce 107
+	STRING  reduce 107
+	U8  reduce 107
+	U16  reduce 107
+	U32  reduce 107
+	U64  reduce 107
+	I8  reduce 107
+	I16  reduce 107
+	I32  reduce 107
+	I64  reduce 107
+	F32  reduce 107
+	F64  reduce 107
+	PLUS  reduce 107
+	MINUS  reduce 107
+	DIV  reduce 107
+	MULT  reduce 107
+	MOD  reduce 107
+	LSHIFT  reduce 107
+	RSHIFT  reduce 107
+	BITXOR  reduce 107
+	BITOR  reduce 107
+	BITNOT  reduce 107
+	BITAND  reduce 107
+	ASSIGN  reduce 107
+	PLUS_ASSIGN  reduce 107
+	MINUS_ASSIGN  reduce 107
+	TIMES_ASSIGN  reduce 107
+	DIV_ASSIGN  reduce 107
+	MOD_ASSIGN  reduce 107
+	LSHIFT_ASSIGN  reduce 107
+	RSHIFT_ASSIGN  reduce 107
+	BITAND_ASSIGN  reduce 107
+	BITXOR_ASSIGN  reduce 107
+	BITOR_ASSIGN  reduce 107
+	EQ  reduce 107
+	NEQ  reduce 107
+	LT  reduce 107
+	LE  reduce 107
+	GT  reduce 107
+	GE  reduce 107
+	AND  reduce 107
+	OR  reduce 107
+	NOT  reduce 107
+	INC  reduce 107
+	DEC  reduce 107
+	RBRACE  reduce 107
+	INT_LIT  reduce 107
+	BOOL_LIT  reduce 107
+	CHAR_LIT  reduce 107
+	FLOAT_LIT  reduce 107
+	STRING_LIT  reduce 107
+	IDENT  reduce 107
+	IDENT_TYPE  reduce 107
 
 
-state 238
+state 239
 	stmt : var_decl .  (44)
 
 	.  reduce 44
 
 
-state 239
+state 240
 	stmt : expr .  (43)
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
@@ -7941,35 +8121,35 @@ state 239
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
 	RETURN  reduce 43
 	BREAK  reduce 43
 	IF  reduce 43
@@ -8003,33 +8183,34 @@ state 239
 	FLOAT_LIT  reduce 43
 	STRING_LIT  reduce 43
 	IDENT  reduce 43
-
-
-state 240
-	type_expr_w_structs : primitive_type .  (24)
-	expr : primitive_type . LPAREN expr RPAREN  (100)
-
-	LPAREN  shift 116
-	IDENT  reduce 24
+	IDENT_TYPE  reduce 43
 
 
 state 241
-	func_decl : FUNC IDENT LPAREN params RPAREN return_types LBRACE stmts . RBRACE  (30)
+	type_expr_w_structs : primitive_type .  (24)
+	expr : primitive_type . LPAREN expr RPAREN  (100)
 
-	RBRACE  shift 259
-	.  error
+	LPAREN  shift 117
+	IDENT  reduce 24
 
 
 state 242
+	func_decl : FUNC IDENT LPAREN params RPAREN return_types LBRACE stmts . RBRACE  (30)
+
+	RBRACE  shift 260
+	.  error
+
+
+state 243
 	stmts : stmt . stmts  (42)
 	stmts : .  (41)
 
-	RETURN  shift 232
-	BREAK  shift 40
-	IF  shift 233
-	CONTINUE  shift 41
-	FOR  shift 234
-	WHILE  shift 235
+	RETURN  shift 233
+	BREAK  shift 41
+	IF  shift 234
+	CONTINUE  shift 42
+	FOR  shift 235
+	WHILE  shift 236
 	CONST  shift 11
 	ERROR  shift 12
 	BOOL  shift 13
@@ -8044,39 +8225,40 @@ state 242
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 236
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 237
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 237
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 238
+	IDENT_TYPE  shift 27
 	RBRACE  reduce 41
 
-	var_decl  goto 238
-	expr  goto 239
-	type_expr_w_structs  goto 32
-	primitive_type  goto 240
-	stmts  goto 260
-	stmt  goto 242
+	var_decl  goto 239
+	expr  goto 240
+	type_expr_w_structs  goto 33
+	primitive_type  goto 241
+	stmts  goto 261
+	stmt  goto 243
 
 
-state 243
+state 244
 	type_expr_list : type_expr_list COMMA type_expr .  (39)
 
 	.  reduce 39
 
 
-state 244
+state 245
 	opt_default : ASSIGN . expr  (19)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -8090,49 +8272,49 @@ state 244
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	.  error
 
-	expr  goto 261
-	primitive_type  goto 56
+	expr  goto 262
+	primitive_type  goto 57
 
 
-state 245
+state 246
 	field_decl : modifier IDENT type_expr opt_default .  (13)
 
 	.  reduce 13
 
 
-state 246
+state 247
 	expr : LBRACKET expr RBRACKET IDENT LBRACE expr_list RBRACE .  (102)
 
 	.  reduce 102
 
 
-state 247
+state 248
 	expr : LBRACKET expr RBRACKET type_expr LBRACE expr_list RBRACE .  (101)
 
 	.  reduce 101
 
 
-state 248
-	field_expr_list : expr COLON expr COMMA field_expr_list .  (118)
-
-	.  reduce 118
-
-
 state 249
+	field_expr_list : expr COLON expr COMMA field_expr_list .  (119)
+
+	.  reduce 119
+
+
+state 250
 	struct_func_decl : FUNC LPAREN IDENT type_expr RPAREN IDENT LPAREN params RPAREN . return_types LBRACE stmts RBRACE  (40)
 	return_types : .  (36)
 
@@ -8149,22 +8331,22 @@ state 249
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	LBRACKET  shift 78
+	LBRACKET  shift 79
 	LBRACE  reduce 36
 
-	type_expr  goto 203
-	primitive_type  goto 80
-	return_types  goto 262
-	type_expr_list  goto 205
+	type_expr  goto 204
+	primitive_type  goto 81
+	return_types  goto 263
+	type_expr_list  goto 206
 
 
-state 250
+state 251
 	stmt : RETURN NULL .  (49)
 
 	.  reduce 49
 
 
-state 251
+state 252
 	opt_expr_list : expr .  (50)
 	opt_expr_list : expr . COMMA expr_list  (51)
 	expr : expr . PLUS expr  (60)
@@ -8197,36 +8379,36 @@ state 251
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
-	COMMA  shift 263
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
+	COMMA  shift 264
 	RETURN  reduce 50
 	BREAK  reduce 50
 	IF  reduce 50
@@ -8260,15 +8442,16 @@ state 251
 	FLOAT_LIT  reduce 50
 	STRING_LIT  reduce 50
 	IDENT  reduce 50
+	IDENT_TYPE  reduce 50
 
 
-state 252
+state 253
 	stmt : RETURN opt_expr_list .  (48)
 
 	.  reduce 48
 
 
-state 253
+state 254
 	stmt : IF expr . LBRACE stmts RBRACE else_block  (45)
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
@@ -8300,53 +8483,53 @@ state 253
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
-	LBRACE  shift 264
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
+	LBRACE  shift 265
 	.  error
 
 
-state 254
+state 255
 	opt_stmt : var_decl .  (55)
 
 	.  reduce 55
 
 
-state 255
+state 256
 	stmt : FOR opt_stmt . SEMICOLON opt_expr SEMICOLON opt_expr LBRACE stmts RBRACE  (46)
 
-	SEMICOLON  shift 265
+	SEMICOLON  shift 266
 	.  error
 
 
-state 256
+state 257
 	stmt : WHILE expr . LBRACE stmts RBRACE  (47)
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
@@ -8378,40 +8561,40 @@ state 256
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
-	LBRACE  shift 266
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
+	LBRACE  shift 267
 	.  error
 
 
-state 257
+state 258
 	type_expr_w_structs : LBRACKET RBRACKET . type_expr  (26)
 	expr : LBRACKET RBRACKET . type_expr LBRACE expr_list RBRACE  (104)
 	expr : LBRACKET RBRACKET . IDENT LBRACE expr_list RBRACE  (105)
@@ -8429,15 +8612,15 @@ state 257
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	LBRACKET  shift 78
-	IDENT  shift 130
+	LBRACKET  shift 79
+	IDENT  shift 131
 	.  error
 
-	type_expr  goto 267
-	primitive_type  goto 80
+	type_expr  goto 268
+	primitive_type  goto 81
 
 
-state 258
+state 259
 	type_expr_w_structs : LBRACKET expr . RBRACKET type_expr  (25)
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
@@ -8471,52 +8654,52 @@ state 258
 	expr : LBRACKET expr . RBRACKET type_expr LBRACE expr_list RBRACE  (101)
 	expr : LBRACKET expr . RBRACKET IDENT LBRACE expr_list RBRACE  (102)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
-	RBRACKET  shift 268
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
+	RBRACKET  shift 269
 	.  error
 
 
-state 259
+state 260
 	func_decl : FUNC IDENT LPAREN params RPAREN return_types LBRACE stmts RBRACE .  (30)
 
 	.  reduce 30
 
 
-state 260
+state 261
 	stmts : stmt stmts .  (42)
 
 	.  reduce 42
 
 
-state 261
+state 262
 	opt_default : ASSIGN expr .  (19)
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
@@ -8548,35 +8731,35 @@ state 261
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
 	FINAL  reduce 19
 	MUT  reduce 19
 	LATE  reduce 19
@@ -8584,61 +8767,18 @@ state 261
 	RBRACE  reduce 19
 
 
-state 262
+state 263
 	struct_func_decl : FUNC LPAREN IDENT type_expr RPAREN IDENT LPAREN params RPAREN return_types . LBRACE stmts RBRACE  (40)
 
-	LBRACE  shift 269
+	LBRACE  shift 270
 	.  error
-
-
-state 263
-	opt_expr_list : expr COMMA . expr_list  (51)
-
-	BREAK  shift 40
-	CONTINUE  shift 41
-	ERROR  shift 12
-	BOOL  shift 13
-	STRING  shift 14
-	U8  shift 15
-	U16  shift 16
-	U32  shift 17
-	U64  shift 18
-	I8  shift 19
-	I16  shift 20
-	I32  shift 21
-	I64  shift 22
-	F32  shift 23
-	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
-	.  error
-
-	expr  goto 136
-	primitive_type  goto 56
-	expr_list  goto 270
 
 
 state 264
-	stmt : IF expr LBRACE . stmts RBRACE else_block  (45)
-	stmts : .  (41)
+	opt_expr_list : expr COMMA . expr_list  (51)
 
-	RETURN  shift 232
-	BREAK  shift 40
-	IF  shift 233
-	CONTINUE  shift 41
-	FOR  shift 234
-	WHILE  shift 235
-	CONST  shift 11
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -8652,76 +8792,35 @@ state 264
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 236
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 237
-	RBRACE  reduce 41
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
+	.  error
 
-	var_decl  goto 238
-	expr  goto 239
-	type_expr_w_structs  goto 32
-	primitive_type  goto 240
-	stmts  goto 271
-	stmt  goto 242
+	expr  goto 137
+	primitive_type  goto 57
+	expr_list  goto 271
 
 
 state 265
-	stmt : FOR opt_stmt SEMICOLON . opt_expr SEMICOLON opt_expr LBRACE stmts RBRACE  (46)
-	opt_expr : .  (56)
-
-	BREAK  shift 40
-	CONTINUE  shift 41
-	ERROR  shift 12
-	BOOL  shift 13
-	STRING  shift 14
-	U8  shift 15
-	U16  shift 16
-	U32  shift 17
-	U64  shift 18
-	I8  shift 19
-	I16  shift 20
-	I32  shift 21
-	I64  shift 22
-	F32  shift 23
-	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
-	SEMICOLON  reduce 56
-
-	expr  goto 272
-	primitive_type  goto 56
-	opt_expr  goto 273
-
-
-state 266
-	stmt : WHILE expr LBRACE . stmts RBRACE  (47)
+	stmt : IF expr LBRACE . stmts RBRACE else_block  (45)
 	stmts : .  (41)
 
-	RETURN  shift 232
-	BREAK  shift 40
-	IF  shift 233
-	CONTINUE  shift 41
-	FOR  shift 234
-	WHILE  shift 235
+	RETURN  shift 233
+	BREAK  shift 41
+	IF  shift 234
+	CONTINUE  shift 42
+	FOR  shift 235
+	WHILE  shift 236
 	CONST  shift 11
 	ERROR  shift 12
 	BOOL  shift 13
@@ -8736,37 +8835,123 @@ state 266
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 236
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 237
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 237
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 238
+	IDENT_TYPE  shift 27
 	RBRACE  reduce 41
 
-	var_decl  goto 238
-	expr  goto 239
-	type_expr_w_structs  goto 32
-	primitive_type  goto 240
-	stmts  goto 274
-	stmt  goto 242
+	var_decl  goto 239
+	expr  goto 240
+	type_expr_w_structs  goto 33
+	primitive_type  goto 241
+	stmts  goto 272
+	stmt  goto 243
+
+
+state 266
+	stmt : FOR opt_stmt SEMICOLON . opt_expr SEMICOLON opt_expr LBRACE stmts RBRACE  (46)
+	opt_expr : .  (56)
+
+	BREAK  shift 41
+	CONTINUE  shift 42
+	ERROR  shift 12
+	BOOL  shift 13
+	STRING  shift 14
+	U8  shift 15
+	U16  shift 16
+	U32  shift 17
+	U64  shift 18
+	I8  shift 19
+	I16  shift 20
+	I32  shift 21
+	I64  shift 22
+	F32  shift 23
+	F64  shift 24
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
+	SEMICOLON  reduce 56
+
+	expr  goto 273
+	primitive_type  goto 57
+	opt_expr  goto 274
 
 
 state 267
-	type_expr_w_structs : LBRACKET RBRACKET type_expr .  (26)
-	expr : LBRACKET RBRACKET type_expr . LBRACE expr_list RBRACE  (104)
+	stmt : WHILE expr LBRACE . stmts RBRACE  (47)
+	stmts : .  (41)
 
-	LBRACE  shift 188
-	IDENT  reduce 26
+	RETURN  shift 233
+	BREAK  shift 41
+	IF  shift 234
+	CONTINUE  shift 42
+	FOR  shift 235
+	WHILE  shift 236
+	CONST  shift 11
+	ERROR  shift 12
+	BOOL  shift 13
+	STRING  shift 14
+	U8  shift 15
+	U16  shift 16
+	U32  shift 17
+	U64  shift 18
+	I8  shift 19
+	I16  shift 20
+	I32  shift 21
+	I64  shift 22
+	F32  shift 23
+	F64  shift 24
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 237
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 238
+	IDENT_TYPE  shift 27
+	RBRACE  reduce 41
+
+	var_decl  goto 239
+	expr  goto 240
+	type_expr_w_structs  goto 33
+	primitive_type  goto 241
+	stmts  goto 275
+	stmt  goto 243
 
 
 state 268
+	type_expr_w_structs : LBRACKET RBRACKET type_expr .  (26)
+	expr : LBRACKET RBRACKET type_expr . LBRACE expr_list RBRACE  (104)
+
+	LBRACE  shift 189
+	IDENT  reduce 26
+
+
+state 269
 	type_expr_w_structs : LBRACKET expr RBRACKET . type_expr  (25)
 	expr : LBRACKET expr RBRACKET . type_expr LBRACE expr_list RBRACE  (101)
 	expr : LBRACKET expr RBRACKET . IDENT LBRACE expr_list RBRACE  (102)
@@ -8784,24 +8969,24 @@ state 268
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	LBRACKET  shift 78
-	IDENT  shift 189
+	LBRACKET  shift 79
+	IDENT  shift 190
 	.  error
 
-	type_expr  goto 275
-	primitive_type  goto 80
+	type_expr  goto 276
+	primitive_type  goto 81
 
 
-state 269
+state 270
 	struct_func_decl : FUNC LPAREN IDENT type_expr RPAREN IDENT LPAREN params RPAREN return_types LBRACE . stmts RBRACE  (40)
 	stmts : .  (41)
 
-	RETURN  shift 232
-	BREAK  shift 40
-	IF  shift 233
-	CONTINUE  shift 41
-	FOR  shift 234
-	WHILE  shift 235
+	RETURN  shift 233
+	BREAK  shift 41
+	IF  shift 234
+	CONTINUE  shift 42
+	FOR  shift 235
+	WHILE  shift 236
 	CONST  shift 11
 	ERROR  shift 12
 	BOOL  shift 13
@@ -8816,42 +9001,43 @@ state 269
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 236
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 237
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 237
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 238
+	IDENT_TYPE  shift 27
 	RBRACE  reduce 41
 
-	var_decl  goto 238
-	expr  goto 239
-	type_expr_w_structs  goto 32
-	primitive_type  goto 240
-	stmts  goto 276
-	stmt  goto 242
+	var_decl  goto 239
+	expr  goto 240
+	type_expr_w_structs  goto 33
+	primitive_type  goto 241
+	stmts  goto 277
+	stmt  goto 243
 
 
-state 270
+state 271
 	opt_expr_list : expr COMMA expr_list .  (51)
 
 	.  reduce 51
 
 
-state 271
+state 272
 	stmt : IF expr LBRACE stmts . RBRACE else_block  (45)
 
-	RBRACE  shift 277
+	RBRACE  shift 278
 	.  error
 
 
-state 272
+state 273
 	opt_expr : expr .  (57)
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
@@ -8883,83 +9069,83 @@ state 272
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
 	LBRACE  reduce 57
 	SEMICOLON  reduce 57
 
 
-state 273
+state 274
 	stmt : FOR opt_stmt SEMICOLON opt_expr . SEMICOLON opt_expr LBRACE stmts RBRACE  (46)
 
-	SEMICOLON  shift 278
-	.  error
-
-
-state 274
-	stmt : WHILE expr LBRACE stmts . RBRACE  (47)
-
-	RBRACE  shift 279
+	SEMICOLON  shift 279
 	.  error
 
 
 state 275
-	type_expr_w_structs : LBRACKET expr RBRACKET type_expr .  (25)
-	expr : LBRACKET expr RBRACKET type_expr . LBRACE expr_list RBRACE  (101)
-
-	LBRACE  shift 213
-	IDENT  reduce 25
-
-
-state 276
-	struct_func_decl : FUNC LPAREN IDENT type_expr RPAREN IDENT LPAREN params RPAREN return_types LBRACE stmts . RBRACE  (40)
+	stmt : WHILE expr LBRACE stmts . RBRACE  (47)
 
 	RBRACE  shift 280
 	.  error
 
 
+state 276
+	type_expr_w_structs : LBRACKET expr RBRACKET type_expr .  (25)
+	expr : LBRACKET expr RBRACKET type_expr . LBRACE expr_list RBRACE  (101)
+
+	LBRACE  shift 214
+	IDENT  reduce 25
+
+
 state 277
-	stmt : IF expr LBRACE stmts RBRACE . else_block  (45)
+	struct_func_decl : FUNC LPAREN IDENT type_expr RPAREN IDENT LPAREN params RPAREN return_types LBRACE stmts . RBRACE  (40)
 
-	ELSE  shift 281
+	RBRACE  shift 281
 	.  error
-
-	else_block  goto 282
 
 
 state 278
+	stmt : IF expr LBRACE stmts RBRACE . else_block  (45)
+
+	ELSE  shift 282
+	.  error
+
+	else_block  goto 283
+
+
+state 279
 	stmt : FOR opt_stmt SEMICOLON opt_expr SEMICOLON . opt_expr LBRACE stmts RBRACE  (46)
 	opt_expr : .  (56)
 
-	BREAK  shift 40
-	CONTINUE  shift 41
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -8973,106 +9159,64 @@ state 278
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
 	LBRACE  reduce 56
 
-	expr  goto 272
-	primitive_type  goto 56
-	opt_expr  goto 283
+	expr  goto 273
+	primitive_type  goto 57
+	opt_expr  goto 284
 
 
-state 279
+state 280
 	stmt : WHILE expr LBRACE stmts RBRACE .  (47)
 
 	.  reduce 47
 
 
-state 280
+state 281
 	struct_func_decl : FUNC LPAREN IDENT type_expr RPAREN IDENT LPAREN params RPAREN return_types LBRACE stmts RBRACE .  (40)
 
 	.  reduce 40
 
 
-state 281
+state 282
 	else_block : ELSE . LBRACE stmts RBRACE  (52)
 	else_block : ELSE . IF expr LBRACE stmts RBRACE else_block  (53)
 
-	IF  shift 284
-	LBRACE  shift 285
+	IF  shift 285
+	LBRACE  shift 286
 	.  error
 
 
-state 282
+state 283
 	stmt : IF expr LBRACE stmts RBRACE else_block .  (45)
 
 	.  reduce 45
 
 
-state 283
+state 284
 	stmt : FOR opt_stmt SEMICOLON opt_expr SEMICOLON opt_expr . LBRACE stmts RBRACE  (46)
 
-	LBRACE  shift 286
+	LBRACE  shift 287
 	.  error
-
-
-state 284
-	else_block : ELSE IF . expr LBRACE stmts RBRACE else_block  (53)
-
-	BREAK  shift 40
-	CONTINUE  shift 41
-	ERROR  shift 12
-	BOOL  shift 13
-	STRING  shift 14
-	U8  shift 15
-	U16  shift 16
-	U32  shift 17
-	U64  shift 18
-	I8  shift 19
-	I16  shift 20
-	I32  shift 21
-	I64  shift 22
-	F32  shift 23
-	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 47
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 54
-	.  error
-
-	expr  goto 287
-	primitive_type  goto 56
 
 
 state 285
-	else_block : ELSE LBRACE . stmts RBRACE  (52)
-	stmts : .  (41)
+	else_block : ELSE IF . expr LBRACE stmts RBRACE else_block  (53)
 
-	RETURN  shift 232
-	BREAK  shift 40
-	IF  shift 233
-	CONTINUE  shift 41
-	FOR  shift 234
-	WHILE  shift 235
-	CONST  shift 11
+	BREAK  shift 41
+	CONTINUE  shift 42
 	ERROR  shift 12
 	BOOL  shift 13
 	STRING  shift 14
@@ -9086,38 +9230,34 @@ state 285
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 236
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 237
-	RBRACE  reduce 41
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 48
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 55
+	.  error
 
-	var_decl  goto 238
-	expr  goto 239
-	type_expr_w_structs  goto 32
-	primitive_type  goto 240
-	stmts  goto 288
-	stmt  goto 242
+	expr  goto 288
+	primitive_type  goto 57
 
 
 state 286
-	stmt : FOR opt_stmt SEMICOLON opt_expr SEMICOLON opt_expr LBRACE . stmts RBRACE  (46)
+	else_block : ELSE LBRACE . stmts RBRACE  (52)
 	stmts : .  (41)
 
-	RETURN  shift 232
-	BREAK  shift 40
-	IF  shift 233
-	CONTINUE  shift 41
-	FOR  shift 234
-	WHILE  shift 235
+	RETURN  shift 233
+	BREAK  shift 41
+	IF  shift 234
+	CONTINUE  shift 42
+	FOR  shift 235
+	WHILE  shift 236
 	CONST  shift 11
 	ERROR  shift 12
 	BOOL  shift 13
@@ -9132,29 +9272,77 @@ state 286
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 236
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 237
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 237
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 238
+	IDENT_TYPE  shift 27
 	RBRACE  reduce 41
 
-	var_decl  goto 238
-	expr  goto 239
-	type_expr_w_structs  goto 32
-	primitive_type  goto 240
+	var_decl  goto 239
+	expr  goto 240
+	type_expr_w_structs  goto 33
+	primitive_type  goto 241
 	stmts  goto 289
-	stmt  goto 242
+	stmt  goto 243
 
 
 state 287
+	stmt : FOR opt_stmt SEMICOLON opt_expr SEMICOLON opt_expr LBRACE . stmts RBRACE  (46)
+	stmts : .  (41)
+
+	RETURN  shift 233
+	BREAK  shift 41
+	IF  shift 234
+	CONTINUE  shift 42
+	FOR  shift 235
+	WHILE  shift 236
+	CONST  shift 11
+	ERROR  shift 12
+	BOOL  shift 13
+	STRING  shift 14
+	U8  shift 15
+	U16  shift 16
+	U32  shift 17
+	U64  shift 18
+	I8  shift 19
+	I16  shift 20
+	I32  shift 21
+	I64  shift 22
+	F32  shift 23
+	F64  shift 24
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 237
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 238
+	IDENT_TYPE  shift 27
+	RBRACE  reduce 41
+
+	var_decl  goto 239
+	expr  goto 240
+	type_expr_w_structs  goto 33
+	primitive_type  goto 241
+	stmts  goto 290
+	stmt  goto 243
+
+
+state 288
 	else_block : ELSE IF expr . LBRACE stmts RBRACE else_block  (53)
 	expr : expr . PLUS expr  (60)
 	expr : expr . MINUS expr  (61)
@@ -9186,63 +9374,63 @@ state 287
 	expr : expr . BITXOR_ASSIGN expr  (87)
 	expr : expr . BITOR_ASSIGN expr  (88)
 
-	PLUS  shift 86
-	MINUS  shift 87
-	DIV  shift 88
-	MULT  shift 89
-	MOD  shift 90
-	LSHIFT  shift 91
-	RSHIFT  shift 92
-	BITXOR  shift 93
-	BITOR  shift 94
-	BITAND  shift 95
-	ASSIGN  shift 96
-	PLUS_ASSIGN  shift 97
-	MINUS_ASSIGN  shift 98
-	TIMES_ASSIGN  shift 99
-	DIV_ASSIGN  shift 100
-	MOD_ASSIGN  shift 101
-	LSHIFT_ASSIGN  shift 102
-	RSHIFT_ASSIGN  shift 103
-	BITAND_ASSIGN  shift 104
-	BITXOR_ASSIGN  shift 105
-	BITOR_ASSIGN  shift 106
-	EQ  shift 107
-	NEQ  shift 108
-	LT  shift 109
-	LE  shift 110
-	GT  shift 111
-	GE  shift 112
-	AND  shift 113
-	OR  shift 114
-	LBRACE  shift 290
-	.  error
-
-
-state 288
-	else_block : ELSE LBRACE stmts . RBRACE  (52)
-
-	RBRACE  shift 291
+	PLUS  shift 87
+	MINUS  shift 88
+	DIV  shift 89
+	MULT  shift 90
+	MOD  shift 91
+	LSHIFT  shift 92
+	RSHIFT  shift 93
+	BITXOR  shift 94
+	BITOR  shift 95
+	BITAND  shift 96
+	ASSIGN  shift 97
+	PLUS_ASSIGN  shift 98
+	MINUS_ASSIGN  shift 99
+	TIMES_ASSIGN  shift 100
+	DIV_ASSIGN  shift 101
+	MOD_ASSIGN  shift 102
+	LSHIFT_ASSIGN  shift 103
+	RSHIFT_ASSIGN  shift 104
+	BITAND_ASSIGN  shift 105
+	BITXOR_ASSIGN  shift 106
+	BITOR_ASSIGN  shift 107
+	EQ  shift 108
+	NEQ  shift 109
+	LT  shift 110
+	LE  shift 111
+	GT  shift 112
+	GE  shift 113
+	AND  shift 114
+	OR  shift 115
+	LBRACE  shift 291
 	.  error
 
 
 state 289
-	stmt : FOR opt_stmt SEMICOLON opt_expr SEMICOLON opt_expr LBRACE stmts . RBRACE  (46)
+	else_block : ELSE LBRACE stmts . RBRACE  (52)
 
 	RBRACE  shift 292
 	.  error
 
 
 state 290
+	stmt : FOR opt_stmt SEMICOLON opt_expr SEMICOLON opt_expr LBRACE stmts . RBRACE  (46)
+
+	RBRACE  shift 293
+	.  error
+
+
+state 291
 	else_block : ELSE IF expr LBRACE . stmts RBRACE else_block  (53)
 	stmts : .  (41)
 
-	RETURN  shift 232
-	BREAK  shift 40
-	IF  shift 233
-	CONTINUE  shift 41
-	FOR  shift 234
-	WHILE  shift 235
+	RETURN  shift 233
+	BREAK  shift 41
+	IF  shift 234
+	CONTINUE  shift 42
+	FOR  shift 235
+	WHILE  shift 236
 	CONST  shift 11
 	ERROR  shift 12
 	BOOL  shift 13
@@ -9257,61 +9445,62 @@ state 290
 	I64  shift 22
 	F32  shift 23
 	F64  shift 24
-	BITNOT  shift 42
-	NOT  shift 43
-	INC  shift 44
-	DEC  shift 45
-	LPAREN  shift 46
-	LBRACKET  shift 236
-	INT_LIT  shift 49
-	BOOL_LIT  shift 50
-	CHAR_LIT  shift 51
-	FLOAT_LIT  shift 52
-	STRING_LIT  shift 53
-	IDENT  shift 237
+	BITNOT  shift 43
+	NOT  shift 44
+	INC  shift 45
+	DEC  shift 46
+	LPAREN  shift 47
+	LBRACKET  shift 237
+	INT_LIT  shift 50
+	BOOL_LIT  shift 51
+	CHAR_LIT  shift 52
+	FLOAT_LIT  shift 53
+	STRING_LIT  shift 54
+	IDENT  shift 238
+	IDENT_TYPE  shift 27
 	RBRACE  reduce 41
 
-	var_decl  goto 238
-	expr  goto 239
-	type_expr_w_structs  goto 32
-	primitive_type  goto 240
-	stmts  goto 293
-	stmt  goto 242
+	var_decl  goto 239
+	expr  goto 240
+	type_expr_w_structs  goto 33
+	primitive_type  goto 241
+	stmts  goto 294
+	stmt  goto 243
 
 
-state 291
+state 292
 	else_block : ELSE LBRACE stmts RBRACE .  (52)
 
 	.  reduce 52
 
 
-state 292
+state 293
 	stmt : FOR opt_stmt SEMICOLON opt_expr SEMICOLON opt_expr LBRACE stmts RBRACE .  (46)
 
 	.  reduce 46
 
 
-state 293
+state 294
 	else_block : ELSE IF expr LBRACE stmts . RBRACE else_block  (53)
 
-	RBRACE  shift 294
+	RBRACE  shift 295
 	.  error
-
-
-state 294
-	else_block : ELSE IF expr LBRACE stmts RBRACE . else_block  (53)
-
-	ELSE  shift 281
-	.  error
-
-	else_block  goto 295
 
 
 state 295
+	else_block : ELSE IF expr LBRACE stmts RBRACE . else_block  (53)
+
+	ELSE  shift 282
+	.  error
+
+	else_block  goto 296
+
+
+state 296
 	else_block : ELSE IF expr LBRACE stmts RBRACE else_block .  (53)
 
 	.  reduce 53
 
 
-89 terminals, 30 nonterminals
-133 grammar rules, 296 states
+90 terminals, 30 nonterminals
+134 grammar rules, 297 states
