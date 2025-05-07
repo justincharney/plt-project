@@ -730,3 +730,9 @@ let analyze (prog : program) : sprogram =
   }
 
 
+(** [check_program prog] runs the semantic checker on [prog], raising
+    [SemanticError _] on failure or returning [()] on success. *)
+let check_program prog : unit =
+  let _sast = analyze prog in
+  ()
+

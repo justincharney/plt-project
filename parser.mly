@@ -197,16 +197,16 @@ struct_func_decl:
 
 stmts:
     /* nothing */           { []     }
-  | stmt SEMICOLON stmts    { $1 :: $3 }
+  | stmt stmts    { $1 :: $2 }
   
 stmt:
-  | expr                                                                   { Expr($1)                }
-  | var_decl                                                               { VarDecl($1)             }
+  | expr SEMICOLON                                                         { Expr($1)                }
+  | var_decl SEMICOLON                                                     { VarDecl($1)             }
   | IF expr LBRACE stmts RBRACE else_block                                 { IfStmt($2, $4, $6)      }
   | FOR opt_stmt SEMICOLON opt_expr SEMICOLON opt_expr LBRACE stmts RBRACE { ForStmt($2, $4, $6, $8) }
   | WHILE expr LBRACE stmts RBRACE                                         { WhileStmt($2, $4)       }
-  | RETURN opt_expr_list                                                   { Return($2)              } 
-  | RETURN NULL                                                            { Return([])              }
+  | RETURN opt_expr_list SEMICOLON                                         { Return($2)              } 
+  | RETURN NULL SEMICOLON                                                  { Return([])              }
 
 opt_expr_list:
   | expr                 { [$1]   } (*also doesn't account for empty return*)
@@ -225,7 +225,7 @@ opt_expr:
   | expr          { Some $1 }
 
 expr_list:
-  | expr                 { [$1]     } (*this doesn't account for empty return since no empty expr*)
+  | expr                 { [$1]     }
   | expr COMMA expr_list { $1 :: $3 }
 
 expr:
@@ -271,7 +271,8 @@ expr:
 | IDENT LBRACKET expr RBRACKET             { IndexAccess(Identifier($1), $3)                }
 | IDENT LBRACKET expr COLON expr RBRACKET  { SliceExpr(Identifier($1), $3, Some $5)         }
 | IDENT LBRACKET expr COLON RBRACKET       { SliceExpr(Identifier($1), $3, None)            }
-| IDENT LPAREN expr_list RPAREN            { FunctionCall($1, $3)               }
+| IDENT LPAREN RPAREN                      { FunctionCall($1, [])                           }
+| IDENT LPAREN expr_list RPAREN            { FunctionCall($1, $3)                           }
 | IDENT DOT IDENT LPAREN expr_list RPAREN  { MethodCall(Identifier($1), Identifier($3), $5) }
 | primitive_type LPAREN expr RPAREN        { Cast(Primitive($1), $3)                        } (* doesn't allow for type cast with struct names *)
 
