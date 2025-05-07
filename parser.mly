@@ -42,7 +42,7 @@
 %left PLUS MINUS
 %left MULT DIV MOD
 %right NOT BITNOT INC DEC (* CAST *)
-%left DOT LBRACKET LBRACE (* FUNCTION CALLS, ARRAY SUBSCRIPTING, INC, DEC *) 
+%left DOT LBRACKET LBRACE (* FUNCTION CALLS, ARRAY SUBSCRIPTING, INC, DEC *)  
 %left LPAREN
 
 %start program
@@ -52,12 +52,15 @@
 
 program:
   PACKAGE IDENT import_decls all_decls EOF
-  { { package_name =      $2;
-      imports =           $3;
-      type_declarations = $4.(0);
-      global_vars =       $4.(1);
-      functions =         $4.(2);
-      struct_functions =  $4.(3); }
+  {
+    let (tdecls, gvars, funcs, smeths) = $4 in
+    { package_name      = $2;
+      imports           = $3;
+      type_declarations = tdecls;
+      global_vars       = gvars;
+      functions         = funcs;
+      struct_functions  = smeths;
+    }
   }
 
 
@@ -70,11 +73,12 @@ import_decls:
 /********** All Declarations *****************/
 
 all_decls:
-  /* nothing */                { [| [];[];[];[] |]                        }
-  | type_decl all_decls        { [| $1::$2.(0); $2.(1); $2.(2); $2.(3) |] }
-  | var_decl all_decls         { [| $2.(0); $1::$2.(1); $2.(2); $2.(3) |] }
-  | func_decl all_decls        { [| $2.(0); $2.(1); $1::$2.(2); $2.(3) |] }
-  | struct_func_decl all_decls { [| $2.(0); $2.(1); $2.(2); $1::$2.(3) |] }
+  /* nothing */                { ([], [], [], []) }
+| type_decl        all_decls   { let (ts, vs, fs, ms) = $2 in ($1::ts,      vs,      fs,      ms) }
+| var_decl         all_decls   { let (ts, vs, fs, ms) = $2 in (     ts, $1::vs,      fs,      ms) }
+| func_decl        all_decls   { let (ts, vs, fs, ms) = $2 in (     ts,      vs, $1::fs,      ms) }
+| struct_func_decl all_decls   { let (ts, vs, fs, ms) = $2 in (     ts,      vs,      fs, $1::ms) }
+
 
 /*** TYPE DECLARATION STRUCTS AND ALIAS ***/
 
@@ -101,7 +105,7 @@ modifier:
   | LATE    { Late    }
 
 opt_default:
-    /* nothing */ { []      }
+    /* nothing */ { None     }
   | ASSIGN expr   { Some $2 }
 
 /********** VARIABLE DECLARATIONS **********/
@@ -139,9 +143,9 @@ var_decl:
 
 type_expr_w_structs:
   | primitive_type                   { Primitive($1)  }
-  | LBRACKET expr RBRACKET type_expr { Array($4, $2)  }
+  | LBRACKET INT_LIT RBRACKET type_expr { Array($4, $2)  }
   | LBRACKET RBRACKET type_expr      { Slice($3)      }
-  | IDENT_TYPE                       { TypeName($1)   }
+  | IDENT_TYPE                            { TypeName($1)   }
 
 opt_assign:
     /* nothing */ { None }
@@ -178,33 +182,33 @@ return_types:
 
 type_expr_list:
   | type_expr                      { [$1]     }
-  | type_expr_list COMMA type_expr { $1 :: $3 }
+  | type_expr COMMA type_expr_list { $1 :: $3 }
 
 /********** STRUCT-FUNC DECLARATION **********/
 
 struct_func_decl:
   FUNC LPAREN IDENT type_expr RPAREN IDENT LPAREN params RPAREN return_types LBRACE stmts RBRACE 
   {{
-  name:         $6;
-  struct_name:  $3;
-  params:       $8;
-  return_types: $10;
-  body:         $12 }}
+  name =         $6;
+  struct_name =  $3;
+  params =      $8;
+  return_types = $10;
+  body =         $12 }}
 
 /********** STATEMENTS **********/
 
 stmts:
-    /* nothing */ { []       }
+    /* nothing */           { []     }
   | stmt stmts    { $1 :: $2 }
-
+  
 stmt:
-  | expr                                                                   { Expr($1)                }
-  | var_decl                                                               { VarDecl($1)             }
+  | expr SEMICOLON                                                         { Expr($1)                }
+  | var_decl SEMICOLON                                                     { VarDecl($1)             }
   | IF expr LBRACE stmts RBRACE else_block                                 { IfStmt($2, $4, $6)      }
   | FOR opt_stmt SEMICOLON opt_expr SEMICOLON opt_expr LBRACE stmts RBRACE { ForStmt($2, $4, $6, $8) }
   | WHILE expr LBRACE stmts RBRACE                                         { WhileStmt($2, $4)       }
-  | RETURN opt_expr_list                                                   { Return($2)              } 
-  | RETURN NULL                                                            { Return([])              }
+  | RETURN opt_expr_list SEMICOLON                                         { Return($2)              } 
+  | RETURN NULL SEMICOLON                                                  { Return([])              }
 
 opt_expr_list:
   | expr                 { [$1]   } (*also doesn't account for empty return*)
@@ -223,7 +227,7 @@ opt_expr:
   | expr          { Some $1 }
 
 expr_list:
-  | expr                 { [$1]     } (*this doesn't account for empty return since no empty expr*)
+  | expr                 { [$1]     }
   | expr COMMA expr_list { $1 :: $3 }
 
 expr:
@@ -264,17 +268,19 @@ expr:
 | DEC expr                 { Unaop(Dec, $2)    }
 | LPAREN MINUS expr RPAREN { Unaop(Neg, $3)    }
 
+| IDENT                                    { Identifier($1)                                 }
 | IDENT DOUBLECOLON IDENT                  { FieldAccess(Identifier($1), Identifier($3))    }
 | IDENT LBRACKET expr RBRACKET             { IndexAccess(Identifier($1), $3)                }
 | IDENT LBRACKET expr COLON expr RBRACKET  { SliceExpr(Identifier($1), $3, Some $5)         }
 | IDENT LBRACKET expr COLON RBRACKET       { SliceExpr(Identifier($1), $3, None)            }
-| IDENT LPAREN expr_list RPAREN            { FunctionCall(Identifier($1), $3)               }
+| IDENT LPAREN RPAREN                      { FunctionCall($1, [])                           }
+| IDENT LPAREN expr_list RPAREN            { FunctionCall($1, $3)                           }
 | IDENT DOT IDENT LPAREN expr_list RPAREN  { MethodCall(Identifier($1), Identifier($3), $5) }
 | primitive_type LPAREN expr RPAREN        { Cast(Primitive($1), $3)                        } (* doesn't allow for type cast with struct names *)
 
 | LBRACKET expr RBRACKET type_expr LBRACE expr_list RBRACE { ArrayLit($2, $4, $6)           }
 | LBRACKET expr RBRACKET IDENT LBRACE expr_list RBRACE     { ArrayLit($2, TypeName($4), $6) }
-| IDENT LBRACE field_expr_list RBRACE                      { StructLit(TypeName($1), $3)    }
+| IDENT LBRACE field_expr_list RBRACE                      { StructLit(Identifier($1), $3)    }
 | LBRACKET RBRACKET type_expr LBRACE expr_list RBRACE      { SliceLit($3, $5)               }
 | LBRACKET RBRACKET IDENT LBRACE expr_list RBRACE          { SliceLit(TypeName($3), $5)     }
 
@@ -290,7 +296,7 @@ expr:
 
 type_expr:
   | primitive_type                   { Primitive($1)  }
-  | LBRACKET expr RBRACKET type_expr { Array($4, $2)  }
+  | LBRACKET INT_LIT RBRACKET type_expr { Array($4, $2)  }
   | LBRACKET RBRACKET type_expr      { Slice($3)      }
 
 field_expr_list:
