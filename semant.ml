@@ -381,15 +381,20 @@ module StringMap = Map.Make(String)
         | _ -> raise (Semantic_error "method call on non‑struct")
         end
 
-      | Make (te, len_expr, cap_expr_opt) ->
-        let elt_ty = resolve_type_expr env te in
+      | Make (ast_slice_type_expr, len_expr, cap_expr_opt) ->
+        let resolved_sast_slice_type = resolve_type_expr env ast_slice_type_expr in
+        let sast_element_type =
+          match resolved_sast_slice_type with
+          | TySlice et -> et
+          | _ -> raise (Semantic_error ("'make' expects a slice type as its first argument (e.g. []Point or []int). Got type: " ^ string_of_ty resolved_sast_slice_type))
+        in
         let slen = check_expr env len_expr in
         if not (is_integer (fst slen)) then
-          raise (Semantic_error "make length argument must be an integer");
+          raise (Semantic_error "'make' length argument must be an integer type");
         let scap_opt = Option.map (check_expr env) cap_expr_opt in
         Option.iter (fun (t,_) -> if not (is_integer t) then
-          raise (Semantic_error "make capacity argument must be an integer"))scap_opt;
-        (TySlice elt_ty, SMake(elt_ty, slen, scap_opt))
+          raise (Semantic_error "'make' capacity argument must be an integer type")) scap_opt;
+        (resolved_sast_slice_type, SMake(sast_element_type, slen, scap_opt))
 
       | Cast (ast_ty, e) ->
         let target = resolve_type_expr env ast_ty in
@@ -416,18 +421,20 @@ module StringMap = Map.Make(String)
 
     | VarDecl {is_const; name; var_type; initializer_expr} ->
       if StringMap.mem name env.values then
-        raise (Semantic_error ("Variable already declared"));
+        raise (Semantic_error ("Variable \"" ^ name ^ "\" already declared in this scope"));
       let inferred_ty, sinit =
         match (var_type, initializer_expr) with
         | Some te, Some ie ->
           let declared_ty = resolve_type_expr env te in
           let sie = check_expr env ie in
-          if not (ty_equal declared_ty (fst sie)) then
-            raise (Semantic_error "Type mismatch in variable declaration");
+          let actual_ty = fst sie in
+          if not (ty_equal declared_ty actual_ty) then
+            raise (Semantic_error (Printf.sprintf "Type mismatch for variable '%s': expected type %s but got %s from initializer"
+                                      name (string_of_ty declared_ty) (string_of_ty actual_ty)));
           (declared_ty, Some sie)
         | Some te, None -> (resolve_type_expr env te, None)
         | None, Some ie -> let sie = check_expr env ie in (fst sie, Some sie)
-        | None, None -> raise (Semantic_error "Cannot infer type that hasn't been initialized")
+        | None, None -> raise (Semantic_error ("Cannot infer type for variable '" ^ name ^ "' without an initializer or explicit type"))
       in
       let env' = add_value name (VVar inferred_ty) env in
       (env', SVarDecl {is_const; name; var_type = inferred_ty; initializer_expr = sinit})
