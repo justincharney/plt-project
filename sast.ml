@@ -21,10 +21,8 @@ and sx =
   | SCast        of type_expr * sexpr
   | SArrayLit    of type_expr * sexpr list
   | SStructLit   of type_expr * (string * sexpr) list
-  | SSliceLit    of type_expr * sexpr list
   | SFieldAccess of sexpr * string
   | SIndexAccess of sexpr * sexpr
-  | SSliceExpr   of sexpr * sexpr * sexpr option
   | SFunctionCall of string * sexpr list
   | SMethodCall  of sexpr * string * sexpr list
   | SContinue

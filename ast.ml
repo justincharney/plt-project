@@ -13,7 +13,6 @@ type primitive_type =
 type type_expr =
   | Primitive of primitive_type
   | Array of type_expr * int (* element type, length *)
-  | Slice of type_expr (* element type *)
   | TypeName of string (* refer to Example 3.6 *)
 
 (* Modifiers *)
@@ -54,14 +53,12 @@ type expr =
   | StringLit of string
   | ArrayLit of expr * type_expr * expr list (* [3]i32{1, 2, 3} *)
   | StructLit of expr * (expr * expr) list (* e.g. goody{x:"funky supreme", y:1000} *)
-  | SliceLit of type_expr * expr list (* []i32{1, 2, 3} | Not in LRM? *)
   | Null (* For null literal *)
 
   (* Variables and Field/Index Access *)
   | Identifier of string
   | FieldAccess of expr * expr (* For struct.field *)
-  | IndexAccess of expr * expr (* array_or_slice_exp[index_exp] *)
-  | SliceExpr of expr * expr * expr option (* arr[start:end?] *)
+  | IndexAccess of expr * expr (* array_exp[index_exp] *)
 
   (* Operations *)
   | Binop of expr * biop * expr (* e.g. a + b *)
