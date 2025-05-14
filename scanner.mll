@@ -2,6 +2,10 @@
 
 {
 
+open Parser (* use parser's tokens *)
+
+exception Lexer_error of string
+
 (* Any OCaml functions defined here will be subsequently available in the remainder of the lexer definition. *)
 
 let interpret_string s =
@@ -31,70 +35,61 @@ let interpret_char s =
     | _ -> failwith "Invalid escape sequence"
   else failwith "Invalid character literal"
 
-(* Token type definition exposed to other modules *)
+(* ------------------------------------------------------------------ *)
+(*  Automatic-semicolon-insertion (ASI) state                         *)
+(* This lexer implements automatic semicolon insertion similar to Go. *)
+(* The core idea is that a newline character can implicitly act as a  *)
+(* semicolon, terminating a statement, but only under specific        *)
+(* conditions.                                                        *)
 
-(* Keywords *)
-type token =
- | FUNC | PACKAGE | IMPORT | TYPE | STRUCT | RETURN | BREAK | IF | ELSE
- | CONTINUE | FOR | CONST | WHILE
- | TRUE | FALSE | FINAL | MUT | LATE | PRIVATE | ERROR
- | NULL
- | DOUBLECOLON
-
- (* Built-in type keywords *)
- | BOOL
- | STRING
- | U8 | U16 | U32 | U64
- | I8 | I16 | I32 | I64
- | F32 | F64
-
- (* Identifiers *)
- | IDENT of string
-
- (* Literals *)
- | INT_LIT of int
- | FLOAT_LIT of float
- | BOOL_LIT of bool
- | STRING_LIT of string (* string literal *)
- | CHAR_LIT of char
+let need_semi   = ref false
+(* Purpose: Tracks whether the immediately preceding token emitted  *)
+(*          was one that could legally end a statement (as defined  *)
+(*          by the `ends_stmt` function).                           *)
+(* Set by: `emit` function sets this to true after emitting a token *)
+(*         that matches `ends_stmt`.                                 *)
+(* Reset by: Set to `false` when an explicit `;` is processed, OR    *)
+(*           when ASI successfully inserts a semicolon on a newline. *)
+(*           Also implicitly `false` after tokens not in `ends_stmt`.*)
 
 
- (* Operators *)
+let paren_depth = ref 0
+(* Purpose: Tracks the nesting level of parentheses `()` and        *)
+(*          square brackets `[]`.                                   *)
+(* Logic: ASI is disabled (newlines are always treated as          *)
+(*        whitespace) whenever `paren_depth` is greater than 0.     *)
+(* Updated by: `update_nesting` (called by `emit`) increments for   *)
+(*             `LPAREN`, `LBRACKET` and decrements for `RPAREN`,     *)
+(*             `RBRACKET`.                                           *)
 
- (* Arithmetic *)
- | PLUS | MINUS | DIV | MOD | MULT
+(* The `ends_stmt` function below lists tokens that can end a statement *)
+(* if followed by a newline (outside parentheses/brackets).            *)
+let ends_stmt = function
+  | IDENT _ | TYPE_NAME _
+  | INT_LIT _ | FLOAT_LIT _ | STRING_LIT _ | CHAR_LIT _
+  | BOOL_LIT _ | NULL
+  | RETURN | BREAK | CONTINUE | INC | DEC
+  | RPAREN | RBRACKET | RBRACE                       -> true
+  | _                                               -> false
 
- (* Bitwise *)
- | LSHIFT | RSHIFT | BITXOR | BITOR | BITNOT | BITAND
+(* The `update_nesting` function updates `paren_depth`. *)
+let update_nesting = function
+  | LPAREN  -> incr paren_depth | RPAREN  -> decr paren_depth
+  | LBRACKET-> incr paren_depth | RBRACKET-> decr paren_depth
+  | _ -> ()
 
- (* Assignment *)
- | ASSIGN | DECL_ASSIGN (* = vs := *)
- | PLUS_ASSIGN | MINUS_ASSIGN | TIMES_ASSIGN | DIV_ASSIGN | MOD_ASSIGN
- | LSHIFT_ASSIGN | RSHIFT_ASSIGN | BITAND_ASSIGN | BITXOR_ASSIGN | BITOR_ASSIGN
-
- (* Equivalence *)
- | EQ | NEQ | LT | LE | GT | GE
-
- (* Logical *)
- | AND | OR | NOT
-
- (* Unary *)
- | INC | DEC
-
- (* Separators *)
- | LPAREN | RPAREN | LBRACE | RBRACE | LBRACKET | RBRACKET
- | SEMICOLON | COLON | COMMA | DOT | TRIPLEDOT
-
- (* Special tokens *)
- | EOF     (* End of file *)
+(* The `emit` function is a wrapper to update state before returning a token. *)
+let emit tok =
+  update_nesting tok;
+  need_semi := ends_stmt tok;
+  tok
 
 }
 
 (* Regular expressions for token components *)
 let digit      = ['0'-'9']
 let alpha      = ['a'-'z' 'A'-'Z']
-let whitespace = [' ' '\t']
-let newline    = '\n' | '\r' | "\r\n"
+let whitespace = [' ' '\t' '\r']
 let identifier = alpha (alpha | digit | '_')*
 
 (* Literals *)
@@ -109,7 +104,12 @@ rule token = parse
 
     (* Whitespace *)
     | whitespace            { token lexbuf }
-    | newline               { token lexbuf }
+    | '\n'                  { Lexing.new_line lexbuf;
+                                if !need_semi && !paren_depth = 0 then
+                                    (need_semi := false; SEMICOLON)
+                                else
+                                    token lexbuf }
+
 
     (* Comments *)
     | "//" [^ '\n']*        { token lexbuf }
@@ -118,130 +118,136 @@ rule token = parse
     (*************** KEYWORDS ***************)
 
     (* Functions and Packages *)
-    | "func"                { FUNC }
-    | "package"             { PACKAGE }
-    | "import"              { IMPORT }
+    | "func"                { emit FUNC }
+    | "package"             { emit PACKAGE }
+    | "import"              { emit IMPORT }
 
     (* Types and Structs *)
-    | "type"                { TYPE }
-    | "struct"              { STRUCT }
+    | "type"                { emit TYPE }
+    | "struct"              { emit STRUCT }
 
     (* Control Flow *)
-    | "return"              { RETURN }
-    | "break"               { BREAK }
-    | "if"                  { IF }
-    | "else"                { ELSE }
-    | "continue"            { CONTINUE }
-    | "for"                 { FOR }
-    | "while"               { WHILE }
+    | "return"              { emit RETURN }
+    | "break"               { emit BREAK }
+    | "if"                  { emit IF }
+    | "else"                { emit ELSE }
+    | "continue"            { emit CONTINUE }
+    | "for"                 { emit FOR }
+    | "while"               { emit WHILE }
 
     (* Constants and Variables *)
-    | "const"               { CONST }
+    | "const"               { emit CONST }
+    | "make"                { emit MAKE }
 
     (* Boolean Literals *)
-    | "true"                { BOOL_LIT(true) }
-    | "false"               { BOOL_LIT(false) }
+    | "true"                { emit (BOOL_LIT(true)) }
+    | "false"               { emit (BOOL_LIT(false)) }
 
     (* Data Types *)
-    | "error"               { ERROR }
-    | "null"                { NULL }
+    | "error"               { emit ERROR }
+    | "null"                { emit NULL }
 
     (* Modifiers *)
-    | "final"               { FINAL }
-    | "mut"                 { MUT }
-    | "late"                { LATE }
-    | "private"             { PRIVATE }
+    | "final"               { emit FINAL }
+    | "mut"                 { emit MUT }
+    | "late"                { emit LATE }
+    | "private"             { emit PRIVATE }
 
     (* Built-in types *)
-    | "bool"               { BOOL }
-    | "string"             { STRING }
-    | "u8"                 { U8 }
-    | "u16"                { U16 }
-    | "u32"                { U32 }
-    | "u64"                { U64 }
-    | "i8"                 { I8 }
-    | "i16"                { I16 }
-    | "i32"                { I32 }
-    | "i64"                { I64 }
-    | "f32"                { F32 }
-    | "f64"                { F64 }
+    | "bool"               { emit BOOL }
+    | "string"             { emit STRING }
+    | "u8"                 { emit U8 }
+    | "u16"                { emit U16 }
+    | "u32"                { emit U32 }
+    | "u64"                { emit U64 }
+    | "i8"                 { emit I8 }
+    | "i16"                { emit I16 }
+    | "i32"                { emit I32 }
+    | "i64"                { emit I64 }
+    | "f16"                { emit F16 }
+    | "f32"                { emit F32 }
 
     (* Literals *)
-    | int_lit               { INT_LIT (int_of_string (Lexing.lexeme lexbuf)) }
-    | float_lit             { FLOAT_LIT (float_of_string (Lexing.lexeme lexbuf)) }
+    | int_lit               { emit(INT_LIT (int_of_string (Lexing.lexeme lexbuf))) }
+    | float_lit             { emit(FLOAT_LIT (float_of_string (Lexing.lexeme lexbuf))) }
     | string_lit            { let s = Lexing.lexeme lexbuf in
                                 (* Remove the quotes *)
                                 let content = String.sub s 1 (String.length s - 2) in
-                                STRING_LIT (interpret_string content) }
+                                emit(STRING_LIT (interpret_string content)) }
     | char_lit              { let c = Lexing.lexeme lexbuf in
                                 let content = String.sub c 1 (String.length c - 2) in
-                                CHAR_LIT (interpret_char content)}
+                                emit(CHAR_LIT (interpret_char content))}
 
     (* Arithmetic *)
-    | "+"                   { PLUS }
-    | "-"                   { MINUS }
-    | "/"                   { DIV }
-    | "%"                   { MOD }
-    | "*"                   { MULT }
+    | "+"                   { emit PLUS }
+    | "-"                   { emit MINUS }
+    | "/"                   { emit DIV }
+    | "%"                   { emit MOD }
+    | "*"                   { emit MULT }
 
     (* Bitwise *)
-    | "<<"                  { LSHIFT }
-    | ">>"                  { RSHIFT }
-    | "^"                   { BITXOR }
-    | "|"                   { BITOR }
-    | "~"                   { BITNOT }
-    | "&"                   { BITAND }
+    | "<<"                  { emit LSHIFT }
+    | ">>"                  { emit RSHIFT }
+    | "^"                   { emit BITXOR }
+    | "|"                   { emit BITOR }
+    | "~"                   { emit BITNOT }
+    | "&"                   { emit BITAND }
 
     (* Assignment *)
-    | "="                   { ASSIGN }
-    | ":="                  { DECL_ASSIGN }
-    | "+="                  { PLUS_ASSIGN }
-    | "-="                  { MINUS_ASSIGN }
-    | "*="                  { TIMES_ASSIGN }
-    | "/="                  { DIV_ASSIGN }
-    | "%="                  { MOD_ASSIGN }
-    | "<<="                 { LSHIFT_ASSIGN }
-    | ">>="                 { RSHIFT_ASSIGN }
-    | "&="                  { BITAND_ASSIGN }
-    | "^="                  { BITXOR_ASSIGN }
-    | "|="                  { BITOR_ASSIGN }
+    | "="                   { emit ASSIGN }
+    | ":="                  { emit DECL_ASSIGN }
+    | "+="                  { emit PLUS_ASSIGN }
+    | "-="                  { emit MINUS_ASSIGN }
+    | "*="                  { emit TIMES_ASSIGN }
+    | "/="                  { emit DIV_ASSIGN }
+    | "%="                  { emit MOD_ASSIGN }
+    | "<<="                 { emit LSHIFT_ASSIGN }
+    | ">>="                 { emit RSHIFT_ASSIGN }
+    | "&="                  { emit BITAND_ASSIGN }
+    | "^="                  { emit BITXOR_ASSIGN }
+    | "|="                  { emit BITOR_ASSIGN }
 
     (* Equivalence *)
-    | "=="                  { EQ }
-    | "!="                  { NEQ }
-    | "<"                   { LT }
-    | "<="                  { LE }
-    | ">"                   { GT }
-    | ">="                  { GE }
+    | "=="                  { emit EQ }
+    | "!="                  { emit NEQ }
+    | "<"                   { emit LT }
+    | "<="                  { emit LE }
+    | ">"                   { emit GT }
+    | ">="                  { emit GE }
 
     (* Logical *)
-    | "&&"                  { AND }
-    | "||"                  { OR }
-    | "!"                   { NOT }
+    | "&&"                  { emit AND }
+    | "||"                  { emit OR }
+    | "!"                   { emit NOT }
 
     (* Unary *)
-    | "++"                  { INC }
-    | "--"                  { DEC }
+    | "++"                  { emit INC }
+    | "--"                  { emit DEC }
 
     (* Separators *)
-    | "("                   { LPAREN }
-    | ")"                   { RPAREN }
-    | "{"                   { LBRACE }
-    | "}"                   { RBRACE }
-    | "["                   { LBRACKET }
-    | "]"                   { RBRACKET }
-    | ";"                   { SEMICOLON }
-    | ":"                   { COLON }
-    | ","                   { COMMA }
-    | "."                   { DOT }
-    | "..."                 { TRIPLEDOT }
-    | "::"                  { DOUBLECOLON }
+    | "("                   { emit LPAREN }
+    | ")"                   { emit RPAREN }
+    | "{"                   { emit LBRACE }
+    | "}"                   { emit RBRACE }
+    | "["                   { emit LBRACKET }
+    | "]"                   { emit RBRACKET }
+    | ";"                   { need_semi := false; emit SEMICOLON }
+    | ":"                   { emit COLON }
+    | ","                   { emit COMMA }
+    | "."                   { emit DOT }
 
     (* Ocamllex checks rules in order, so this is after keywords *)
-    | identifier            { IDENT (Lexing.lexeme lexbuf) }
+    | identifier as s           { if Scanner_state.is_type_name s then
+                                emit (TYPE_NAME s)
+                              else
+                                emit (IDENT s)
+                            }
     | eof                   { EOF }
-    | _                     { raise (Failure (Printf.sprintf "unrecognized token: %s" (Lexing.lexeme lexbuf))) }
+    | _ as c                { raise (Failure (Printf.sprintf "Lexing bad char: '%c'" c)) }
 
 and comment = parse
     | "*/"      { token lexbuf }
+    | '\n'      { Lexing.new_line lexbuf; comment lexbuf }
+    | "/*"      { ignore (comment lexbuf); comment lexbuf }
+    | eof       { failwith "unterminated comment" }
     | _         { comment lexbuf }

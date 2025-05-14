@@ -35,8 +35,7 @@ type unop =
   | Inc | Dec
 
 (* compound operators in lang *)
-type assign_op =
-| RegAssign | DeclAssign
+type compound_op =
 | PlusAssign | MinusAssign | TimesAssign | DivAssign | ModAssign
 | LshiftAssign | RshiftAssign | BitandAssign | BitxorAssign | BitorAssign
 
@@ -63,10 +62,10 @@ type expr =
   (* Operations *)
   | Binop of expr * biop * expr (* e.g. a + b *)
   | Unaop of unop * expr (* e.g. -x *)
-  | Assignment of expr * assign_op * expr  (* For operations like x += y and x = y *)
+  | SimpleAssign of expr * expr (* For basic assignment: x = y *)
+  | CompoundAssign of expr * compound_op * expr  (* For operations like x += y *)
 
-  (* Error Expression and Casting *)
-  | Cast of type_expr * expr (* i64(x) | error("system fail") | f32(1.2) *)
+  | Sequence of expr * expr (* expr1; expr2 - Evaluates expr1, then expr2, returns value of expr2 *)
 
   (* Function and Method Calls *)
   | FunctionCall of string * expr list (* func_name(arg1, arg2) *)
