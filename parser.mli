@@ -79,36 +79,12 @@ type token =
   | DOT
   | TRIPLEDOT
   | QUESTION
-  | INT_LIT of (
-# 22 "parser.mly"
-        int
-# 86 "parser.mli"
-)
-  | BOOL_LIT of (
-# 23 "parser.mly"
-        bool
-# 91 "parser.mli"
-)
-  | CHAR_LIT of (
-# 24 "parser.mly"
-        char
-# 96 "parser.mli"
-)
-  | FLOAT_LIT of (
-# 25 "parser.mly"
-        float
-# 101 "parser.mli"
-)
-  | STRING_LIT of (
-# 26 "parser.mly"
-        string
-# 106 "parser.mli"
-)
-  | IDENT of (
-# 27 "parser.mly"
-        string
-# 111 "parser.mli"
-)
+  | INT_LIT of (int)
+  | BOOL_LIT of (bool)
+  | CHAR_LIT of (char)
+  | FLOAT_LIT of (float)
+  | STRING_LIT of (string)
+  | IDENT of (string)
 
 val program :
   (Lexing.lexbuf  -> token) -> Lexing.lexbuf -> Ast.program

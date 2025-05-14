@@ -45,7 +45,7 @@ type sparam = {
 type sfunc = {
   sf_name         : string;
   sf_params       : sparam list;
-  sf_return_types : type_expr list;
+  sf_return_types : type_expr;(*never actually parse for this in variable declaration so removing list part*)
   sf_body         : sstmt list;
 }
 
