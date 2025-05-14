@@ -10,12 +10,10 @@ module StringMap = Map.Make(String)
 let translate (sprogram : sprogram) =
   let context    = L.global_context () in
   let the_module = L.create_module context "P.A.T." in
-  let string_struct = L.named_struct_type context "String" in 
-  L.struct_set_body string_struct [| L.pointer_type (L.i8_type context); (L.i64_type context) |] false;
 
   (* Return the LLVM type for a P.A.T type *)
   let rec ltype_of_typ = function
-    | TyPrim p ->
+    | SPrimitive p ->
       (
         match p with
           | I8     -> L.i8_type      context
@@ -29,18 +27,15 @@ let translate (sprogram : sprogram) =
           | F32    -> L.float_type   context
           | F64    -> L.double_type  context
           | Bool   -> L.i1_type      context
-          | String -> string_struct 
+          | String -> L.pointer_type (L.i8_type context)
       )
-    | TyArray(t, n) -> L.array_type (ltype_of_typ t) n
+    | SArray(t, n) -> L.array_type (ltype_of_typ t) n
     (* | SSlice t -> 
         let ptr = L.pointer_type (ltype_of_typ t) in
         L.struct_type context [| ptr; L.i64_type context |] *)
-    | TyStruct name ->
+    | STypeName name ->
         try StringMap.find name struct_types
         with Not_found -> failwith ("Unknown type: " ^ name)
-    | TyUnit -> L.void_type context
-    | TyError -> string_struct
-    | _ -> raise Failure "type not supported in IR."
   and
   (* Type handling *)
   struct_types : L.llvalue StringMap.t = 

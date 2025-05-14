@@ -558,16 +558,16 @@ module StringMap = Map.Make(String)
     (* ------------------------------------------------------ *)
     (* Pass 2 - resolve struct fields *)
     (* ------------------------------------------------------ *)
-    let env2, stype_decls, salias_decls =
-      List.fold_left (fun (e_acc, sd_acc, td_acc) td ->
+    let env2, stype_decls =
+      List.fold_left (fun (e_acc, sd_acc) td ->
         match td with
         | TypeStruct (n, flds) ->
           let sfields = List.map (check_field e_acc) flds in
           let e' = add_struct n sfields e_acc in
-          (e', sd_acc @ [STypeStruct (n, sfields)], td_acc)
+          (e', sd_acc @ [STypeStruct (n, sfields)])
         | TypeAlias (n, _) ->
-          (e_acc, sd_acc, td_acc @ [STypeAlias (n, find_type n e_acc)])
-    ) (env1, [], []) p.type_declarations
+          (e_acc, sd_acc @ [STypeAlias (n, find_type n e_acc)])
+      ) (env1, []) p.type_declarations
     in
     (* Phase 3: enter all function headers so functions can mutually recurse. *)
     let env3 = List.fold_left add_func_header env2 p.functions in
@@ -604,8 +604,7 @@ module StringMap = Map.Make(String)
     {
       sp_package = p.package_name;
       sp_imports = p.imports;
-      sp_structs = stype_decls;
-      sp_alias   = salias_decls;
+      sp_types   = stype_decls;
       sp_globals = sglobals;
       sp_funcs   = sfuncs;
       sp_methods = smethods;
