@@ -113,9 +113,8 @@ type sstruct_func = {
   body         : sstmt list;
 }
 
-type stype_decl =
-  | STypeStruct of string * sfield list
-  | STypeAlias of string * ty
+type sTypeStruct = string * sfield list
+type sTypeAlias = string * ty
 
 (* Represents a checked global variable *)
 type sglobal_decl = {
@@ -128,7 +127,8 @@ type sglobal_decl = {
 type sprogram = {
   sp_package : package_decl; (* From the AST *)
   sp_imports : import_decl list; (* From the AST *)
-  sp_types   : stype_decl list;
+  sp_structs : sTypeStruct list;
+  sp_alias   : sTypeAlias list;
   sp_globals : sglobal_decl list;
   sp_funcs   : sfunc_decl list;
   sp_methods : sstruct_func list;

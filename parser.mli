@@ -1,9 +1,7 @@
 type token =
-  | DOUBLECOLON
-  | EOF
-  | FUNC
   | PACKAGE
   | IMPORT
+  | FUNC
   | TYPE
   | STRUCT
   | RETURN
@@ -14,12 +12,15 @@ type token =
   | FOR
   | WHILE
   | CONST
-  | ERROR
-  | NULL
+  | MAKE
   | FINAL
   | MUT
   | LATE
   | PRIVATE
+  | ERROR
+  | TRUE
+  | FALSE
+  | NULL
   | BOOL
   | STRING
   | U8
@@ -30,26 +31,29 @@ type token =
   | I16
   | I32
   | I64
+  | F16
   | F32
-  | F64
   | PLUS
   | MINUS
-  | DIV
   | MULT
+  | DIV
   | MOD
   | LSHIFT
   | RSHIFT
+  | BITAND
   | BITXOR
   | BITOR
   | BITNOT
-  | BITAND
+  | AND
+  | OR
+  | NOT
   | ASSIGN
+  | DECL_ASSIGN
   | PLUS_ASSIGN
   | MINUS_ASSIGN
   | TIMES_ASSIGN
   | DIV_ASSIGN
   | MOD_ASSIGN
-  | DECL_ASSIGN
   | LSHIFT_ASSIGN
   | RSHIFT_ASSIGN
   | BITAND_ASSIGN
@@ -61,12 +65,8 @@ type token =
   | LE
   | GT
   | GE
-  | AND
-  | OR
-  | NOT
   | INC
   | DEC
-  | NEG
   | LPAREN
   | RPAREN
   | LBRACE
@@ -77,14 +77,17 @@ type token =
   | COLON
   | COMMA
   | DOT
-  | TRIPLEDOT
-  | QUESTION
+  | IDENT of (string)
+  | TYPE_NAME of (string)
   | INT_LIT of (int)
-  | BOOL_LIT of (bool)
-  | CHAR_LIT of (char)
   | FLOAT_LIT of (float)
   | STRING_LIT of (string)
-  | IDENT of (string)
+  | CHAR_LIT of (char)
+  | BOOL_LIT of (bool)
+  | EOF
+  | UPLUS
+  | UMINUS
+  | IFX
 
 val program :
   (Lexing.lexbuf  -> token) -> Lexing.lexbuf -> Ast.program
