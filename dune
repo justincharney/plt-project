@@ -30,21 +30,26 @@
   (modules sast)
   (libraries ast))
 
-  (library
-   (name sast_printer)
-   (modules sast_printer)
-   (libraries ast sast))
-
-  (executable
-   (name plt)
-   (modules plt)
-   (libraries ast sast scanner parser semant sast_printer))
-
 ; define semant as a library that depends on ast and sast
 (library
   (name semant)
   (modules semant)
   (libraries ast sast))
+
+(library
+  (name irgen)
+  (modules irgen)
+  (libraries llvm ast sast))
+
+(library
+  (name sast_printer)
+  (modules sast_printer)
+  (libraries ast sast))
+
+(executable
+  (name plt)
+  (modules plt)
+  (libraries ast sast scanner parser semant sast_printer))
 
 (executable
  (name hello)
