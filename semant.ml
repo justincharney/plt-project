@@ -46,6 +46,17 @@ let local_string_of_compound_op = function
       structs = StringMap.empty;
     }
 
+    let initial_env =
+      let buit_in_funcs =
+        List.fold_left (fun acc (name, func_sig) -> StringMap.add name (VFunc func_sig) acc)
+        StringMap.empty
+        [
+          ("printf", {params = [TyPrim Ast.String]; returns = [TyPrim Ast.I32]});
+          ("exit", {params = [TyPrim Ast.I32]; returns = []})
+        ]
+      in
+    {empty_env with values = buit_in_funcs}
+
     let add_type name t env =
       { env with types = StringMap.add name t env.types}
 
@@ -664,7 +675,7 @@ let local_string_of_compound_op = function
           if StringMap.mem n e.types then dup n "type (alias name)";
           add_type n TyError e (* Placeholder, resolved in pass 1 *)
         )
-      empty_env p.type_declarations
+        initial_env p.type_declarations
     in
     let env1 =
       List.fold_left (fun e td ->

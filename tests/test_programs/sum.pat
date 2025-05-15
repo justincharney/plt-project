@@ -6,4 +6,6 @@ func add(a: i32, b: i32) i32 {
 
 func main() {
     c := add(5, 3)
+
+    printf("Hello");
 }

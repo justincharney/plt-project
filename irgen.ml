@@ -376,7 +376,19 @@ let translate (sprogram : sprogram) =
             try (StringMap.find fname !function_decls, "calltmp")
             with Not_found -> failwith ("IRGen: Unknown function referenced: " ^ fname)
         in
-        let call_instr = L.build_call callee_llval (Array.of_list args_ll)
+
+        (* Handling for printf's first argument *)
+        let final_args_ll =
+          if fname = "printf" then
+            match args_ll with
+            | format_string_struct_val :: rest_args ->
+              (* Extact the i8* from the P.A.T String struct {i8*, i64} *)
+              let format_string_ptr = L.build_extractvalue format_string_struct_val 0 "fmt_str_ptr" builder in
+              format_string_ptr :: rest_args
+            | [] -> failwith "printf called with no arguments"
+          else args_ll
+        in
+        let call_instr = L.build_call callee_llval (Array.of_list final_args_ll)
                            (if sexpr_ty = TyUnit || fname = "exit" then "" else ret_name_suffix) builder in
         if fname = "exit" then ignore (L.build_unreachable builder);
         call_instr
