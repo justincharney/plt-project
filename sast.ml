@@ -65,7 +65,7 @@ and sx =
   (* calls / built-ins *)
   | SFunctionCall  of string * sexpr list
   | SMethodCall    of sexpr * string * sexpr list
-  | SMake          of ty * sexpr * sexpr option
+  (*| SMake          of ty * sexpr * sexpr option*)
   | SCast          of ty * sexpr
 
 (* --------------------------------------------------------------------- *)
