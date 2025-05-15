@@ -20,14 +20,14 @@ let ast_construction_tests = "test suite for AST construction and structure" >::
   "create and verify type expressions" >:: (fun _ ->
     let t_bool = Primitive Bool in
     let t_str_arr = Array (Primitive String, 10) in
-    let t_i32_slice = Slice (Primitive I32) in
+    (* let t_i32_slice = Slice (Primitive I32) in *)
     let t_struct = Struct "MyStruct" in
     let t_alias = TypeName "MyIntAlias" in
     let t_error = Primitive Error in
 
     assert_equal (Primitive Bool) t_bool;
     assert_equal (Array (Primitive String, 10)) t_str_arr;
-    assert_equal (Slice (Primitive I32)) t_i32_slice;
+    (* assert_equal (Slice (Primitive I32)) t_i32_slice; *)
     assert_equal (Struct "MyStruct") t_struct;
     assert_equal (TypeName "MyIntAlias") t_alias;
     assert_equal (Primitive Error) t_error;
@@ -36,9 +36,9 @@ let ast_construction_tests = "test suite for AST construction and structure" >::
     (match t_str_arr with
      | Array (Primitive String, sz) -> assert_equal 10 sz
      | _ -> assert_failure "Expected Array(Primitive String, 10)");
-    (match t_i32_slice with
+    (* (match t_i32_slice with
      | Slice (Primitive I32) -> ()
-     | _ -> assert_failure "Expected Slice(Primitive I32)");
+     | _ -> assert_failure "Expected Slice(Primitive I32)"); *)
   );
 
   "create and verify basic expressions" >:: (fun _ ->
@@ -49,18 +49,18 @@ let ast_construction_tests = "test suite for AST construction and structure" >::
     let comp_assign = CompoundAssign (Identifier "count", PlusAssign, IntLit 1) in
     let field_acc = FieldAccess (Identifier "myStructVar", "fieldName") in
     let index_acc = IndexAccess (Identifier "myArray", IntLit 0) in
-    let slice_expr = SliceExpr (Identifier "mySlice", Some (IntLit 1), Some (IntLit 5)) in
+    (* let slice_expr = SliceExpr (Identifier "mySlice", Some (IntLit 1), Some (IntLit 5)) in
     let slice_expr_no_end = SliceExpr (Identifier "mySlice", Some (IntLit 2), None) in
-    let slice_expr_no_start = SliceExpr (Identifier "mySlice", None, Some (IntLit 3)) in
+    let slice_expr_no_start = SliceExpr (Identifier "mySlice", None, Some (IntLit 3)) in *)
     let func_call = FunctionCall ("myFunc", [IntLit 1; BoolLit false]) in
     let method_call = MethodCall (Identifier "myObj", "doThing", [StringLit "arg"]) in
     let cast_expr = Cast (Primitive I16, Identifier "long_val") in
-    let make_expr = Make (Slice (Primitive I32), IntLit 10, None) in
-    let make_expr_cap = Make (Slice (Primitive U8), IntLit 5, Some (IntLit 10)) in
+    (* let make_expr = Make (Slice (Primitive I32), IntLit 10, None) in
+    let make_expr_cap = Make (Slice (Primitive U8), IntLit 5, Some (IntLit 10)) in *)
     let seq_expr = Sequence (SimpleAssign (Identifier "a", IntLit 1), Identifier "a") in
     let arr_lit = ArrayLit (Primitive I32, [IntLit 1; IntLit 2]) in
     let struct_lit = StructLit ("Point", [("x", IntLit 0); ("y", IntLit 0)]) in
-    let slice_lit = SliceLit (Primitive F32, [FloatLit 1.0; FloatLit 2.0]) in
+    (* let slice_lit = SliceLit (Primitive F32, [FloatLit 1.0; FloatLit 2.0]) in *)
 
 
     (* Verify identifiers *)
@@ -93,7 +93,7 @@ let ast_construction_tests = "test suite for AST construction and structure" >::
       | _ -> assert_failure "Expected IndexAccess");
 
     (* Verify Slice Expression *)
-     (match slice_expr with
+     (* (match slice_expr with
       | SliceExpr(Identifier s, Some (IntLit start), Some (IntLit end_)) ->
           assert_equal "mySlice" s; assert_equal 1 start; assert_equal 5 end_
       | _ -> assert_failure "Expected SliceExpr with start and end");
@@ -104,7 +104,7 @@ let ast_construction_tests = "test suite for AST construction and structure" >::
     (match slice_expr_no_start with
       | SliceExpr(Identifier s, None, Some (IntLit end_)) ->
           assert_equal "mySlice" s; assert_equal 3 end_
-      | _ -> assert_failure "Expected SliceExpr with end only");
+      | _ -> assert_failure "Expected SliceExpr with end only"); *)
 
     (* Verify Calls *)
     (match func_call with
@@ -120,12 +120,12 @@ let ast_construction_tests = "test suite for AST construction and structure" >::
       | _ -> assert_failure "Expected Cast");
 
     (* Verify Make *)
-    (match make_expr with
+    (* (match make_expr with
       | Make(Slice(Primitive I32), IntLit len, None) -> assert_equal 10 len
       | _ -> assert_failure "Expected Make slice without capacity");
      (match make_expr_cap with
       | Make(Slice(Primitive U8), IntLit len, Some(IntLit cap)) -> assert_equal 5 len; assert_equal 10 cap
-      | _ -> assert_failure "Expected Make slice with capacity");
+      | _ -> assert_failure "Expected Make slice with capacity"); *)
 
     (* Verify Sequence *)
     (match seq_expr with
@@ -139,9 +139,9 @@ let ast_construction_tests = "test suite for AST construction and structure" >::
     (match struct_lit with
       | StructLit("Point", fields) -> assert_equal 2 (List.length fields); assert_equal "x" (fst (List.hd fields))
       | _ -> assert_failure "Expected StructLit");
-    (match slice_lit with
+    (* (match slice_lit with
       | SliceLit(Primitive F32, elems) -> assert_equal 2 (List.length elems)
-      | _ -> assert_failure "Expected SliceLit");
+      | _ -> assert_failure "Expected SliceLit"); *)
   );
 
   "create and verify statements" >:: (fun _ ->

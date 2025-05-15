@@ -59,7 +59,7 @@ module StringMap = Map.Make(String)
     (* ----- Helpers ----- *)
 
     let numeric_prim = function
-      | U8 | U16 | U32 | U64 | I8 | I16 | I32 | I64 | F16 | F32 -> true
+      | U8 | U16 | U32 | U64 | I8 | I16 | I32 | I64 | F32 | F64 -> true
       | _ -> false
 
     let int_prim = function
@@ -69,7 +69,7 @@ module StringMap = Map.Make(String)
     let is_numeric = function TyPrim p when numeric_prim p -> true | _ -> false
     let is_integer = function TyPrim p when int_prim p -> true | _ -> false
     let is_boolean = function TyPrim Bool -> true | _ -> false
-    let is_nullable = function TyNull | TySlice _ | TyStruct _ -> true | _ -> false
+    let is_nullable = function TyNull | TyStruct _ -> true | _ -> false (*Removed TySlice*)
     let is_string = function TyPrim String -> true | _ -> false
 
     let ensure_numeric ty ctx =
@@ -85,7 +85,7 @@ module StringMap = Map.Make(String)
       | TyNull, t | t, TyNull -> is_nullable t
       | TyPrim p1, TyPrim p2 -> p1 = p2
       | TyArray (et1, n1), TyArray (et2, n2) -> n1 = n2 && ty_equal et1 et2
-      | TySlice et1, TySlice et2 -> ty_equal et1 et2
+      (* | TySlice et1, TySlice et2 -> ty_equal et1 et2 *)
       | TyStruct s1, TyStruct s2 -> s1 = s2
       | TyError, _
       | _, TyError -> true (* allow error propagation*)
@@ -95,7 +95,7 @@ module StringMap = Map.Make(String)
       match t with
       | Primitive p -> TyPrim p
       | Array (te, n) -> TyArray (resolve_type_expr env te, n)
-      | Slice te -> TySlice (resolve_type_expr env te)
+      (* | Slice te -> TySlice (resolve_type_expr env te) *)
       | Struct s ->
         if not (StringMap.mem s env.structs) then
           raise (Semantic_error ("Struct " ^ s ^ " not found"));
@@ -162,12 +162,12 @@ module StringMap = Map.Make(String)
         let sfield_inits = List.map check_field field_inits in
         (TyStruct name, SStructLit (name, sfield_inits))
 
-      | SliceLit (te, elems) ->
+      (* | SliceLit (te, elems) ->
         let elt_ty = resolve_type_expr env te in
         let selems = List.map (check_expr env) elems in
         List.iter (fun (t, _) -> if not (ty_equal t elt_ty) then
           raise (Semantic_error "Slice literal element type mismatch")) selems;
-        (TySlice elt_ty, SSliceLit (elt_ty, selems))
+        (TySlice elt_ty, SSliceLit (elt_ty, selems)) *)
 
       | Identifier id ->
         begin match find_value id env with
@@ -197,13 +197,14 @@ module StringMap = Map.Make(String)
           raise (Semantic_error "index must be an integer");
         let elt_ty =
           match fst sarr with
-          | TyArray (t, _) | TySlice t -> t
+          | TyArray (t, _) -> t
+          (* | TySlice t -> t *)
           | TyPrim String -> TyPrim U8 (* Gives you the character *)
           | _ -> raise (Semantic_error "indexing requires array or slice")
         in
         (elt_ty, SIndexAccess (sarr, sidx))
 
-      | SliceExpr (arr, lo, hi) ->
+      (* | SliceExpr (arr, lo, hi) ->
         let sarr = check_expr env arr in
         let slo = Option.map(check_expr env) lo in
         let shi = Option.map(check_expr env) hi in
@@ -217,7 +218,7 @@ module StringMap = Map.Make(String)
           | TyPrim String -> TyPrim String (* Gives you the substring *)
           | _ -> raise (Semantic_error "Slice on non-array/slice type")
         in
-        (TySlice elt_ty, SSliceExpr (sarr, slo, shi))
+        (TySlice elt_ty, SSliceExpr (sarr, slo, shi)) *)
 
       | Binop (e1, op, e2) ->
         let se1 = check_expr env e1 in
@@ -335,7 +336,7 @@ module StringMap = Map.Make(String)
         | _ -> raise (Semantic_error "method call on non‑struct")
         end
 
-      | Make (te, len_expr, cap_expr_opt) ->
+      (* | Make (te, len_expr, cap_expr_opt) ->
         let elt_ty = resolve_type_expr env te in
         let slen = check_expr env len_expr in
         if not (is_integer (fst slen)) then
@@ -343,7 +344,7 @@ module StringMap = Map.Make(String)
         let scap_opt = Option.map (check_expr env) cap_expr_opt in
         Option.iter (fun (t,_) -> if not (is_integer t) then
           raise (Semantic_error "make capacity argument must be an integer"))scap_opt;
-        (TySlice elt_ty, SMake(elt_ty, slen, scap_opt))
+        (TySlice elt_ty, SMake(elt_ty, slen, scap_opt)) *)
 
       | Cast (ast_ty, e) ->
         let target = resolve_type_expr env ast_ty in

@@ -33,17 +33,17 @@ let rec string_of_sexpr (typ, sx) =
     | SStringLit s -> Printf.sprintf "\"%s\"" (String.escaped s) (* Use String.escaped *)
     | SNull -> "null"
     | SArrayLit (t, exprs) -> Printf.sprintf "%s{%s}" (string_of_ty t) (String.concat ", " (List.map string_of_sexpr exprs))
-    | SSliceLit (t, exprs) -> Printf.sprintf "[]%s{%s}" (string_of_ty t) (String.concat ", " (List.map string_of_sexpr exprs))
+    (* | SSliceLit (t, exprs) -> Printf.sprintf "[]%s{%s}" (string_of_ty t) (String.concat ", " (List.map string_of_sexpr exprs)) *)
     | SStructLit (name, fields) ->
         let field_strs = List.map (fun (fname, sexpr) -> Printf.sprintf "%s: %s" fname (string_of_sexpr sexpr)) fields in
         Printf.sprintf "%s{%s}" name (String.concat ", " field_strs)
     | SIdentifier id -> id
     | SFieldAccess (sexpr, field) -> Printf.sprintf "%s.%s" (string_of_sexpr sexpr) field
     | SIndexAccess (sexpr, index) -> Printf.sprintf "%s[%s]" (string_of_sexpr sexpr) (string_of_sexpr index)
-    | SSliceExpr (sexpr, start_opt, end_opt) ->
+    (* | SSliceExpr (sexpr, start_opt, end_opt) ->
         let start_str = match start_opt with None -> "" | Some s -> string_of_sexpr s in
         let end_str = match end_opt with None -> "" | Some e -> string_of_sexpr e in
-        Printf.sprintf "%s[%s:%s]" (string_of_sexpr sexpr) start_str end_str
+        Printf.sprintf "%s[%s:%s]" (string_of_sexpr sexpr) start_str end_str *)
     | SBinop (e1, op, e2) -> Printf.sprintf "(%s %s %s)" (string_of_sexpr e1) (string_of_biop op) (string_of_sexpr e2)
     | SUnaop (op, e) -> Printf.sprintf "(%s%s)" (string_of_unop op) (string_of_sexpr e)
     | SSimpleAssign (lval, rval) -> Printf.sprintf "(%s = %s)" (string_of_sexpr lval) (string_of_sexpr rval)

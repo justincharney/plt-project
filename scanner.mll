@@ -164,8 +164,8 @@ rule token = parse
     | "i16"                { emit I16 }
     | "i32"                { emit I32 }
     | "i64"                { emit I64 }
-    | "f16"                { emit F16 }
     | "f32"                { emit F32 }
+    | "f64"                { emit F64 }
 
     (* Literals *)
     | int_lit               { emit(INT_LIT (int_of_string (Lexing.lexeme lexbuf))) }

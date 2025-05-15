@@ -106,7 +106,7 @@ let type_tests = "Type Checking and Resolution" >::: [
         ()
     );
 
-    "slice literal type check U8 (char)" >:: run_semant_test_pass (make_program
+    (* "slice literal type check U8 (char)" >:: run_semant_test_pass (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
             Expr (SliceLit (Primitive U8, [CharLit 'a'; CharLit 'b'])) (* Using CharLit for U8 *)
         ]}]
@@ -118,7 +118,7 @@ let type_tests = "Type Checking and Resolution" >::: [
             Expr (SliceLit (Primitive I32, [Cast(Primitive I32, IntLit 1); Cast(Primitive I32, IntLit 2)]))
         ]}]
         ()
-    );
+    ); *)
 
     "valid cast I32 to I64" >:: run_semant_test_pass (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
@@ -128,13 +128,13 @@ let type_tests = "Type Checking and Resolution" >::: [
         ()
     );
 
-    "null assignment to slice" >:: run_semant_test_pass (make_program
+    (* "null assignment to slice" >:: run_semant_test_pass (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
             Expr (SimpleAssign(Identifier "s", Null));
             VarDecl {is_const=false; name="s"; var_type=Some(Slice(Primitive I32)); initializer_expr=None};
         ]}]
         ()
-     );
+     ); *)
 ]
 
 let expression_tests = "Expression Checking" >::: [
@@ -220,19 +220,19 @@ let expression_tests = "Expression Checking" >::: [
         ]}]
         ()
     );
-     "valid slice expression I32 array" >:: run_semant_test_pass (make_program
+     (* "valid slice expression I32 array" >:: run_semant_test_pass (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
             Expr (SliceExpr(Identifier "a", Some (IntLit 0), Some (IntLit 1))); (* Indices are I32, allowed *)
             VarDecl {is_const=false; name="a"; var_type=None; initializer_expr=Some(ArrayLit(Primitive I32, [Cast(Primitive I32, IntLit 1); Cast(Primitive I32, IntLit 2)]))};
         ]}]
         ()
-    );
-    "valid make" >:: run_semant_test_pass (make_program
+    ); *)
+    (* "valid make" >:: run_semant_test_pass (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
             Expr(Make(Slice(Primitive U8), IntLit 10, Some (IntLit 20))) (* Length/Cap are I32, allowed *)
         ]}]
         ()
-    );
+    ); *)
 ]
 
 let statement_tests = "Statement Checking" >::: [
@@ -528,12 +528,12 @@ let error_tests_types = "Error Cases: Types" >::: [
         ]}]
         ()
     );
-     "slice literal element type mismatch (F32 vs String)" >:: run_semant_test_fail (make_program
+     (* "slice literal element type mismatch (F32 vs String)" >:: run_semant_test_fail (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
             Expr (SliceLit(Primitive F32, [FloatLit 1.0; StringLit "no"]))
         ]}]
         ()
-    );
+    ); *)
      "invalid cast (I32 to Bool)" >:: run_semant_test_fail (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
              Expr (Cast(Primitive Bool, IntLit 1))
@@ -610,21 +610,21 @@ let error_tests_scope = "Error Cases: Scope and Usage" >::: [
         ]}]
         ()
     );
-      "slice non-array/slice" >:: run_semant_test_fail (make_program
+      (* "slice non-array/slice" >:: run_semant_test_fail (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
             Expr (SliceExpr(Identifier "x", Some(IntLit 0), None));
             VarDecl {is_const=false; name="x"; var_type=None; initializer_expr=Some(IntLit 1)};
         ]}]
         ()
-    );
-      "slice with non-integer index" >:: run_semant_test_fail (make_program
+    ); *)
+      (* "slice with non-integer index" >:: run_semant_test_fail (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
             Expr (SliceExpr(Identifier "a", Some(FloatLit 0.0), None));
             VarDecl {is_const=false; name="a"; var_type=None; initializer_expr=Some(ArrayLit(Primitive I32, [Cast(Primitive I32, IntLit 1)]))};
         ]}]
         ()
-    );
-     "make len non-integer" >:: run_semant_test_fail (make_program
+    ); *)
+     (* "make len non-integer" >:: run_semant_test_fail (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
             Expr(Make(Slice(Primitive U8), StringLit "10", None))
         ]}]
@@ -635,7 +635,7 @@ let error_tests_scope = "Error Cases: Scope and Usage" >::: [
             Expr(Make(Slice(Primitive U8), IntLit 10, Some(BoolLit true)))
         ]}]
         ()
-    );
+    ); *)
     "use undeclared type alias" >:: run_semant_test_fail (make_program
         ~functions:[{ name="main"; params=[]; return_types=[]; body=[
             VarDecl {is_const=false; name="x"; var_type=Some(TypeName "NoSuchType"); initializer_expr=None}

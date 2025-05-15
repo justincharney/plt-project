@@ -7,7 +7,7 @@ open Ast (* re-use primitive_type, biop, … *)
 type ty =
   | TyPrim   of primitive_type
   | TyArray  of ty * int
-  | TySlice  of ty
+  (* | TySlice  of ty *)
   | TyStruct of string
   | TyNull
   | TyUnit
@@ -21,11 +21,11 @@ let rec string_of_ty = function
       | Bool -> "bool" | String -> "string"
       | U8 -> "u8" | U16 -> "u16" | U32 -> "u32" | U64 -> "u64"
       | I8 -> "i8" | I16 -> "i16" | I32 -> "i32" | I64 -> "i64"
-      | F16 -> "f16" | F32 -> "f32"
+      | F32 -> "f32" | F64 -> "f64"
       | Error -> "<primitive_error>"
       end
   | TyArray (t, n) -> Printf.sprintf "[%d]%s" n (string_of_ty t)
-  | TySlice t      -> Printf.sprintf "[]%s" (string_of_ty t)
+  (* | TySlice t      -> Printf.sprintf "[]%s" (string_of_ty t) *)
   | TyStruct n     -> n
   | TyNull         -> "null"
   | TyUnit         -> "unit" (* For functions without returns *)
@@ -45,13 +45,13 @@ and sx =
   | SNull
   | SArrayLit    of ty * sexpr list
   | SStructLit   of string * (string * sexpr) list
-  | SSliceLit    of ty * sexpr list
+  (* | SSliceLit    of ty * sexpr list *)
 
   (* l-values and basic primaries *)
   | SIdentifier    of string
   | SFieldAccess   of sexpr * string
   | SIndexAccess   of sexpr * sexpr
-  | SSliceExpr     of sexpr * sexpr option * sexpr option
+  (* | SSliceExpr     of sexpr * sexpr option * sexpr option *)
 
   (* operators *)
   | SBinop         of sexpr * biop * sexpr

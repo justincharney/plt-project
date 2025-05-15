@@ -9,7 +9,7 @@ open Ast
 %token FINAL MUT LATE PRIVATE ERROR
 %token TRUE FALSE NULL
 %token BOOL STRING
-%token U8 U16 U32 U64 I8 I16 I32 I64 F16 F32
+%token U8 U16 U32 U64 I8 I16 I32 I64 F32 F64
 %token PLUS MINUS MULT DIV MOD
 %token LSHIFT RSHIFT BITAND BITXOR BITOR BITNOT
 %token AND OR NOT
@@ -101,14 +101,14 @@ primitive_type:
     | U32    { Primitive U32   } | U64    { Primitive U64   }
     | I8     { Primitive I8    } | I16    { Primitive I16   }
     | I32    { Primitive I32   } | I64    { Primitive I64   }
-    | F16    { Primitive F16   } | F32    { Primitive F32   }
+    | F32    { Primitive F32   } | F64    { Primitive F64   }
     | ERROR  { Primitive Error }
 
 type_expr:
       primitive_type                       { $1 }
     | TYPE_NAME                            { TypeName $1 }
     | LBRACKET INT_LIT RBRACKET type_expr  { Array($4,$2) }
-    | LBRACKET RBRACKET type_expr          { Slice $3 }
+    /*| LBRACKET RBRACKET type_expr          { Slice $3 }*/
 
 /* ---------- Fields (inside struct) -------------------------------------- */
 modifier_opt:
@@ -255,8 +255,8 @@ expr:
     | LPAREN expr RPAREN               { $2 }
     | expr DOT IDENT                   { FieldAccess($1,$3) }
     | expr LBRACKET expr RBRACKET      { IndexAccess($1,$3) }
-    | expr LBRACKET expr_opt COLON expr_opt RBRACKET
-        { SliceExpr($1,$3,$5) }
+    /*| expr LBRACKET expr_opt COLON expr_opt RBRACKET
+        { SliceExpr($1,$3,$5) }*/
     | IDENT LPAREN arg_list RPAREN     { FunctionCall($1,$3) }
     | expr DOT IDENT LPAREN arg_list RPAREN
         { MethodCall($1,$3,$5) }
@@ -302,16 +302,14 @@ expr:
     | lvalue BITOR_ASSIGN expr           { CompoundAssign($1,BitorAssign,$3) }
 
     /* make (slice constructor) */
-    | MAKE LPAREN type_expr COMMA expr cap_opt RPAREN
-        { Make($3,$5,$6) }
+    /*| MAKE LPAREN type_expr COMMA expr cap_opt RPAREN
+        { Make($3,$5,$6) }*/
 
 arg_list:
       /* None */               { [] }
     | expr_list              { List.rev $1 }
 
-cap_opt:
-      /* None */                { None }
-    | COMMA expr             { Some $2 }
+/* cap_opt removed (only used in make) */
 
 /* ---------- Literals ---------------------------------------------------- */
 literal:
