@@ -27,6 +27,7 @@ let translate (sprogram : sprogram) =
 
   (* Return the LLVM type for a P.A.T type *)
   let rec ltype_of_sast_ty (t : ty) : L.lltype =
+    Printf.eprintf "  [DEBUG] ltype_of_sast_ty: %s\n" (Sast.string_of_ty t); flush stderr;
     match t with
     | TyPrim p ->
       (
@@ -43,10 +44,16 @@ let translate (sprogram : sprogram) =
       )
     | TyArray(elt_t, n) -> L.array_type (ltype_of_sast_ty elt_t) n
     | TyStruct name -> (
+      Printf.eprintf "    [DEBUG] ltype_of_sast_ty for TyStruct %s: looking in ll_struct_types\n" name; flush stderr;
       try StringMap.find name !ll_struct_types
         with Not_found ->
+          Printf.eprintf "    [DEBUG] ltype_of_sast_ty for TyStruct %s: not in ll_struct_types, looking in ll_alias_types\n" name; flush stderr;
           try StringMap.find name !ll_alias_types
-          with Not_found -> failwith ("Unknown struct type in ltype_of_sast_ty: " ^ name)
+          with Not_found ->
+            Printf.eprintf "    [ERROR] ltype_of_sast_ty for TyStruct %s: Not found in either map.\n" name; flush stderr;
+            StringMap.iter (fun k _ -> Printf.eprintf "      ll_struct_types has: %s\n" k) !ll_struct_types;
+            StringMap.iter (fun k _ -> Printf.eprintf "      ll_alias_types has: %s\n" k) !ll_alias_types;
+            failwith ("Unknown struct type in ltype_of_sast_ty: " ^ name)
     )
     | TyTuple []        -> L.void_type context (* Should ideally be TyUnit *)
     | TyTuple [ty_elt]  -> ltype_of_sast_ty ty_elt
@@ -60,18 +67,27 @@ let translate (sprogram : sprogram) =
     let struct_defs = List.filter_map (function STypeStruct(n,f) -> Some (n,f) | _ -> None) sprogram.sp_types in
     let alias_defs = List.filter_map (function STypeAlias(n,t) -> Some (n,t) | _ -> None) sprogram.sp_types in
 
+    Printf.eprintf "  [DEBUG] process_type_declarations: Defining struct type names (pass 1)\n"; flush stderr;
     List.iter (fun (name, _) ->
+      Printf.eprintf "    [DEBUG] Defining struct type name: %s\n" name; flush stderr;
       let ll_ty = L.named_struct_type context name in
       ll_struct_types := StringMap.add name ll_ty !ll_struct_types
     ) struct_defs;
 
-    List.iter (fun (name, sfields) ->
+    Printf.eprintf "  [DEBUG] process_type_declarations: Setting struct type bodies (pass 2)\n"; flush stderr;
+    List.iter (fun (name, current_sfields : string * Sast.sfield list) -> (* Explicit type for the tuple's second element *)
+      Printf.eprintf "    [DEBUG] Setting body for struct type: %s\n" name; flush stderr;
       let ll_ty = StringMap.find name !ll_struct_types in
-      let field_ll_types = List.map (fun f -> ltype_of_sast_ty f.field_type) sfields in
+      let field_ll_types = List.map (fun (f : Sast.sfield) -> (* Explicit type for f *)
+        Printf.eprintf "      [DEBUG] Field %s type: %s\n" f.name (Sast.string_of_ty f.field_type); flush stderr;
+        ltype_of_sast_ty f.field_type
+      ) current_sfields in (* Use the explicitly typed list *)
       L.struct_set_body ll_ty (Array.of_list field_ll_types) false
     ) struct_defs;
 
+    Printf.eprintf "  [DEBUG] process_type_declarations: Processing alias types\n"; flush stderr;
     List.iter (fun (name, sast_ty) ->
+        Printf.eprintf "    [DEBUG] Defining alias type: %s = %s\n" name (Sast.string_of_ty sast_ty); flush stderr;
         let ll_ty = ltype_of_sast_ty sast_ty in
         ll_alias_types := StringMap.add name ll_ty !ll_alias_types
     ) alias_defs
@@ -81,59 +97,136 @@ let translate (sprogram : sprogram) =
   Printf.eprintf "IRGen: Finished type declarations.\n"; flush stderr;
 
   let global_vars_map : L.llvalue StringMap.t ref = ref StringMap.empty in
-  let rec build_global_initializer (var_ty: ty) (init_expr_opt: sexpr option) (_builder_dummy : L.llbuilder) : L.llvalue =
+  let rec build_global_initializer (var_name_for_debug: string) (var_ty: ty) (init_expr_opt: sexpr option) (_builder_dummy : L.llbuilder) : L.llvalue =
+    Printf.eprintf "    [DEBUG] build_global_initializer for '%s', var_ty: %s\n" var_name_for_debug (Sast.string_of_ty var_ty); flush stderr;
     match init_expr_opt with
-    | None -> L.const_null (ltype_of_sast_ty var_ty)
+    | None ->
+        Printf.eprintf "      [DEBUG] No initializer for '%s', creating const_null for type %s.\n" var_name_for_debug (Sast.string_of_ty var_ty); flush stderr;
+        let ll_var_ty = ltype_of_sast_ty var_ty in
+        L.const_null ll_var_ty
     | Some (sexpr_ty, sx) ->
+        Printf.eprintf "      [DEBUG] Initializer for '%s': sexpr_ty: %s, sx: %s\n" var_name_for_debug (Sast.string_of_ty sexpr_ty) (Sast.string_of_sexpr_node sx); flush stderr;
         (match sx with
         | SIntLit i ->
+            Printf.eprintf "        [DEBUG] SIntLit %d\n" i; flush stderr;
             (match sexpr_ty with
                 | TyPrim (A.I8 | A.U8)   -> L.const_int (L.i8_type context) i
                 | TyPrim (A.I16 | A.U16) -> L.const_int (L.i16_type context) i
                 | TyPrim (A.I32 | A.U32) -> L.const_int (L.i32_type context) i
                 | TyPrim (A.I64 | A.U64) -> L.const_int (L.i64_type context) i
-                | _ -> L.const_int (L.i32_type context) i
+                | _ -> L.const_int (L.i32_type context) i (* Should be caught by semant *)
             )
-        | SBoolLit b  -> L.const_int (L.i1_type context) (if b then 1 else 0)
+        | SBoolLit b  ->
+            Printf.eprintf "        [DEBUG] SBoolLit %b\n" b; flush stderr;
+            L.const_int (L.i1_type context) (if b then 1 else 0)
         | SFloatLit f ->
+            Printf.eprintf "        [DEBUG] SFloatLit %f\n" f; flush stderr;
             (match sexpr_ty with
                 | TyPrim A.F32 -> L.const_float (L.float_type context) f
                 | TyPrim A.F64 -> L.const_float (L.double_type context) f
-                | _ -> L.const_float (L.double_type context) f
+                | _ -> L.const_float (L.double_type context) f (* Should be caught by semant *)
             )
         | SStringLit s ->
-            let global_str_val = L.define_global ".str_const" (L.const_stringz context s) the_module in
+            Printf.eprintf "        [DEBUG] SStringLit \"%s\"\n" s; flush stderr;
+            let global_str_val = L.define_global (".str_const_" ^ var_name_for_debug) (L.const_stringz context s) the_module in
             L.set_linkage L.Linkage.Internal global_str_val;
             let str_ptr = L.const_in_bounds_gep global_str_val [| L.const_int (L.i32_type context) 0; L.const_int (L.i32_type context) 0 |] in
             let len = L.const_int (L.i64_type context) (String.length s) in
             L.const_struct context [| str_ptr; len |]
-        | SNull -> L.const_null (ltype_of_sast_ty sexpr_ty)
+        | SNull ->
+            Printf.eprintf "        [DEBUG] SNull\n"; flush stderr;
+            let ll_sexpr_ty = ltype_of_sast_ty sexpr_ty in
+            L.const_null ll_sexpr_ty
         | SArrayLit (elem_ty, selms) ->
+            Printf.eprintf "        [DEBUG] SArrayLit, elem_ty: %s\n" (Sast.string_of_ty elem_ty); flush stderr;
             let ll_elem_ty = ltype_of_sast_ty elem_ty in
-            let const_elems = List.map (fun se -> build_global_initializer elem_ty (Some se) _builder_dummy) selms in
+            let const_elems = List.mapi (fun i se ->
+                Printf.eprintf "          [DEBUG] SArrayLit elem %d\n" i; flush stderr;
+                build_global_initializer (var_name_for_debug ^ "_arr_elem" ^ string_of_int i) elem_ty (Some se) _builder_dummy
+            ) selms in
             L.const_array ll_elem_ty (Array.of_list const_elems)
-        | SStructLit (struct_name, field_inits) ->
-            let _ = ltype_of_sast_ty (TyStruct struct_name) in
-            let s_info = List.find (function STypeStruct(n,_) when n = struct_name -> true | _ -> false) sprogram.sp_types in
-            let ordered_sfields = match s_info with STypeStruct(_,fs) -> fs | _ -> failwith "Struct not found for const init" in
-            let const_fields_map = List.fold_left (fun acc (fname, se) -> StringMap.add fname (build_global_initializer (fst se) (Some se) _builder_dummy) acc) StringMap.empty field_inits in
-            let const_fields = List.map (fun (sf:sfield) ->
-                try StringMap.find sf.name const_fields_map
-                with Not_found ->
-                    match sf.default_value with
-                    | Some def_se -> build_global_initializer sf.field_type (Some def_se) _builder_dummy
-                    | None -> L.const_null (ltype_of_sast_ty sf.field_type)
-            ) ordered_sfields in
-            L.const_struct context (Array.of_list const_fields)
+        | SStructLit (struct_name_from_lit, field_inits) ->
+          (* struct_name_from_lit is the name used in the literal, e.g., "Vector" *)
+          (* sexpr_ty is the resolved type of this literal, e.g., TyStruct "Point" *)
+          let canonical_struct_name =
+            match sexpr_ty with
+            | TyStruct csn -> csn
+            | _ -> failwith ("IRGen Error: SStructLit's expression type is not TyStruct: " ^ (Sast.string_of_ty sexpr_ty) ^ " for literal " ^ struct_name_from_lit)
+          in
+          Printf.eprintf "        [DEBUG] SStructLit: literal name '%s', canonical name for lookup: '%s'\n" struct_name_from_lit canonical_struct_name; flush stderr;
+          Printf.eprintf "          [DEBUG] Attempting ltype_of_sast_ty for TyStruct %s (canonical)\n" canonical_struct_name; flush stderr;
+          let _ = ltype_of_sast_ty (TyStruct canonical_struct_name) in (* Ensure struct type is known, using canonical name. This also prints debug info from ltype_of_sast_ty *)
+          Printf.eprintf "          [DEBUG] ltype_of_sast_ty for TyStruct %s (canonical) OK.\n" canonical_struct_name; flush stderr;
+
+          let s_info =
+            try List.find (function STypeStruct(n,_) when n = canonical_struct_name -> true | _ -> false) sprogram.sp_types
+            with Not_found ->
+              Printf.eprintf "          [ERROR] Struct definition for canonical name '%s' (from literal '%s') not found in sprogram.sp_types during SStructLit processing.\n" canonical_struct_name struct_name_from_lit; flush stderr;
+              List.iter (function STypeStruct(n,_) -> Printf.eprintf "            Available STypeStruct: %s\n" n | STypeAlias(n,_) -> Printf.eprintf "            Available STypeAlias: %s\n" n ) sprogram.sp_types;
+              failwith ("Struct " ^ canonical_struct_name ^ " not found for const init")
+          in
+          Printf.eprintf "          [DEBUG] Found s_info for struct '%s'.\n" canonical_struct_name; flush stderr;
+          let ordered_sfields = match s_info with STypeStruct(_,fs) -> fs | _ -> failwith ("Struct " ^ canonical_struct_name ^ " not found for const init (should be impossible here after find)") in
+
+          Printf.eprintf "          [DEBUG] Building const_fields_map for struct '%s'.\n" canonical_struct_name; flush stderr;
+          let const_fields_map = List.fold_left (fun acc (fname, se) ->
+              Printf.eprintf "            [DEBUG] SStructLit field init: %s\n" fname; flush stderr;
+              StringMap.add fname (build_global_initializer (var_name_for_debug ^ "_" ^ fname) (fst se) (Some se) _builder_dummy) acc
+          ) StringMap.empty field_inits in
+
+          Printf.eprintf "          [DEBUG] Mapping ordered_sfields for struct '%s'.\n" canonical_struct_name; flush stderr;
+          let const_fields = List.map (fun (sf:sfield) ->
+              Printf.eprintf "            [DEBUG] SStructLit ordered field: %s (type: %s)\n" sf.name (Sast.string_of_ty sf.field_type); flush stderr;
+              try
+                let f_val = StringMap.find sf.name const_fields_map in
+                Printf.eprintf "              [DEBUG] Found provided initializer for field %s.\n" sf.name; flush stderr;
+                f_val
+              with Not_found ->
+                  Printf.eprintf "              [DEBUG] No initializer provided for field %s. Checking for default.\n" sf.name; flush stderr;
+                  match sf.default_value with
+                  | Some def_se ->
+                      Printf.eprintf "                [DEBUG] Using default value for field %s.\n" sf.name; flush stderr;
+                      build_global_initializer (var_name_for_debug ^ "_" ^ sf.name ^ "_default") sf.field_type (Some def_se) _builder_dummy
+                  | None ->
+                      Printf.eprintf "                [DEBUG] No default value for field %s. Using const_null.\n" sf.name; flush stderr;
+                      L.const_null (ltype_of_sast_ty sf.field_type)
+          ) ordered_sfields in
+          let result_struct = L.const_struct context (Array.of_list const_fields) in
+          Printf.eprintf "      [DEBUG] build_global_initializer: SStructLit for '%s' (canonical '%s') processed successfully.\n" struct_name_from_lit canonical_struct_name; flush stderr;
+          result_struct
         | _ -> L.const_null (ltype_of_sast_ty var_ty)
         )
   in
   Printf.eprintf "IRGen: Processing global variables...\n"; flush stderr;
   List.iter (fun (gdecl : sglobal_decl) ->
-    let dummy_builder = L.builder context in
-    let init_val = build_global_initializer gdecl.var_type gdecl.initializer_expr dummy_builder in
-    let global_val = L.define_global gdecl.name init_val the_module in
-    global_vars_map := StringMap.add gdecl.name global_val !global_vars_map
+    Printf.eprintf "  [DEBUG] Processing global var: %s of type %s\n" gdecl.name (Sast.string_of_ty gdecl.var_type); flush stderr;
+    try
+      let dummy_builder = L.builder context in (* Dummy builder, not used for const generation but might be if build_expr was used *)
+      Printf.eprintf "    [DEBUG] Calling build_global_initializer for %s\n" gdecl.name; flush stderr;
+      let init_val = build_global_initializer gdecl.name gdecl.var_type gdecl.initializer_expr dummy_builder in
+      Printf.eprintf "    [DEBUG] build_global_initializer for %s returned. Defining global.\n" gdecl.name; flush stderr;
+      let global_val = L.define_global gdecl.name init_val the_module in
+      Printf.eprintf "    [DEBUG] Global %s defined. Adding to global_vars_map.\n" gdecl.name; flush stderr;
+      global_vars_map := StringMap.add gdecl.name global_val !global_vars_map;
+      Printf.eprintf "    [DEBUG] Global %s added to map.\n" gdecl.name; flush stderr;
+    with
+    | Not_found as e ->
+        Printf.eprintf "  [FATAL ERROR] Not_found exception during processing of global variable '%s'.\n" gdecl.name;
+        Printf.eprintf "    Exception details: %s\n" (Printexc.to_string e);
+        Printexc.print_backtrace stderr;
+        flush stderr;
+        raise e
+    | Failure msg as e ->
+        Printf.eprintf "  [FATAL ERROR] Failure exception during processing of global variable '%s': %s\n" gdecl.name msg;
+        Printexc.print_backtrace stderr;
+        flush stderr;
+        raise e
+    | e ->
+        Printf.eprintf "  [FATAL ERROR] Unexpected exception during processing of global variable '%s'.\n" gdecl.name;
+        Printf.eprintf "    Exception details: %s\n" (Printexc.to_string e);
+        Printexc.print_backtrace stderr;
+        flush stderr;
+        raise e
   ) sprogram.sp_globals;
   Printf.eprintf "IRGen: Finished global variables.\n"; flush stderr;
 

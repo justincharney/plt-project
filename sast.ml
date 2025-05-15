@@ -136,3 +136,80 @@ type sprogram = {
   sp_funcs   : sfunc_decl list;
   sp_methods : sstruct_func list;
 }
+
+(* --------------------------------------------------------------------- *)
+(*  Helper functions for converting AST operators to strings.                                                 *)
+(* --------------------------------------------------------------------- *)
+
+let _sast_string_of_biop = function
+  | Plus -> "+" | Minus -> "-" | Mult -> "*" | Div -> "/" | Mod -> "%"
+  | Eq -> "==" | Neq -> "!=" | Lt -> "<" | Le -> "<=" | Gt -> ">" | Ge -> ">="
+  | And -> "&&" | Or -> "||"
+  | Lshift -> "<<" | Rshift -> ">>" | Bitand -> "&" | Bitor -> "|" | Bitxor -> "^"
+
+let _sast_string_of_unop = function
+  | Neg -> "-" | Not -> "!" | Bitnot -> "~"
+  | Inc -> "++" (* Ensure these match your Ast.unop definition *)
+  | Dec -> "--" (* Ensure these match your Ast.unop definition *)
+
+let _sast_string_of_compound_op = function
+  | PlusAssign -> "+=" | MinusAssign -> "-=" | TimesAssign -> "*=" | DivAssign -> "/=" | ModAssign -> "%="
+  | LshiftAssign -> "<<=" | RshiftAssign -> ">>=" | BitandAssign -> "&=" | BitxorAssign -> "^=" | BitorAssign -> "|="
+
+let rec string_of_sexpr_node s : string =
+  match s with
+  | SIntLit i      -> Printf.sprintf "SIntLit(%d)" i
+  | SBoolLit b     -> Printf.sprintf "SBoolLit(%b)" b
+  | SCharLit c     -> Printf.sprintf "SCharLit('%C')" c (* Use %C for OCaml char literals if preferred *)
+  | SFloatLit f    -> Printf.sprintf "SFloatLit(%f)" f
+  | SStringLit str -> Printf.sprintf "SStringLit(\"%s\")" (String.escaped str)
+  | SNull          -> "SNull"
+  | SArrayLit (ty, sexprs) ->
+      Printf.sprintf "SArrayLit(%s, [%s])"
+        (string_of_ty ty)
+        (String.concat "; " (List.map string_of_sexpr sexprs))
+  | SStructLit (name, fields) ->
+      Printf.sprintf "SStructLit(%s, {%s})"
+        name
+        (String.concat "; " (List.map (fun (fname, se) -> Printf.sprintf "%s = %s" fname (string_of_sexpr se)) fields))
+  | SIdentifier id -> Printf.sprintf "SIdentifier(%s)" id
+  | SFieldAccess (se, field) ->
+      Printf.sprintf "SFieldAccess(%s, %s)" (string_of_sexpr se) field
+  | SIndexAccess (se1, se2) ->
+      Printf.sprintf "SIndexAccess(%s, %s)" (string_of_sexpr se1) (string_of_sexpr se2)
+  | SBinop (se1, op, se2) ->
+      Printf.sprintf "SBinop(%s, %s, %s)"
+        (string_of_sexpr se1)
+        (_sast_string_of_biop op)
+        (string_of_sexpr se2)
+  | SUnaop (op, se) ->
+      Printf.sprintf "SUnaop(%s, %s)"
+        (_sast_string_of_unop op)
+        (string_of_sexpr se)
+  | SSimpleAssign (se1, se2) ->
+      Printf.sprintf "SSimpleAssign(%s, %s)" (string_of_sexpr se1) (string_of_sexpr se2)
+  | SCompoundAssign (se1, op, se2) ->
+      Printf.sprintf "SCompoundAssign(%s, %s, %s)"
+        (string_of_sexpr se1)
+        (_sast_string_of_compound_op op)
+        (string_of_sexpr se2)
+  | SSequence (se1, se2) ->
+      Printf.sprintf "SSequence(%s, %s)" (string_of_sexpr se1) (string_of_sexpr se2)
+  | SFunctionCall (name, args) ->
+      Printf.sprintf "SFunctionCall(%s, [%s])"
+        name
+        (String.concat "; " (List.map string_of_sexpr args))
+  | SMethodCall (recv, name, args) ->
+      Printf.sprintf "SMethodCall(%s, %s, [%s])"
+        (string_of_sexpr recv)
+        name
+        (String.concat "; " (List.map string_of_sexpr args))
+  | SCast (ty, se) ->
+      Printf.sprintf "SCast(%s, %s)" (string_of_ty ty) (string_of_sexpr se)
+
+and string_of_sexpr ((t, s) : sexpr) : string =
+  Printf.sprintf "(%s : %s)" (string_of_sexpr_node s) (string_of_ty t)
+
+(* function for a list of sexpr too, for convenience *)
+let string_of_sexpr_list (sexprs : sexpr list) : string =
+  "[" ^ (String.concat "; " (List.map string_of_sexpr sexprs)) ^ "]"
