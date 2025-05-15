@@ -557,7 +557,20 @@ let local_string_of_compound_op = function
         | None -> None
         | Some c -> let sc = check_expr env_after_init c in ensure_bool (fst sc) "for condition"; Some sc
       in
-      let supd_opt = Option.map (check_expr env_after_init) update_opt in
+      (* Desugar ++i to i+=1 and --i to i-=1 in the update clause *)
+      let desugared_update_opt =
+        match update_opt with
+        | Some (Unaop(Inc, Identifier var_name)) ->
+            Some(CompoundAssign(Identifier var_name, PlusAssign, IntLit 1))
+        | Some (Unaop(Dec, Identifier var_name)) ->
+            Some (CompoundAssign(Identifier var_name, MinusAssign, IntLit 1))
+        | Some (Unaop(Inc, (FieldAccess _ as lval_expr))) | Some (Unaop(Inc, (IndexAccess _ as lval_expr))) ->
+            Some (CompoundAssign(lval_expr, PlusAssign, IntLit 1))
+        | Some (Unaop(Dec, (FieldAccess _ as lval_expr))) | Some (Unaop(Dec, (IndexAccess _ as lval_expr))) ->
+            Some (CompoundAssign(lval_expr, MinusAssign, IntLit 1))
+        | other_update_opt -> other_update_opt (* No change *)
+      in
+      let supd_opt = Option.map (check_expr env_after_init) desugared_update_opt in
       let sbody = check_block env_after_init expected body in
       (env, SFor (sinit_opt, scond_opt, supd_opt, sbody)) (* Original env is returned, init scope is local *)
 
