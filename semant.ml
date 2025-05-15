@@ -52,6 +52,7 @@ let local_string_of_compound_op = function
         StringMap.empty
         [
           ("printf", {params = [TyPrim Ast.String]; returns = [TyPrim Ast.I32]});
+          ("print_int", {params = []; returns = [TyPrim Ast.I32]});
           ("exit", {params = [TyPrim Ast.I32]; returns = []})
         ]
       in
@@ -373,9 +374,10 @@ let local_string_of_compound_op = function
       | FunctionCall (fname, args) ->
           begin match find_value fname env with
           | VFunc fsig ->
+        if fname = "print_int" then let sargs = List.map (check_expr env) args in (List.hd fsig.returns,SFunctionCall (fname,sargs)) else
             if List.length args <> List.length fsig.params then
               raise (Semantic_error (Printf.sprintf "Function '%s' expects %d argument(s) but got %d"
-                                        fname (List.length fsig.params) (List.length args)));
+                                        fname (List.length fsig.params) (List.length args))) else
             let sargs = List.map (check_expr env) args in
             List.iteri (fun i p_ty ->
                 let (a_ty, _) = List.nth sargs i in

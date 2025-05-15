@@ -371,6 +371,7 @@ let translate (sprogram : sprogram) =
         let callee_llval, ret_name_suffix =
           match fname with
           | "printf" -> (printf_func, "printf_call")
+          | "print_int" -> (printf_func, "printf_call")
           | "exit" -> (exit_func, "")
           | _ ->
             try (StringMap.find fname !function_decls, "calltmp")
@@ -386,6 +387,10 @@ let translate (sprogram : sprogram) =
               let format_string_ptr = L.build_extractvalue format_string_struct_val 0 "fmt_str_ptr" builder in
               format_string_ptr :: rest_args
             | [] -> failwith "printf called with no arguments"
+          else if fname = "print_int" then
+            match args_ll with
+            | [] -> failwith "print_int called with no arguments"
+            | all_args -> (StringMap.find "int_format_str" local_vars) :: all_args
           else args_ll
         in
         let call_instr = L.build_call callee_llval (Array.of_list final_args_ll)
@@ -557,7 +562,8 @@ let translate (sprogram : sprogram) =
     Printf.eprintf "  [DEBUG] build_function_body for %s: Function has %d params according to LLVM.\n" func_name (Array.length (L.params f_llval)); flush stderr;
     let builder = L.builder_at_end context (L.entry_block f_llval) in
     Printf.eprintf "  [DEBUG] build_function_body for %s: Builder created at entry block.\n" func_name; flush stderr;
-    let local_vars_map : L.llvalue StringMap.t ref = ref StringMap.empty in
+    let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder in
+    let local_vars_map : L.llvalue StringMap.t ref = ref (StringMap.add "int_format_str" int_format_str StringMap.empty) in
 
     Printf.eprintf "  [DEBUG] build_function_body for %s: Setting current_func_return_type.\n" func_name; flush stderr;
     current_func_return_type := Some(
