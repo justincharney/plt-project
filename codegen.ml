@@ -2,7 +2,7 @@
 module L = Llvm
 module StringMap = Map.Make(String)
 
-(*let translate  = 
+let translate  = 
   let context = L.global_context () in
   let the_module = L.create_module context "P.A.T." in
 
@@ -23,7 +23,7 @@ module StringMap = Map.Make(String)
   let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder in 
 
   let local = L.build_alloca i32_t "x" builder in 
-  ignore(L.build_store (L.const_int i32_t 9) local builder);
+  ignore(L.build_store (L.const_null i32_t) local builder);
   let load_local = L.build_load local "x" builder in 
   ignore(L.build_call printf_func [| int_format_str; load_local |] "printf" builder);
 
@@ -34,7 +34,7 @@ module StringMap = Map.Make(String)
 
   add_terminal builder (L.build_ret (L.const_int i32_t 0));  
 
-  the_module*)(*creates llvm ir where number given value and printed*)
+  the_module(*creates llvm ir where number given value and printed*)
 
 (*let translate  = 
   let context = L.global_context () in
@@ -68,7 +68,7 @@ module StringMap = Map.Make(String)
 
   the_module*)(*print string to console*)
 
-let translate  = 
+(*let translate  = 
   let context = L.global_context () in
   let the_module = L.create_module context "P.A.T." in
 
@@ -112,6 +112,6 @@ let translate  =
   add_terminal builder (L.build_ret (L.const_int i32_t 0));  
 
   the_module
-
+*)
 let () = 
   print_string (L.string_of_llmodule (translate))
