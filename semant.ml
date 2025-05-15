@@ -53,6 +53,9 @@ let local_string_of_compound_op = function
         [
           ("printf", {params = [TyPrim Ast.String]; returns = [TyPrim Ast.I32]});
           ("print_int", {params = []; returns = [TyPrim Ast.I32]});
+          ("len", {params = [TyPrim Ast.String]; returns = [TyPrim Ast.U32]});
+          ("cap", {params = [TyPrim Ast.String]; returns = [TyPrim Ast.U32]});
+          ("assert", {params = [TyPrim Ast.Bool]; returns = []});
           ("exit", {params = [TyPrim Ast.I32]; returns = []})
         ]
       in
