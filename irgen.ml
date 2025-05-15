@@ -366,6 +366,17 @@ let translate (sprogram : sprogram) =
         ignore(build_expr builder local_vars current_func_llval se1);
         build_expr builder local_vars current_func_llval se2
 
+    | SFunctionCall ("len", [arg_se]) ->
+          (match fst arg_se with
+          | TyPrim A.String ->
+              let llvm_val = 
+                  build_expr builder local_vars current_func_llval arg_se 
+              in 
+              L.build_extractvalue llvm_val 1 "len" builder
+          | TyArray (_,length) ->
+              L.const_int (L.i64_type context) length
+          | _ -> failwith ("len() failed"))
+
     | SFunctionCall (fname, args_sast) ->
         let args_ll = List.map (build_expr builder local_vars current_func_llval) args_sast in
         let callee_llval, ret_name_suffix =
