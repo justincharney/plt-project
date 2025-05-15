@@ -137,7 +137,7 @@ rule token = parse
 
     (* Constants and Variables *)
     | "const"               { emit CONST }
-    | "make"                { emit MAKE }
+    (*| "make"                { emit MAKE }*)
 
     (* Boolean Literals *)
     | "true"                { emit (BOOL_LIT(true)) }

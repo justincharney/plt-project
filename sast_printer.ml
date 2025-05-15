@@ -51,9 +51,9 @@ let rec string_of_sexpr (typ, sx) =
     | SSequence (e1, e2) -> Printf.sprintf "(%s; %s)" (string_of_sexpr e1) (string_of_sexpr e2)
     | SFunctionCall (name, args) -> Printf.sprintf "%s(%s)" name (String.concat ", " (List.map string_of_sexpr args))
     | SMethodCall (obj, name, args) -> Printf.sprintf "%s.%s(%s)" (string_of_sexpr obj) name (String.concat ", " (List.map string_of_sexpr args))
-    | SMake (t, len, cap_opt) ->
+    (*| SMake (t, len, cap_opt) ->
         let cap_str = match cap_opt with None -> "" | Some c -> ", " ^ string_of_sexpr c in
-        Printf.sprintf "make(%s, %s%s)" (string_of_ty t) (string_of_sexpr len) cap_str
+        Printf.sprintf "make(%s, %s%s)" (string_of_ty t) (string_of_sexpr len) cap_str*)
     | SCast (t, e) -> Printf.sprintf "%s(%s)" (string_of_ty t) (string_of_sexpr e)
   in
   Printf.sprintf "%s : %s" sx_str (string_of_ty typ)
