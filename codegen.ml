@@ -8,6 +8,8 @@ let translate  =
 
   let i32_t = L.i32_type context 
   and i8_t = L.i8_type context 
+  and f32_t = L.float_type context
+  and f64_t = L.double_type context
   and i1_t = L.i1_type context in 
 
   let printf_t : L.lltype = 
@@ -26,6 +28,13 @@ let translate  =
   ignore(L.build_store (L.const_null i32_t) local builder);
   let load_local = L.build_load local "x" builder in 
   ignore(L.build_call printf_func [| int_format_str; load_local |] "printf" builder);
+  let flocal = L.build_alloca f32_t "a" builder in
+  let dlocal = L.build_alloca f64_t "b" builder in
+  (* let fstring = L.string_of_lltype (L.type_of flocal) in *)
+  (* let dstring = L.string_of_lltype (L.type_of dlocal) in *)
+  let fstring = if (L.string_of_lltype (L.type_of flocal)) = "float*" then "isf32" else "notf32" in
+  let dstring = if (L.string_of_lltype (L.type_of dlocal)) = "double*" then "isf64" else "notf64" in
+  print_endline ("flocal: " ^ fstring ^ " dlocal: " ^ dstring);
 
   let add_terminal builder instr = 
     match L.block_terminator (L.insertion_block builder) with
