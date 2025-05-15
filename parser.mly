@@ -5,7 +5,7 @@ open Ast
 
 /* ----------  tokens ----------------------------------------------------- */
 %token PACKAGE IMPORT FUNC TYPE STRUCT RETURN BREAK IF ELSE CONTINUE FOR WHILE
-%token CONST MAKE
+%token CONST 
 %token FINAL MUT LATE PRIVATE ERROR
 %token TRUE FALSE NULL
 %token BOOL STRING
@@ -263,7 +263,7 @@ var_decl:
 lvalue:
       IDENT                         { Identifier $1 }         /* Simple variable */
     | expr DOT IDENT                { FieldAccess($1, $3) }   /* Struct field access */
-    | expr LBRACKET expr RBRACKET   { IndexAccess($1, $3) }   /* Array/Slice element access */
+    | expr LBRACKET expr RBRACKET   { IndexAccess($1, $3) }   /* Array element access */
   ;
 
 expr:
