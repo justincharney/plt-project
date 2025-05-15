@@ -55,8 +55,6 @@ open Ast
 /* ----------  entry point ------------------------------------------------- */
 %start program
 %type  <Ast.program> program
-%type <(string * Ast.expr) list> struct_field_init_list
-%type <(string * Ast.expr)> struct_field_init
 
 %%  /* ---------- grammar rules & semantic actions ------------------------ */
 
@@ -164,7 +162,7 @@ type_ann_opt:
 
 /* ---------- Function & struct‑function --------------------------------- */
 param:
-      IDENT type_expr { { name=$1; param_type=$2 } }
+      IDENT COLON type_expr { { name=$1; param_type=$3 } }
 
 param_list:
       /* None */            { [] }
@@ -188,8 +186,8 @@ func_decl:
         { { name=$2; params=List.rev $4; return_types=$6; body=$7 } }
 
 struct_func_decl:
-      FUNC LPAREN IDENT COLON TYPE_NAME RPAREN IDENT LPAREN param_list RPAREN return_types func_body
-        { { name=$7; struct_name=$5;
+      FUNC LPAREN IDENT TYPE_NAME RPAREN IDENT LPAREN param_list RPAREN return_types func_body
+        { { name=$6; receiver_name = $3; struct_name=$4;
             params=List.rev $8; return_types=$10; body=$11 } }
 
 /* ---------- Statements -------------------------------------------------- */
@@ -211,10 +209,16 @@ stmt:
     | RETURN ret_opt SEMICOLON      { Return $2 }
     | BREAK SEMICOLON               { Break }
     | CONTINUE SEMICOLON            { Continue }
+    | SEMICOLON                     { Block [] }
 
 ret_opt:
       /* None */           { None }
     | expr_list         { Some (List.rev $1) }
+
+expr_list_opt:
+    /* None */         { [] }
+    | expr_list        { $1 }
+    | expr_list COMMA  { $1 }
 
 expr_list:
       expr                         { [$1] }
@@ -223,23 +227,36 @@ expr_list:
 /* simple C‑style three‑field clause */
 for_clause:
       expr_opt SEMICOLON expr_opt SEMICOLON expr_opt
-        { (match $1 with
+        { (* The init part must be a statement. Wrap expr in Expr stmt *)
+          (match $1 with
            | None -> None
-           | Some e -> Some (Expr e)), $3, $5 }
+           | Some e -> Some (Expr e)),
+          (* Condition must be an expression *)
+          $3,
+          (* Step part must be an expression *)
+          $5 }
+    | var_decl SEMICOLON expr_opt SEMICOLON expr_opt
+        { (* Init part is already a VarDecl statement *)
+          (Some $1),
+          (* Condition must be an expression *)
+          $3,
+          (* Step part must be an expression *)
+          $5 }
 
 expr_opt:
       /* None */ { None } | expr { Some $1 }
 
 /* ---------- Local variable decl (stmt) --------------------------------- */
 
-/*  A declaration must start with  CONST .
-    Otherwise the line is parsed as an expression / assignment statement.  */
 var_decl:
       CONST IDENT type_ann_opt ASSIGN expr
         { VarDecl{is_const=true; name=$2; var_type=$3; initializer_expr=Some $5} }
+    | IDENT COLON type_expr ASSIGN expr
+        { VarDecl{is_const=false; name=$1; var_type=Some $3; initializer_expr=Some $5} }
+    | IDENT COLON type_expr
+        { VarDecl{is_const=false; name=$1; var_type=Some $3; initializer_expr=None} }
     | IDENT DECL_ASSIGN expr
         { VarDecl{is_const=false; name=$1; var_type=None; initializer_expr=Some $3} }
-
 /* ---------- Expressions ------------------------------------------------- */
 
 /* An lvalue represents an expression that can appear on the left side of an assignment */
@@ -249,22 +266,13 @@ lvalue:
     | expr LBRACKET expr RBRACKET   { IndexAccess($1, $3) }   /* Array/Slice element access */
   ;
 
-/* ---------- Struct Literal Field Initialization ----------------------- */
-struct_field_init_list:
-    /* empty for SomeType{} */                          { [] }
-    | struct_field_init                                 { [$1] }
-    | struct_field_init_list COMMA struct_field_init    { $3 :: $1 }
-    ;
-
-struct_field_init:
-    IDENT COLON expr { ($1, $3) }
-    ;
-
 expr:
       literal                          { $1 }
     | IDENT                            { Identifier $1 }
     | LPAREN type_expr RPAREN expr %prec CAST
                                        { Cast($2, $4) }
+    | TYPE_NAME LBRACE field_assign_list_opt RBRACE
+                                       { StructLit($1, List.rev $3) }
     | LPAREN expr RPAREN               { $2 }
     | expr DOT IDENT                   { FieldAccess($1,$3) }
     | expr LBRACKET expr RBRACKET      { IndexAccess($1,$3) }
@@ -273,8 +281,10 @@ expr:
     | IDENT LPAREN arg_list RPAREN     { FunctionCall($1,$3) }
     | expr DOT IDENT LPAREN arg_list RPAREN
         { MethodCall($1,$3,$5) }
-    | TYPE_NAME LBRACE struct_field_init_list RBRACE
-        { StructLit($1, List.rev $3) }
+    | LBRACKET INT_LIT RBRACKET type_expr LBRACE expr_list_opt RBRACE
+        { let arr_ty = Array($4, $2) in ArrayLit(arr_ty, List.rev $6) }
+    /*| LBRACKET RBRACKET type_expr LBRACE expr_list_opt RBRACE
+        { let slice_ty = Slice($3) in SliceLit(slice_ty, List.rev $5) }*/
 
     /* unary */
     | NOT expr                         { Unaop(Not,$2) }
@@ -319,6 +329,18 @@ expr:
     /* make (slice constructor) */
     /*| MAKE LPAREN type_expr COMMA expr cap_opt RPAREN
         { Make($3,$5,$6) }*/
+
+field_assign_list_opt:
+      /* None */                { [] }
+    | field_assign_list         { $1 }
+
+field_assign_list:
+      field_assign               { [$1] }
+    | field_assign_list COMMA field_assign { $3 :: $1 }
+    | field_assign_list COMMA             { $1 }
+
+field_assign:
+      IDENT COLON expr          { ($1, $3) }
 
 arg_list:
       /* None */               { [] }
