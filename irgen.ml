@@ -364,9 +364,11 @@ let translate (sprogram : sprogram) =
                       with Not_found -> failwith ("IRGen: Undeclared identifier (rvalue): " ^ id)
         in L.build_load addr id builder
 
-    | SFieldAccess (struct_sexpr, _field_name) ->
-        let field_addr = build_lvalue_address (snd struct_sexpr) in
-        L.build_load field_addr "field_val" builder
+    | SFieldAccess (_, field_name_str) as sx_field_access ->
+      (* sx_field_access is the SFieldAccess node itself *)
+      let specific_field_addr = build_lvalue_address sx_field_access in
+      L.build_load specific_field_addr field_name_str builder
+
 
     | SIndexAccess (coll_sexpr, _idx_sexpr) ->
         let elem_addr = build_lvalue_address (snd coll_sexpr) in
@@ -375,6 +377,12 @@ let translate (sprogram : sprogram) =
     | SBinop (se1, op, se2) ->
         let v1 = build_expr builder local_vars current_func_llval se1 in
         let v2 = build_expr builder local_vars current_func_llval se2 in
+        Printf.eprintf "  [DEBUG] SBinop: op '%s'\n" (Sast._sast_string_of_biop op);
+        Printf.eprintf "    v1 LLVM Value: %s\n" (L.string_of_llvalue v1);
+        Printf.eprintf "    v1 LLVM Type:  %s\n" (L.string_of_lltype (L.type_of v1));
+        Printf.eprintf "    v2 LLVM Value: %s\n" (L.string_of_llvalue v2);
+        Printf.eprintf "    v2 LLVM Type:  %s\n" (L.string_of_lltype (L.type_of v2));
+        flush stderr;
         let (t1, _) = se1 in
         (match op with
           | A.Plus    when Semant.is_integer t1 -> L.build_add  v1 v2 "addtmp"  builder
