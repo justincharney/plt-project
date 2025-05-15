@@ -8,5 +8,8 @@ func main() {
     c := add(5, 3)
     print_int(c);
 
+    f:f64 = (f64)3.4
+    print_float(f);
+
     printf("Hello");
 }
