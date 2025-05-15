@@ -39,7 +39,7 @@
 (library
   (name irgen)
   (modules irgen)
-  (libraries llvm ast sast))
+  (libraries llvm llvm.analysis ast sast semant))
 
 (library
   (name sast_printer)
@@ -49,7 +49,7 @@
 (executable
   (name plt)
   (modules plt)
-  (libraries ast sast scanner parser semant sast_printer))
+  (libraries llvm ast sast scanner parser semant sast_printer irgen))
 
 (executable
  (name hello)

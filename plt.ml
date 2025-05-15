@@ -26,11 +26,16 @@ let () =
     (* 1. Parse the input file *)
     let ast = Parser.program Scanner.token lexbuf in
 
-    (* 2. Perform semantic checks (assuming Semant module exists) *)
+    (* 2. Perform semantic checks *)
     let sast = Semant.check_program ast in
 
     (* 3. Print the resulting SAST *)
     print_endline (string_of_sprogram sast);
+
+    (* 4. Print the IRgen *)
+    let llvm_module = Irgen.translate sast in
+    print_endline (Llvm.string_of_llmodule llvm_module);
+
     close_in channel;
     exit 0 (* Indicate success *)
 
