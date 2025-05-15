@@ -374,6 +374,16 @@ let local_string_of_compound_op = function
         let se1 = check_expr env e1 in
         let se2 = check_expr env e2 in
         (fst se2, SSequence (se1, se2))
+      
+      | FunctionCall ("len", [input]) ->
+          let sexpr =
+              check_expr env input
+          in
+          (match fst sexpr with
+          | TyPrim String
+          | TyArray _ ->
+              (TyPrim U32, SFunctionCall ("len", [sexpr]))
+          | _ -> raise (Semantic_error "len() cannot be applied"))
 
       | FunctionCall (fname, args) ->
           begin match find_value fname env with
