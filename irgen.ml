@@ -63,13 +63,28 @@ let translate (sprogram : sprogram) =
     let global_alias m (n,t) = StringMap.add n t m in 
     List.fold_left global_alias StringMap.empty alias_def_list in 
 
-  let global_vars : L.llvalue StringMap.t = 
-    let global_var m decl = 
-      let init = L.const_null (ltype_of_typ decl.var_type) in 
-      let global_val = L.define_global decl.name init the_module in 
-      L.set_global_constant decl.is_const global_val;
-      StringMap.add decl.name global_val m in 
-    List.fold_left global_var StringMap.empty sprogram.sp_globals in 
+  (* Map for global variables *)
+  let global_vars : L.llvalue StringMap.t =
+      let global_var map (decl : sglobal_decl) =
+          let init_val = 
+              match decl.initializer_expr with
+              | Some (TyPrim I32, SIntLit i) -> 
+                      L.const_int (L.i32_type context) i
+              | Some (TyPrim Bool, SBoolLit b) -> 
+                      L.const_int (L.i1_type context) (if b then 1 else 0)
+              | Some (TyPrim F64, SFloatLit f) -> 
+                      L.const_float (L.double_type context) f
+              | Some (TyPrim String, SStringLit s) -> 
+                      L.const_null (ltype_of_typ decl.var_type)
+              | _ -> L.const_null (ltype_of_typ decl.var_type) 
+          in
+          let global_val = 
+              L.define_global decl.name init_val the_module
+          in 
+          StringMap.add decl.name global_val map
+      in 
+      List.fold_left global_var StringMap.empty sprogram.sp_globals
+  in
 
   (* Built-in functions: make(), len(), cap(), printf(), sprintf(), assert(), exit(), append() *)
   let printf_t    : L.lltype  = L.var_arg_function_type (L.i32_type context) [| L.pointer_type (L.i8_type context) |] in
