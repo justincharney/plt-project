@@ -360,20 +360,6 @@ let local_string_of_compound_op = function
         (fst se2, SSequence (se1, se2))
 
       | FunctionCall (fname, args) ->
-        if StringMap.mem fname env.types && List.length args = 1 then
-          let se_arg = check_expr env (List.hd args) in
-          let src_ty = fst se_arg in
-          let target_ty = resolve_type_expr env (TypeName fname) in
-          let ok =
-            ty_equal src_ty target_ty
-            || (is_numeric src_ty && is_numeric target_ty)
-          in
-          if not ok then
-            raise (Semantic_error
-              (Printf.sprintf "Illegal cast using function-call syntax: cannot cast from %s to %s"
-                  (string_of_ty src_ty) (string_of_ty target_ty)));
-          ( target_ty, SCast (target_ty, se_arg) )
-        else
           begin match find_value fname env with
           | VFunc fsig ->
             if List.length args <> List.length fsig.params then

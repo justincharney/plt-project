@@ -18,7 +18,7 @@ const global_offset : Vector = Vector{x: 0.1, y: -0.1, label: "offset"}
 
 // --- Struct Method ---
 // Method to calculate squared distance from origin
-func (p Point) distSq() f32 {
+func (p: Point) distSq() f32 {
     return p.x * p.x + p.y * p.y
 }
 

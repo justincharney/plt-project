@@ -186,9 +186,9 @@ func_decl:
         { { name=$2; params=List.rev $4; return_types=$6; body=$7 } }
 
 struct_func_decl:
-      FUNC LPAREN IDENT TYPE_NAME RPAREN IDENT LPAREN param_list RPAREN return_types func_body
-        { { name=$6; receiver_name = $3; struct_name=$4;
-            params=List.rev $8; return_types=$10; body=$11 } }
+      FUNC LPAREN IDENT COLON TYPE_NAME RPAREN IDENT LPAREN param_list RPAREN return_types func_body
+        { { name=$7; receiver_name = $3; struct_name=$5;
+            params=List.rev $9; return_types=$11; body=$12 } }
 
 /* ---------- Statements -------------------------------------------------- */
 block:
