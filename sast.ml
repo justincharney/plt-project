@@ -9,6 +9,7 @@ type ty =
   | TyArray  of ty * int
   (* | TySlice  of ty *)
   | TyStruct of string
+  | TyTuple  of ty list
   | TyNull
   | TyUnit
   | TyError
@@ -29,6 +30,7 @@ let rec string_of_ty = function
   | TyStruct n     -> n
   | TyNull         -> "null"
   | TyUnit         -> "unit" (* For functions without returns *)
+  | TyTuple ts     -> Printf.sprintf "(%s)" (String.concat ", " (List.map string_of_ty ts))
   | TyError        -> "<type_error>"
 
 (* --------------------------------------------------------------------- *)

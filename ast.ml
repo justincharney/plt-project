@@ -50,7 +50,7 @@ type expr =
   | FloatLit of float
   | StringLit of string
   | Null (* For null literal *)
-  | ArrayLit of type_expr * expr list (* [3]i32{1, 2, 3} *)
+  | ArrayLit of type_expr * expr list (* e.g., [3]int{1, 2, 3} - type includes size *)
   | StructLit of string * (string * expr) list (* e.g. goody{"funky supreme", 1000} *)
   (* | SliceLit of type_expr * expr list (* []i32{1, 2, 3} *) *)
 
@@ -122,6 +122,7 @@ type func_decl = {
 
 type struct_func = {
   name: string;
+  receiver_name: string;
   struct_name: string;
   params: param list;
   return_types: type_expr list;

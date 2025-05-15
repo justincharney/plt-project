@@ -55,6 +55,8 @@ open Ast
 /* ----------  entry point ------------------------------------------------- */
 %start program
 %type  <Ast.program> program
+%type <(string * Ast.expr) list> struct_field_init_list
+%type <(string * Ast.expr)> struct_field_init
 
 %%  /* ---------- grammar rules & semantic actions ------------------------ */
 
@@ -119,8 +121,8 @@ modifier_opt:
     | LATE         { Some Late }
 
 field:
-      modifier_opt IDENT type_expr default_opt
-      { { name=$2; field_type=$3; modifier=$1; default_value=$4 } }
+      modifier_opt IDENT COLON type_expr default_opt
+      { { name=$2; field_type=$4; modifier=$1; default_value=$5 } }
 
 default_opt:
       /* None */                { None }
@@ -128,7 +130,7 @@ default_opt:
 
 field_list:
       /* None */                { [] }
-    | field_list field SEMICOLON { $2 :: $1 }
+    | field_list field { $2 :: $1 }
 
 /* ---------- Type declarations ------------------------------------------ */
 type_decl:
@@ -186,8 +188,8 @@ func_decl:
         { { name=$2; params=List.rev $4; return_types=$6; body=$7 } }
 
 struct_func_decl:
-      FUNC LPAREN IDENT IDENT RPAREN IDENT LPAREN param_list RPAREN return_types func_body
-        { { name=$6; struct_name=$3;
+      FUNC LPAREN IDENT COLON TYPE_NAME RPAREN IDENT LPAREN param_list RPAREN return_types func_body
+        { { name=$7; struct_name=$5;
             params=List.rev $8; return_types=$10; body=$11 } }
 
 /* ---------- Statements -------------------------------------------------- */
@@ -247,6 +249,17 @@ lvalue:
     | expr LBRACKET expr RBRACKET   { IndexAccess($1, $3) }   /* Array/Slice element access */
   ;
 
+/* ---------- Struct Literal Field Initialization ----------------------- */
+struct_field_init_list:
+    /* empty for SomeType{} */                          { [] }
+    | struct_field_init                                 { [$1] }
+    | struct_field_init_list COMMA struct_field_init    { $3 :: $1 }
+    ;
+
+struct_field_init:
+    IDENT COLON expr { ($1, $3) }
+    ;
+
 expr:
       literal                          { $1 }
     | IDENT                            { Identifier $1 }
@@ -260,6 +273,8 @@ expr:
     | IDENT LPAREN arg_list RPAREN     { FunctionCall($1,$3) }
     | expr DOT IDENT LPAREN arg_list RPAREN
         { MethodCall($1,$3,$5) }
+    | TYPE_NAME LBRACE struct_field_init_list RBRACE
+        { StructLit($1, List.rev $3) }
 
     /* unary */
     | NOT expr                         { Unaop(Not,$2) }
