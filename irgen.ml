@@ -384,13 +384,22 @@ let translate (sprogram : sprogram) =
         Printf.eprintf "    v2 LLVM Type:  %s\n" (L.string_of_lltype (L.type_of v2));
         flush stderr;
         let (t1, _) = se1 in
+        let (t2, _) = se2 in
         (match op with
+          | A.Plus    when Semant.is_string  t1 -> failwith "String concatenation via '+' not yet implemented in IRgen"
           | A.Plus    when Semant.is_integer t1 -> L.build_add  v1 v2 "addtmp"  builder
           | A.Plus                              -> L.build_fadd v1 v2 "faddtmp" builder
           | A.Minus   when Semant.is_integer t1 -> L.build_sub  v1 v2 "subtmp"  builder
           | A.Minus                             -> L.build_fsub v1 v2 "fsubtmp" builder
-          | A.Mult    when Semant.is_integer t1 -> L.build_mul  v1 v2 "multmp"  builder
-          | A.Mult                              -> L.build_fmul v1 v2 "fmultmp" builder
+          | A.Mult ->
+            (if Semant.is_integer t1 && Semant.is_integer t2 then
+              L.build_mul v1 v2 "multmp" builder
+            else if Semant.is_numeric t1 && Semant.is_numeric t2 then
+              let v1_float = if Semant.is_integer t1 then L.build_sitofp v1 (L.float_type context) "v1tof" builder else v1 in
+              let v2_float = if Semant.is_integer t2 then L.build_sitofp v2 (L.float_type context) "v2tofp" builder else v2 in
+              L.build_fmul v1_float v2_float "fmultmp" builder
+            else
+              failwith ("Type error in multiplication: " ^ Sast.string_of_ty t1 ^ " * " ^ Sast.string_of_ty t2))
           | A.Div     when Semant.is_integer t1 -> L.build_sdiv v1 v2 "divtmp"  builder
           | A.Div                               -> L.build_fdiv v1 v2 "fdivtmp" builder
           | A.Mod     when Semant.is_integer t1 -> L.build_srem v1 v2 "modtmp"  builder
@@ -571,37 +580,101 @@ let translate (sprogram : sprogram) =
         L.build_call callee (Array.of_list args_ll) (if sexpr_ty = TyUnit then "" else "methodcalltmp") builder
 
     | SCast (target_sast_ty, source_se) ->
+        Printf.eprintf "\n  [DEBUG] SCast: Processing new cast invocation.\n";
+        Printf.eprintf "    Target SAST Type (target_sast_ty): %s\n" (Sast.string_of_ty target_sast_ty);
+        Printf.eprintf "    Source SAST Expr (fst source_se): %s\n" (Sast.string_of_ty (fst source_se));
+        Printf.eprintf "    Source SAST Expr Node (snd source_se): %s\n" (Sast.string_of_sexpr_node (snd source_se));
+        flush stderr;
+
         let source_val = build_expr builder local_vars current_func_llval source_se in
         let source_ll_ty = L.type_of source_val in
         let target_ll_ty = ltype_of_sast_ty target_sast_ty in
-        let (source_sast_ty_for_cast, _) = source_se in
+        let (source_sast_ty_from_expr, _) = source_se in (* This is the SAST type of the source expression *)
 
-        let is_float_sast_ty = function TyPrim (A.F32 | A.F64) -> true | _ -> false in
-        let is_int_sast_ty = function TyPrim (A.U8|A.U16|A.U32|A.U64|A.I8|A.I16|A.I32|A.I64) -> true | _ -> false in
-        let is_signed_int_sast_ty = function TyPrim (A.I8|A.I16|A.I32|A.I64) -> true | _ -> false in
+        Printf.eprintf "    LLVM source_val: %s (LLVM Type: %s)\n" (L.string_of_llvalue source_val) (L.string_of_lltype source_ll_ty);
+        Printf.eprintf "    LLVM target_ll_ty: %s\n" (L.string_of_lltype target_ll_ty);
+        Printf.eprintf "    SAST source_sast_ty_from_expr (used for conditions): %s\n" (Sast.string_of_ty source_sast_ty_from_expr);
+        flush stderr;
 
-        if source_ll_ty = target_ll_ty then source_val
-        else if is_float_sast_ty source_sast_ty_for_cast && is_int_sast_ty target_sast_ty then
-            if is_signed_int_sast_ty target_sast_ty then L.build_fptosi source_val target_ll_ty "fptosi" builder
-            else L.build_fptoui source_val target_ll_ty "fptoui" builder
-        else if is_int_sast_ty source_sast_ty_for_cast && is_float_sast_ty target_sast_ty then
-            if is_signed_int_sast_ty source_sast_ty_for_cast then L.build_sitofp source_val target_ll_ty "sitofp" builder
-            else L.build_uitofp source_val target_ll_ty "uitofp" builder
-        else if is_int_sast_ty source_sast_ty_for_cast && is_int_sast_ty target_sast_ty then
+        (* Local helper definitions for clarity within SCast *)
+        let is_float_sast_ty_local = function TyPrim (A.F32 | A.F64) -> true | _ -> false in
+        let is_int_sast_ty_local = function TyPrim (A.U8|A.U16|A.U32|A.U64|A.I8|A.I16|A.I32|A.I64) -> true | _ -> false in
+        let is_signed_int_sast_ty_local = function TyPrim (A.I8|A.I16|A.I32|A.I64) -> true | _ -> false in
+
+        Printf.eprintf "    Condition checks before branching:\n";
+        Printf.eprintf "      is_float_sast_ty_local(source_sast_ty_from_expr = %s)? %b\n" (Sast.string_of_ty source_sast_ty_from_expr) (is_float_sast_ty_local source_sast_ty_from_expr);
+        Printf.eprintf "      is_int_sast_ty_local(source_sast_ty_from_expr   = %s)? %b\n" (Sast.string_of_ty source_sast_ty_from_expr) (is_int_sast_ty_local source_sast_ty_from_expr);
+        Printf.eprintf "      is_float_sast_ty_local(target_sast_ty    = %s)? %b\n" (Sast.string_of_ty target_sast_ty) (is_float_sast_ty_local target_sast_ty);
+        Printf.eprintf "      is_int_sast_ty_local(target_sast_ty      = %s)? %b\n" (Sast.string_of_ty target_sast_ty) (is_int_sast_ty_local target_sast_ty);
+        flush stderr;
+
+        if source_ll_ty = target_ll_ty then (
+            Printf.eprintf "    [DEBUG] SCast: Path taken: No-op cast (source_ll_ty equals target_ll_ty)\n"; flush stderr;
+            source_val
+        )
+        else if is_float_sast_ty_local source_sast_ty_from_expr && is_int_sast_ty_local target_sast_ty then (
+            Printf.eprintf "    [DEBUG] SCast: Path taken: float_to_int\n"; flush stderr;
+            if is_signed_int_sast_ty_local target_sast_ty then (
+                let cast_instr = L.build_fptosi source_val target_ll_ty "fptosi" builder in
+                Printf.eprintf "      [DEBUG] SCast Details: float to int (signed) -> fptosi. Result LLVM Value: %s, LLVM Type: %s\n" (L.string_of_llvalue cast_instr) (L.string_of_lltype (L.type_of cast_instr)); flush stderr;
+                cast_instr
+            ) else (
+                let cast_instr = L.build_fptoui source_val target_ll_ty "fptoui" builder in
+                Printf.eprintf "      [DEBUG] SCast Details: float to int (unsigned) -> fptoui. Result LLVM Value: %s, LLVM Type: %s\n" (L.string_of_llvalue cast_instr) (L.string_of_lltype (L.type_of cast_instr)); flush stderr;
+                cast_instr
+            )
+        )
+        else if is_int_sast_ty_local source_sast_ty_from_expr && is_float_sast_ty_local target_sast_ty then (
+            Printf.eprintf "    [DEBUG] SCast: Path taken: int_to_float\n"; flush stderr;
+            if is_signed_int_sast_ty_local source_sast_ty_from_expr then (
+                let cast_instr = L.build_sitofp source_val target_ll_ty "sitofp" builder in
+                Printf.eprintf "      [DEBUG] SCast Details: int to float (signed) -> sitofp. Result LLVM Value: %s, LLVM Type: %s\n" (L.string_of_llvalue cast_instr) (L.string_of_lltype (L.type_of cast_instr)); flush stderr;
+                cast_instr
+            ) else (
+                let cast_instr = L.build_uitofp source_val target_ll_ty "uitofp" builder in
+                Printf.eprintf "      [DEBUG] SCast Details: int to float (unsigned) -> uitofp. Result LLVM Value: %s, LLVM Type: %s\n" (L.string_of_llvalue cast_instr) (L.string_of_lltype (L.type_of cast_instr)); flush stderr;
+                cast_instr
+            )
+        )
+        else if is_int_sast_ty_local source_sast_ty_from_expr && is_int_sast_ty_local target_sast_ty then (
+            Printf.eprintf "    [DEBUG] SCast: Path taken: int_to_int\n"; flush stderr;
             let source_bits = L.integer_bitwidth source_ll_ty in
             let target_bits = L.integer_bitwidth target_ll_ty in
-            if target_bits > source_bits then
-                if is_signed_int_sast_ty source_sast_ty_for_cast then L.build_sext source_val target_ll_ty "sext" builder
-                else L.build_zext source_val target_ll_ty "zext" builder
-            else
-                L.build_trunc source_val target_ll_ty "trunc" builder
-        else if is_float_sast_ty source_sast_ty_for_cast && is_float_sast_ty target_sast_ty then
+            if target_bits > source_bits then (
+                if is_signed_int_sast_ty_local source_sast_ty_from_expr then (
+                    let cast_instr = L.build_sext source_val target_ll_ty "sext" builder in
+                    Printf.eprintf "      [DEBUG] SCast Details: int to int (sext). Result LLVM Value: %s, LLVM Type: %s\n" (L.string_of_llvalue cast_instr) (L.string_of_lltype (L.type_of cast_instr)); flush stderr;
+                    cast_instr
+                ) else (
+                    let cast_instr = L.build_zext source_val target_ll_ty "zext" builder in
+                    Printf.eprintf "      [DEBUG] SCast Details: int to int (zext). Result LLVM Value: %s, LLVM Type: %s\n" (L.string_of_llvalue cast_instr) (L.string_of_lltype (L.type_of cast_instr)); flush stderr;
+                    cast_instr
+                )
+            ) else ( (* target_bits <= source_bits *)
+                let cast_instr = L.build_trunc source_val target_ll_ty "trunc" builder in
+                Printf.eprintf "      [DEBUG] SCast Details: int to int (trunc). Result LLVM Value: %s, LLVM Type: %s\n" (L.string_of_llvalue cast_instr) (L.string_of_lltype (L.type_of cast_instr)); flush stderr;
+                cast_instr
+            )
+        )
+        else if is_float_sast_ty_local source_sast_ty_from_expr && is_float_sast_ty_local target_sast_ty then (
+             Printf.eprintf "    [DEBUG] SCast: Path taken: float_to_float\n"; flush stderr;
              let source_bits = if source_ll_ty = L.float_type context then 32 else 64 in
              let target_bits = if target_ll_ty = L.float_type context then 32 else 64 in
-             if target_bits > source_bits then L.build_fpext source_val target_ll_ty "fpext" builder
-             else L.build_fptrunc source_val target_ll_ty "fptrunc" builder
-        else
-            L.build_bitcast source_val target_ll_ty "bitcast" builder
+             if target_bits > source_bits then (
+                let cast_instr = L.build_fpext source_val target_ll_ty "fpext" builder in
+                Printf.eprintf "      [DEBUG] SCast Details: float to float (fpext). Result LLVM Value: %s, LLVM Type: %s\n" (L.string_of_llvalue cast_instr) (L.string_of_lltype (L.type_of cast_instr)); flush stderr;
+                cast_instr
+             ) else ( (* target_bits <= source_bits *)
+                let cast_instr = L.build_fptrunc source_val target_ll_ty "fptrunc" builder in
+                Printf.eprintf "      [DEBUG] SCast Details: float to float (fptrunc). Result LLVM Value: %s, LLVM Type: %s\n" (L.string_of_llvalue cast_instr) (L.string_of_lltype (L.type_of cast_instr)); flush stderr;
+                cast_instr
+             )
+        ) else (
+            Printf.eprintf "    [DEBUG] SCast: Path taken: Fallback to L.build_bitcast from %s to %s\n" (L.string_of_lltype source_ll_ty) (L.string_of_lltype target_ll_ty); flush stderr;
+            let cast_instr = L.build_bitcast source_val target_ll_ty "bitcast" builder in
+            Printf.eprintf "      [DEBUG] SCast Details: bitcast result LLVM Value: %s, LLVM Type: %s\n" (L.string_of_llvalue cast_instr) (L.string_of_lltype (L.type_of cast_instr)); flush stderr;
+            cast_instr
+        )
 
   and build_stmt builder (local_vars : L.llvalue StringMap.t ref) (current_func_llval: L.llvalue) (sstmt : sstmt) : unit =
     match sstmt with

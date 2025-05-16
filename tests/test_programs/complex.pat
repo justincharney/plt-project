@@ -28,7 +28,7 @@ func add_points(p1: Point, p2: Vector) Point {
     result : Point
     result.x = p1.x + p2.x
     result.y = p1.y + p2.y
-    result.label = p1.label + "+" + p2.label // String concatenation
+    result.label = "Combined"   // p1.label + "+" + p2.label // String concatenation
     return result
 }
 
