@@ -54,12 +54,23 @@ func main() {
     // Method call
     dist_sq := pt1.distSq()
 
+    printf("Distance squared for pt1: %.2f\n", dist_sq)
+
     // Multiple return assignment? ( multi-assign isn't in AST yet)
     // scaled_pt : Point
     // success : bool
     // scaled_pt, success = scale_and_label(pt2, scale_factor, "scaled_pt2")
     temp_scaled := scale_and_label(pt2, scale_factor, "scaled_pt2")
     sum_pt = temp_scaled[0] // Reassign
+
+    // Print pt1
+    printf("pt1: x=%.2f, y=%.2f, label=%s\n", pt1.x, pt1.y, pt1.label)
+
+    // Print boolean (success)
+    printf("Success: %d\n", temp_scaled[1])
+
+    // Print sum_pt
+    printf("sum_pt: x=%.2f, y=%.2f, label=%s\n", sum_pt.x, sum_pt.y, sum_pt.label)
 
     // Control Flow (If/Else)
     message : string; // STILL NEED A SEMICOLON HERE (FIX)
@@ -68,6 +79,7 @@ func main() {
     } else {
         message = "Close to origin"
     }
+    printf("Message: %s\n", message);
 
     // Array and Slice
     points_arr : [3]Point = [3]Point{
@@ -92,6 +104,7 @@ func main() {
             break // Exit loop early
         }
     }
+    printf("After loop: loop_counter = %d, float_sum = %.2f\n", loop_counter, float_sum)
 
     // Block scope
     {

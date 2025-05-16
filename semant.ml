@@ -51,7 +51,7 @@ let local_string_of_compound_op = function
         List.fold_left (fun acc (name, func_sig) -> StringMap.add name (VFunc func_sig) acc)
         StringMap.empty
         [
-          ("printf", {params = [TyPrim Ast.String]; returns = [TyPrim Ast.I32]});
+          ("printf", {params = [TyPrim Ast.String]; returns = [TyPrim Ast.I32]}); (* "printf" will be handled as a special case in check_expr for variadic behavior *)
           ("print_int", {params = []; returns = [TyPrim Ast.I32]});
           ("print_float", {params = []; returns = [TyPrim Ast.I32]});
           ("print_fancy", {params = [TyPrim Ast.String; TyPrim Ast.I32; TyPrim Ast.I32; TyPrim Ast.Bool; TyPrim Ast.Bool]; returns = [TyPrim Ast.I32]});
@@ -375,7 +375,20 @@ let local_string_of_compound_op = function
         let se1 = check_expr env e1 in
         let se2 = check_expr env e2 in
         (fst se2, SSequence (se1, se2))
-      
+
+      | FunctionCall ("printf", first_arg :: other_args) ->
+        let s_first_arg = check_expr env first_arg in
+        if not (is_string (fst s_first_arg)) then
+          raise (Semantic_error (Printf.sprintf "First argument to 'printf' must be a string, got %s" (string_of_ty (fst s_first_arg))));
+        (* For other args, we type check but allow any number - we don't parse the format string to check types *)
+        let s_other_args = List.map (check_expr env) other_args in
+        let sargs = s_first_arg :: s_other_args in
+        (TyPrim Ast.I32, SFunctionCall("printf", sargs)) (* printf returns I32 *)
+
+      | FunctionCall ("printf", []) ->
+        raise (Semantic_error "'printf' requires at least a format string argument")
+
+
       | FunctionCall ("len", [input]) ->
           let sexpr =
               check_expr env input
@@ -396,9 +409,9 @@ let local_string_of_compound_op = function
           | _ -> raise (Semantic_error "cap() cannot be applied"))
 
       | FunctionCall ("assert", [input]) ->
-          let sexpr = 
-              check_expr env input 
-          in 
+          let sexpr =
+              check_expr env input
+          in
           (match fst sexpr with
           | TyPrim Bool ->
               (TyUnit, SFunctionCall ("assert", [sexpr]))
@@ -407,7 +420,7 @@ let local_string_of_compound_op = function
       | FunctionCall (fname, args) ->
           begin match find_value fname env with
           | VFunc fsig ->
-            if fname = "print_int" || fname = "print_float" 
+            if fname = "print_int" || fname = "print_float"
             then let sargs = List.map (check_expr env) args in (List.hd fsig.returns,SFunctionCall (fname,sargs)) else
             if List.length args <> List.length fsig.params then
               raise (Semantic_error (Printf.sprintf "Function '%s' expects %d argument(s) but got %d"
