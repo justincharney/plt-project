@@ -6,7 +6,7 @@ type User struct {
 }
 
 // Struct method.
-func (u User) IsEligible() bool {
+func (u: User) IsEligible() bool {
     return u.age >= 18;
 }
 
@@ -17,28 +17,30 @@ func verifyUser(u User) (string, error) {
         error error_type = error(msg); // Error is special type of casting.
         return "Access denied for " + u.name, error_type;
     }
-    return "Access granted to " + u.name, null; // Null is a special data type.
+    return u.name, null; // Null is a special data type.
 }
 
 // Variadic function example.
-func verifyAll(users ...User) {
-    for (i := 0; i < len(users); i++) {
+func verifyAll(users [3]User) {
+    for i := 0; i < len(users); i+=1 {
         msg, err := verifyUser(users[i]);
         if err != null {
             printf("%s (error: %s)\n", msg, err);
             exit(1); // Exit program with code 1.
         }
-        printf("%s\n", msg);
+        printf("Access granted to: %s\n", msg);
     }
 }
 
 // An array of size 3 of User structs.
-mainUsers := [
+mainUsers := [3]User{
     User{"Alice", 22},
     User{"Bob", 17},
     User{"Carol", 30}
-];
+};
 verifyAll(mainUsers);
 
 // Will not reach here if exit is called.
 printf("All users passed verification.\n");
+
+print_fancy("Hello World"12,160,true,true) // this will print the string with foreground color 12(blue) and background color red(160), 1st bool is for italics, 2nd is for underline
