@@ -386,6 +386,23 @@ let translate (sprogram : sprogram) =
           | TyArray (_,capacity) ->
               L.const_int (L.i32_type context) capacity
           | _ -> failwith ("cap() not supported"))
+    
+    | SFunctionCall ("assert", [arg_se]) ->
+        let cond_result =
+            build_expr builder local_vars current_func_llval arg_se
+        in
+        let pass_result =
+            L.append_block context "assert_passed" current_func_llval
+        in
+        let fail_result = 
+            L.append_block context "assert_failed" current_func_llval
+        in
+        ignore (L.build_cond_br cond_result pass_result fail_result builder);
+        L.position_at_end fail_result builder;
+        ignore (L.build_call exit_func [| L.const_int (L.i32_type context) 1 |] "" builder);
+        ignore (L.build_unreachable builder);
+        L.position_at_end pass_result builder;
+        L.const_null (L.pointer_type (L.i8_type context))
 
     | SFunctionCall (fname, sast_args) when fname="print_fancy"-> 
         (match sast_args with
