@@ -48,19 +48,16 @@ let need_semi   = ref false
 (*          by the `ends_stmt` function).                           *)
 (* Set by: `emit` function sets this to true after emitting a token *)
 (*         that matches `ends_stmt`.                                 *)
-(* Reset by: Set to `false` when an explicit `;` is processed, OR    *)
-(*           when ASI successfully inserts a semicolon on a newline. *)
-(*           Also implicitly `false` after tokens not in `ends_stmt`.*)
+(* Reset by: Set to `false` when an explicit `;` is processed, OR when ASI *)
+(*           successfully inserts a semicolon on a newline.*)
+
 
 
 let paren_depth = ref 0
-(* Purpose: Tracks the nesting level of parentheses `()` and        *)
-(*          square brackets `[]`.                                   *)
-(* Logic: ASI is disabled (newlines are always treated as          *)
-(*        whitespace) whenever `paren_depth` is greater than 0.     *)
-(* Updated by: `update_nesting` (called by `emit`) increments for   *)
-(*             `LPAREN`, `LBRACKET` and decrements for `RPAREN`,     *)
-(*             `RBRACKET`.                                           *)
+(* Purpose: Tracks the nesting level of `()` and `[]` only. *)
+(*          Braces `{}` for expressions are handled by Scanner_state.expr_brace_depth. *)
+(* Logic: ASI is disabled (newlines are treated as whitespace) whenever `paren_depth` is > 0. *)
+(* Updated by: `update_nesting` (called by `emit`). *)
 
 (* The `ends_stmt` function below lists tokens that can end a statement *)
 (* if followed by a newline (outside parentheses/brackets).            *)
@@ -105,10 +102,13 @@ rule token = parse
     (* Whitespace *)
     | whitespace            { token lexbuf }
     | '\n'                  { Lexing.new_line lexbuf;
-                                if !need_semi && !paren_depth = 0 then
-                                    (need_semi := false; SEMICOLON)
-                                else
-                                    token lexbuf }
+                            if !paren_depth > 0 || Scanner_state.get_expr_brace_level() > 0 then (
+                                token lexbuf (* Supress ASI if inside (), [], or expression {} *)
+                            ) else if !need_semi then (
+                                (need_semi := false; SEMICOLON)
+                            ) else
+                                token lexbuf}
+
 
 
     (* Comments *)

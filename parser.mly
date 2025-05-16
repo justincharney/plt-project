@@ -5,7 +5,7 @@ open Ast
 
 /* ----------  tokens ----------------------------------------------------- */
 %token PACKAGE IMPORT FUNC TYPE STRUCT RETURN BREAK IF ELSE CONTINUE FOR WHILE
-%token CONST 
+%token CONST
 %token FINAL MUT LATE PRIVATE ERROR
 %token TRUE FALSE NULL
 %token BOOL STRING
@@ -55,8 +55,14 @@ open Ast
 /* ----------  entry point ------------------------------------------------- */
 %start program
 %type  <Ast.program> program
+%type <unit> start_expr_brace
+%type <unit> end_expr_brace
 
 %%  /* ---------- grammar rules & semantic actions ------------------------ */
+
+/* --- ASI Helper Productions --- */
+start_expr_brace: /* empty */ { Scanner_state.enter_expr_brace () }
+end_expr_brace:   /* empty */ { Scanner_state.exit_expr_brace () }
 
 /* === Program hierarchy ================================================== */
 program:
@@ -271,8 +277,8 @@ expr:
     | IDENT                            { Identifier $1 }
     | LPAREN type_expr RPAREN expr %prec CAST
                                        { Cast($2, $4) }
-    | TYPE_NAME LBRACE field_assign_list_opt RBRACE
-                                       { StructLit($1, List.rev $3) }
+    | TYPE_NAME start_expr_brace LBRACE field_assign_list_opt RBRACE end_expr_brace
+                                       { StructLit($1, List.rev $4) }
     | LPAREN expr RPAREN               { $2 }
     | expr DOT IDENT                   { FieldAccess($1,$3) }
     | expr LBRACKET expr RBRACKET      { IndexAccess($1,$3) }
@@ -281,8 +287,8 @@ expr:
     | IDENT LPAREN arg_list RPAREN     { FunctionCall($1,$3) }
     | expr DOT IDENT LPAREN arg_list RPAREN
         { MethodCall($1,$3,$5) }
-    | LBRACKET INT_LIT RBRACKET type_expr LBRACE expr_list_opt RBRACE
-        { let arr_ty = Array($4, $2) in ArrayLit(arr_ty, List.rev $6) }
+    | LBRACKET INT_LIT RBRACKET type_expr start_expr_brace LBRACE expr_list_opt RBRACE end_expr_brace
+        { let arr_ty = Array($4, $2) in ArrayLit(arr_ty, List.rev $7) }
     /*| LBRACKET RBRACKET type_expr LBRACE expr_list_opt RBRACE
         { let slice_ty = Slice($3) in SliceLit(slice_ty, List.rev $5) }*/
 

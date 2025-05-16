@@ -85,7 +85,8 @@ func main() {
     points_arr : [3]Point = [3]Point{
         origin,
         pt1,
-        Point{x: 5.0, y: 5.0, label:"arr_pt"}}; // SEMICOLON WRONGLY ADDED HERE IF LAST BRACE ON NEW LINE
+        Point{x: 5.0, y: 5.0, label:"arr_pt"}
+    }
 
     points_another_arr: [2]Point;
     points_another_arr[0] = points_arr[1];
