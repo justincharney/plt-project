@@ -370,9 +370,10 @@ let translate (sprogram : sprogram) =
       L.build_load specific_field_addr field_name_str builder
 
 
-    | SIndexAccess (coll_sexpr, _idx_sexpr) ->
-        let elem_addr = build_lvalue_address (snd coll_sexpr) in
-        L.build_load elem_addr "indexed_val" builder
+    | SIndexAccess (_, _idx_sexpr_node) as sx_index_access -> (* Use the whole sx for build_lvalue_address *)
+        (* sx_index_access is the SIndexAccess node itself *)
+        let specific_elem_addr = build_lvalue_address sx_index_access in (* This will get e.g. %Point* for tuple[0] *)
+        L.build_load specific_elem_addr "indexed_val" builder (* Load from e.g. %Point* giving %Point *)
 
     | SBinop (se1, op, se2) ->
         let v1 = build_expr builder local_vars current_func_llval se1 in
