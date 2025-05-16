@@ -1,0 +1,62 @@
+\begin{Verbatim}[commandchars=\\\{\},numbers=left,firstnumber=1,stepnumber=1]
+\PY{k}{package} \PY{n}{main}
+
+\PY{k}{const} \PY{n}{scale} \PY{p}{:} \PY{k+kt}{i32} \PY{o}{=} \PY{l+m}{2}
+
+\PY{k}{type} \PY{n}{Point} \PY{k}{struct} \PY{p}{\PYZob{}}
+    \PY{n}{x}\PY{p}{:} \PY{k+kt}{i32}
+    \PY{n}{y}\PY{p}{:} \PY{k+kt}{i32}
+\PY{p}{\PYZcb{}}
+
+\PY{k}{func} \PY{p}{(}\PY{n}{p}\PY{p}{:} \PY{n}{Point}\PY{p}{)} \PY{n}{calcDist}\PY{p}{(}\PY{p}{)} \PY{k+kt}{i32}\PY{p}{\PYZob{}}
+  \PY{k}{return} \PY{n}{p}\PY{p}{.}\PY{n}{x} \PY{o}{*} \PY{n}{p}\PY{p}{.}\PY{n}{x} \PY{o}{+} \PY{n}{p}\PY{p}{.}\PY{n}{y} \PY{o}{*} \PY{n}{p}\PY{p}{.}\PY{n}{y}
+\PY{p}{\PYZcb{}}
+
+\PY{k}{func} \PY{p}{(}\PY{n}{p}\PY{p}{:} \PY{n}{Point}\PY{p}{)} \PY{n}{withScaleEnough} \PY{p}{(}\PY{n}{min}\PY{p}{:}\PY{k+kt}{i32}\PY{p}{)} \PY{p}{(}\PY{k+kt}{i32}\PY{p}{,} \PY{k+kt}{bool}\PY{p}{)} \PY{p}{\PYZob{}}
+  \PY{n}{newX} \PY{p}{:}\PY{o}{=} \PY{n}{p}\PY{p}{.}\PY{n}{x} \PY{o}{*} \PY{n}{scale} 
+  \PY{n}{newY} \PY{p}{:}\PY{o}{=} \PY{n}{p}\PY{p}{.}\PY{n}{y} \PY{o}{*} \PY{n}{scale} 
+  \PY{n}{mean} \PY{p}{:}\PY{o}{=} \PY{p}{(}\PY{n}{newX} \PY{o}{+} \PY{n}{newY}\PY{p}{)} \PY{o}{/} \PY{l+m}{2}
+
+  \PY{k}{if} \PY{n}{mean} \PY{o}{\PYZgt{}} \PY{n}{min} \PY{p}{\PYZob{}}
+    \PY{k}{return} \PY{n}{mean} \PY{p}{,}\PY{k+kc}{true}
+  \PY{p}{\PYZcb{}} \PY{k}{else} \PY{p}{\PYZob{}}
+    \PY{k}{return} \PY{n}{mean}\PY{p}{,} \PY{k+kc}{false}
+  \PY{p}{\PYZcb{}}
+\PY{p}{\PYZcb{}}
+
+\PY{k}{func} \PY{n}{main}\PY{p}{(}\PY{p}{)} \PY{p}{\PYZob{}}
+  \PY{n}{p1} \PY{p}{:}\PY{o}{=} \PY{n}{Point}\PY{p}{\PYZob{}}\PY{n}{x}\PY{p}{:}\PY{l+m}{10}\PY{p}{,}\PY{n}{y}\PY{p}{:}\PY{l+m}{10}\PY{p}{\PYZcb{}}
+  \PY{n}{p2} \PY{p}{:}\PY{o}{=} \PY{n}{Point}\PY{p}{\PYZob{}}\PY{n}{x}\PY{p}{:}\PY{l+m}{20}\PY{p}{,}\PY{n}{y}\PY{p}{:}\PY{l+m}{20}\PY{p}{\PYZcb{}}
+  \PY{n}{p3} \PY{p}{:}\PY{o}{=} \PY{n}{Point}\PY{p}{\PYZob{}}\PY{n}{x}\PY{p}{:}\PY{l+m}{27}\PY{p}{,}\PY{n}{y}\PY{p}{:}\PY{l+m}{15}\PY{p}{\PYZcb{}}
+  \PY{n}{my\PYZus{}arr} \PY{p}{:}\PY{o}{=} \PY{p}{[}\PY{l+m}{3}\PY{p}{]}\PY{n}{Point}\PY{p}{\PYZob{}}\PY{n}{p1}\PY{p}{,}\PY{n}{p2}\PY{p}{,}\PY{n}{p3}\PY{p}{\PYZcb{}}
+
+  \PY{n}{centroidX} \PY{p}{:} \PY{k+kt}{i32} \PY{o}{=} \PY{l+m}{0}
+  \PY{n}{centroidY} \PY{p}{:} \PY{k+kt}{i32} \PY{o}{=} \PY{l+m}{0}
+
+  \PY{k}{for} \PY{n}{i}\PY{p}{:}\PY{o}{=}\PY{l+m}{0}\PY{p}{;} \PY{n}{i} \PY{o}{\PYZlt{}} \PY{l+m}{3} \PY{p}{;} \PY{n}{i}\PY{o}{+=}\PY{l+m}{1}\PY{p}{\PYZob{}}
+    \PY{n}{tmpPt} \PY{p}{:}\PY{o}{=} \PY{n}{my\PYZus{}arr}\PY{p}{[}\PY{n}{i}\PY{p}{]}
+    \PY{n}{print\PYZus{}fancy}\PY{p}{(}\PY{l+s}{\PYZdq{}Center for Point: \PYZdq{}}\PY{p}{,}\PY{l+m}{21}\PY{p}{,}\PY{l+m}{0}\PY{p}{,}\PY{k+kc}{false}\PY{p}{,}\PY{k+kc}{true}\PY{p}{)}
+    \PY{n}{print\PYZus{}int}\PY{p}{(}\PY{n}{tmpPt}\PY{p}{.}\PY{n}{calcDist}\PY{p}{(}\PY{p}{)}\PY{p}{)}
+
+    \PY{n}{tmp\PYZus{}scale} \PY{p}{:}\PY{o}{=} \PY{n}{tmpPt}\PY{p}{.}\PY{n}{withScaleEnough}\PY{p}{(}\PY{l+m}{30}\PY{p}{)}
+    \PY{n}{newMean} \PY{p}{:}\PY{o}{=} \PY{n}{tmp\PYZus{}scale}\PY{p}{[}\PY{l+m}{0}\PY{p}{]}
+    \PY{n}{isEnough} \PY{p}{:}\PY{o}{=} \PY{n}{tmp\PYZus{}scale}\PY{p}{[}\PY{l+m}{1}\PY{p}{]}
+
+    \PY{k}{if} \PY{n}{isEnough} \PY{p}{\PYZob{}}
+      \PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}is enough\PYZbs{}nmean: \PYZdq{}}\PY{p}{)}
+      \PY{n}{print\PYZus{}int}\PY{p}{(}\PY{n}{newMean}\PY{p}{)}
+    \PY{p}{\PYZcb{}} \PY{k}{else} \PY{p}{\PYZob{}}
+      \PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}not enough\PYZbs{}nmean: \PYZdq{}}\PY{p}{)}
+      \PY{n}{print\PYZus{}int}\PY{p}{(}\PY{n}{newMean}\PY{p}{)}
+    \PY{p}{\PYZcb{}}
+
+    \PY{n}{centroidX} \PY{o}{+=} \PY{n}{tmpPt}\PY{p}{.}\PY{n}{x}
+    \PY{n}{centroidY} \PY{o}{+=} \PY{n}{tmpPt}\PY{p}{.}\PY{n}{y}
+  \PY{p}{\PYZcb{}}
+  \PY{n}{centroidX} \PY{o}{/=} \PY{l+m}{3}
+  \PY{n}{centroidY} \PY{o}{/=} \PY{l+m}{3}
+
+  \PY{n}{print\PYZus{}int}\PY{p}{(}\PY{n}{centroidX}\PY{p}{)}
+  \PY{n}{print\PYZus{}int}\PY{p}{(}\PY{n}{centroidY}\PY{p}{)}
+\PY{p}{\PYZcb{}}
+\end{Verbatim}

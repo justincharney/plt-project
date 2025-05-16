@@ -3,7 +3,7 @@ package main
 
 /* Multi-line comment.
 * All variables below (except in loop and function body) are in global scope. The
-* rest are in local scope. Every statement of code must end in a semicolon.
+* rest are in local scope. Every statement of code should end in a semicolon.
 */
 
 /* Declaring and initializing variables. */
