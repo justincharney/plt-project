@@ -31,46 +31,28 @@ https://docs.docker.com/desktop/
 
 ### Running the Project
 
-#### Option 1: One-off commands
-
 1. Build the Docker image (only needed once, or when changing Docker configuration):
    ```
    docker-compose build
    ```
 
-2. Run the sample program:
+2. Start the container
+  ```bash
+  docker-compose up -d ocaml
+  ```
+
+3. Open a shell in the container
+  ```bash
+  docker-compose exec ocaml bash
+  ```
+
+3. Compile and Run a P.A.T Test Progran (e.g., `funky.pat`):
+  This command will first build your P.A.T. compiler (`plt.exe`) if it hasn't been built yet, then use it to compile `funky.pat`. The compiler will output the generated LLVM IR to a `.ll` file and print instructions to compile and run it.
    ```
-   # Uses the --rm flag to automatically remove the container when it exits
-   docker-compose run --rm ocaml dune exec ./hello.exe
+   dune exec ./plt.exe -- ./tests/test_programs/funky.pat
    ```
 
-3. Access the Docker container shell:
-   ```
-   docker-compose run --rm ocaml bash
-   ```
-
-#### Option 2: Persistent development container
-
-```bash
-# Build the image first (only needed once initially)
-docker-compose build
-
-# Start a container in the background
-docker-compose up -d ocaml
-
-# Execute commands in the running container
-docker-compose exec ocaml dune exec ./hello.exe
-
-# Open a shell in the container
-docker-compose exec ocaml bash
-# Then inside the container
-dune exec ./hello.exe
-# Or try utop and execute something like 2 * 24;;
-utop
-
-# When finished, stop the container
-docker-compose down
-```
+  After running the above, follow the `llc-14` and `clang-14` commands printed by `plt.exe` to create and run the executable.
 
 ### Building and Testing the Project
 
@@ -90,36 +72,19 @@ docker-compose run --rm ocaml dune build
 
 #### Running Tests
 
-There are several ways to run the tests:
+There are several ways to run the tests from the container's shell:
+
+0. Run a shell in the docker container. Then perform subsequent steps.
+  ```bash
+   docker-compose exec ocaml bash
+  ```
 
 1. Run all tests:
    ```bash
-   docker-compose exec ocaml dune runtest
+   dune test
    ```
 
 2. Run a specific test executable:
    ```bash
-   docker-compose exec ocaml dune exec tests/test_scanner.exe
-   ```
-
-3. Rebuild and run tests in one command:
-   ```bash
-   docker-compose exec ocaml dune build @runtest --auto-promote
-   ```
-
-4. For interactive testing during development:
-   ```bash
-   # Enter the Docker container
-   docker-compose exec ocaml bash
-
-   # Build the project
-   dune build
-
-   # Run specific tests
    dune exec tests/test_scanner.exe
-
-   # Or run all tests
-   dune clean
-   dune build
-   dune test
    ```
