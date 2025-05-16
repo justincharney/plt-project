@@ -31,3 +31,6 @@ _opam/
 
 # Python cache for Overleaf Minted code highlighting
 highlighting/__pycache__/
+
+# MacOS stuff
+.DS_Store
