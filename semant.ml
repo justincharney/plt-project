@@ -402,7 +402,7 @@ let local_string_of_compound_op = function
           (match fst sexpr with
           | TyPrim Bool ->
               (TyUnit, SFunctionCall ("assert", [sexpr]))
-          | _ -> raise (Semantic_error "assert() cannot be applied") 
+          | _ -> raise (Semantic_error "assert() cannot be applied"))
 
       | FunctionCall (fname, args) ->
           begin match find_value fname env with
