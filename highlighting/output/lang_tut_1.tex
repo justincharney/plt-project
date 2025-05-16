@@ -8,15 +8,15 @@
 \PY{c+cm}{*/}
 
 \PY{c+cm}{/*}\PY{c+cm}{ Declaring and initializing variables. }\PY{c+cm}{*/}
-\PY{k+kt}{i16} \PY{n}{var1}\PY{p}{;} \PY{c+c1}{// Declared vars. must specify type}
-\PY{k}{const} \PY{k+kt}{f32} \PY{n}{var2} \PY{o}{=} \PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m}{1.50}\PY{n}{f}\PY{p}{)}\PY{p}{;} \PY{c+c1}{// Constant var init. Negatives must be wrapped in ().}
+\PY{n}{var1} \PY{p}{:} \PY{k+kt}{i16}\PY{p}{;} \PY{c+c1}{// Declared vars. must specify type}
+\PY{k}{const} \PY{n}{var2} \PY{p}{:} \PY{k+kt}{f32} \PY{o}{=} \PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m}{1.50}\PY{n}{f}\PY{p}{)}\PY{p}{;} \PY{c+c1}{// Constant var init. Negatives must be wrapped in ().}
 \PY{n}{var3} \PY{p}{:}\PY{o}{=} \PY{l+s}{\PYZdq{}string type\PYZdq{}}\PY{p}{;} \PY{c+c1}{// Walrus operator infers type from right hand side.}
 \PY{n}{assert}\PY{p}{(}\PY{n}{len}\PY{p}{(}\PY{n}{var3}\PY{p}{)} \PY{o}{==} \PY{l+m}{11}\PY{p}{)}\PY{p}{;} \PY{c+c1}{// len(.) gets length of string.}
 
 \PY{c+cm}{/*}\PY{c+cm}{ Type alias and casting. Casting only works b}\PY{c+cm}{/}\PY{c+cm}{t primitives. See LRM. }\PY{c+cm}{*/}
 \PY{k}{type} \PY{n}{PAT} \PY{o}{=} \PY{k+kt}{i32}\PY{p}{;} \PY{c+c1}{// Type alias for signed 32\PYZhy{}bit int.}
-\PY{n}{PAT} \PY{n}{x} \PY{o}{=} \PY{p}{(}\PY{l+m}{100} \PY{o}{*} \PY{l+m}{10}\PY{p}{)} \PY{o}{+} \PY{l+m}{1}\PY{p}{;}
-\PY{n}{y} \PY{p}{:}\PY{o}{=} \PY{k+kt}{u8}\PY{p}{(}\PY{n}{x}\PY{p}{)}\PY{p}{;} \PY{c+c1}{// Casting. Signed 32\PYZhy{}bit int \PYZhy{}\PYZhy{}\PYZgt{} unsigned 8\PYZhy{}bit int.}
+\PY{n}{x} \PY{p}{:} \PY{n}{PAT} \PY{o}{=} \PY{p}{(}\PY{l+m}{100} \PY{o}{*} \PY{l+m}{10}\PY{p}{)} \PY{o}{+} \PY{l+m}{1}\PY{p}{;}
+\PY{n}{y} \PY{p}{:}\PY{o}{=} \PY{p}{(}\PY{k+kt}{u8}\PY{p}{)}\PY{n}{x}\PY{p}{;} \PY{c+c1}{// Casting. Signed 32\PYZhy{}bit int \PYZhy{}\PYZhy{}\PYZgt{} unsigned 8\PYZhy{}bit int.}
 \PY{n}{assert}\PY{p}{(}\PY{n}{y} \PY{o}{==} \PY{l+m}{232}\PY{p}{)}\PY{p}{;} \PY{c+c1}{// Due to truncation.}
 \PY{n}{assert}\PY{p}{(}\PY{n}{x} \PY{o}{!=} \PY{k+kc}{true} \PY{o}{\PYZam{}\PYZam{}} \PY{k+kt}{bool}\PY{p}{(}\PY{n}{x}\PY{p}{)} \PY{o}{==} \PY{k+kc}{true}\PY{p}{)}\PY{p}{;} \PY{c+c1}{// Only bool types can be true or false.}
 
@@ -28,21 +28,20 @@
     \PY{k+kr}{mut} \PY{n}{d} \PY{k+kt}{string}
 \PY{p}{\PYZcb{}}\PY{p}{;}
 \PY{n}{MyStruct} \PY{n}{z} \PY{o}{=} \PY{p}{\PYZob{}}\PY{n}{a}\PY{p}{:}\PY{k+kc}{true}\PY{p}{,} \PY{n}{b}\PY{p}{:}\PY{l+m}{123}\PY{p}{,} \PY{n}{c}\PY{p}{:}\PY{l+m}{4.56}\PY{p}{,} \PY{n}{d}\PY{p}{:}\PY{l+s}{\PYZdq{}false\PYZdq{}}\PY{p}{\PYZcb{}}\PY{p}{;}
-\PY{n}{assert}\PY{p}{(}\PY{n}{z} \PY{o}{==} \PY{n}{MyStruct}\PY{p}{)}\PY{p}{;}
 
 \PY{c+cm}{/*}\PY{c+cm}{ Arrays. }\PY{c+cm}{*/}
-\PY{p}{[}\PY{l+m}{5}\PY{p}{]}\PY{k+kt}{u64} \PY{n}{var4}\PY{p}{;} \PY{c+c1}{// Unsigned 64\PYZhy{}bit int array of size 5.}
+\PY{n}{var4} \PY{p}{:} \PY{p}{[}\PY{l+m}{5}\PY{p}{]}\PY{k+kt}{u64}\PY{p}{;} \PY{c+c1}{// Unsigned 64\PYZhy{}bit int array of size 5.}
 \PY{n}{assert}\PY{p}{(}\PY{n}{var4}\PY{p}{[}\PY{l+m}{0}\PY{p}{]} \PY{o}{==} \PY{n}{var1} \PY{o}{==} \PY{l+m}{0}\PY{p}{)}\PY{p}{;} \PY{c+c1}{// 0\PYZhy{}based indexing. Uninit. vars. are equal to 0.}
-\PY{n}{asssert}\PY{p}{(}\PY{n}{cap}\PY{p}{(}\PY{n}{var4}\PY{p}{)} \PY{o}{==} \PY{n}{len}\PY{p}{(}\PY{n}{var4}\PY{p}{)} \PY{o}{==} \PY{l+m}{5}\PY{p}{)}\PY{p}{;} \PY{c+c1}{// cap(.) and len(.) get size of array.}
+\PY{n}{assert}\PY{p}{(}\PY{n}{cap}\PY{p}{(}\PY{n}{var4}\PY{p}{)} \PY{o}{==} \PY{n}{len}\PY{p}{(}\PY{n}{var4}\PY{p}{)} \PY{o}{==} \PY{l+m}{5}\PY{p}{)}\PY{p}{;} \PY{c+c1}{// cap(.) and len(.) get size of array.}
 
 \PY{c+cm}{/*}\PY{c+cm}{ Loops and conditionals. }\PY{c+cm}{*/}
-\PY{k}{for} \PY{p}{(}\PY{n}{i} \PY{p}{:}\PY{o}{=} \PY{l+m}{0}\PY{p}{;} \PY{n}{i} \PY{o}{\PYZlt{}} \PY{n}{cap}\PY{p}{(}\PY{n}{var4}\PY{p}{)}\PY{p}{;} \PY{n}{i}\PY{o}{++}\PY{p}{)} \PY{p}{\PYZob{}}
+\PY{k}{for} \PY{n}{i} \PY{p}{:}\PY{o}{=} \PY{l+m}{0}\PY{p}{;} \PY{n}{i} \PY{o}{\PYZlt{}} \PY{n}{cap}\PY{p}{(}\PY{n}{var4}\PY{p}{)}\PY{p}{;} \PY{n}{i}\PY{o}{++} \PY{p}{\PYZob{}}
     \PY{k}{if} \PY{n}{i} \PY{o}{!=} \PY{l+m}{5} \PY{p}{\PYZob{}} \PY{c+c1}{// Parentheses are optional for conditionals.}
         \PY{n}{var4}\PY{p}{[}\PY{n}{i}\PY{p}{]} \PY{o}{=} \PY{l+m}{2} \PY{o}{\PYZlt{}\PYZlt{}} \PY{l+m}{1}\PY{p}{;}
         \PY{k}{continue}\PY{p}{;}
     \PY{p}{\PYZcb{}}
     \PY{k}{else} \PY{p}{\PYZob{}} \PY{k}{break}\PY{p}{;} \PY{p}{\PYZcb{}}
 \PY{p}{\PYZcb{}}
-\PY{k+kt}{i8} \PY{n}{j}\PY{p}{;}
-\PY{k}{while} \PY{n}{j}\PY{o}{++} \PY{o}{\PYZlt{}} \PY{n}{cap}\PY{p}{(}\PY{n}{var4}\PY{p}{)} \PY{p}{\PYZob{}} \PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}\PYZpc{}d \PYZdq{}}\PY{p}{,} \PY{n}{var4}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{p}{)}\PY{p}{;} \PY{p}{\PYZcb{}} \PY{c+c1}{// C\PYZhy{}styled printf.}
+\PY{n}{j} \PY{p}{:} \PY{k+kt}{i8}\PY{p}{;}
+\PY{k}{while} \PY{n}{j} \PY{o}{\PYZlt{}} \PY{n}{cap}\PY{p}{(}\PY{n}{var4}\PY{p}{)} \PY{p}{\PYZob{}} \PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}\PYZpc{}d \PYZdq{}}\PY{p}{,} \PY{n}{var4}\PY{p}{[}\PY{n}{j}\PY{o}{++}\PY{p}{]}\PY{p}{)}\PY{p}{;} \PY{p}{\PYZcb{}} \PY{c+c1}{// C\PYZhy{}styled printf.}
 \end{Verbatim}

@@ -1,0 +1,22 @@
+\begin{Verbatim}[commandchars=\\\{\},numbers=left,firstnumber=1,stepnumber=1]
+\PY{k}{package} \PY{n}{main}
+
+\PY{k}{func} \PY{n}{reverse}\PY{p}{(}\PY{n}{n}\PY{p}{:} \PY{k+kt}{i32}\PY{p}{)} \PY{k+kt}{i32} \PY{p}{\PYZob{}}
+    \PY{n}{res} \PY{p}{:}\PY{o}{=} \PY{l+m}{0}
+    \PY{k}{while} \PY{n}{n} \PY{o}{\PYZgt{}} \PY{l+m}{0} \PY{p}{\PYZob{}}
+        \PY{n}{res} \PY{o}{=} \PY{n}{res} \PY{o}{*} \PY{l+m}{10} \PY{o}{+} \PY{n}{n} \PY{o}{\PYZpc{}} \PY{l+m}{10}
+        \PY{n}{n} \PY{o}{/=} \PY{l+m}{10}
+    \PY{p}{\PYZcb{}}
+    \PY{k}{return} \PY{n}{res}
+\PY{p}{\PYZcb{}}
+
+\PY{k}{func} \PY{n}{main}\PY{p}{(}\PY{p}{)} \PY{p}{\PYZob{}}
+    \PY{n}{num} \PY{p}{:}\PY{o}{=} \PY{l+m}{12345}
+    \PY{n}{new\PYZus{}num} \PY{p}{:} \PY{k+kt}{i32} \PY{o}{=} \PY{n}{reverse}\PY{p}{(}\PY{n}{num}\PY{p}{)}
+    \PY{n}{print\PYZus{}int}\PY{p}{(}\PY{n}{new\PYZus{}num}\PY{p}{)}
+
+    \PY{n}{float\PYZus{}a} \PY{p}{:} \PY{k+kt}{f64} \PY{o}{=} \PY{p}{(}\PY{k+kt}{f64}\PY{p}{)}\PY{l+m}{1.2}
+    \PY{n}{float\PYZus{}b} \PY{p}{:}\PY{o}{=} \PY{p}{(}\PY{k+kt}{f64}\PY{p}{)}\PY{l+m}{3.4}
+    \PY{n}{print\PYZus{}float}\PY{p}{(}\PY{n}{float\PYZus{}a} \PY{o}{+} \PY{n}{float\PYZus{}b}\PY{p}{)}
+\PY{p}{\PYZcb{}}
+\end{Verbatim}

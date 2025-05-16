@@ -1,0 +1,46 @@
+\begin{Verbatim}[commandchars=\\\{\},numbers=left,firstnumber=1,stepnumber=1]
+\PY{k}{package} \PY{n}{main}
+
+\PY{k}{type} \PY{n}{User} \PY{k}{struct} \PY{p}{\PYZob{}}
+    \PY{k+kr}{final} \PY{n}{name} \PY{k+kt}{string}
+    \PY{k+kr}{final} \PY{n}{age}  \PY{k+kt}{i32}
+\PY{p}{\PYZcb{}}
+
+\PY{c+c1}{// Struct method.}
+\PY{k}{func} \PY{p}{(}\PY{n}{u} \PY{n}{User}\PY{p}{)} \PY{n}{IsEligible}\PY{p}{(}\PY{p}{)} \PY{k+kt}{bool} \PY{p}{\PYZob{}}
+    \PY{k}{return} \PY{n}{u}\PY{p}{.}\PY{n}{age} \PY{o}{\PYZgt{}=} \PY{l+m}{18}\PY{p}{;}
+\PY{p}{\PYZcb{}}
+
+\PY{c+c1}{// Function example.}
+\PY{k}{func} \PY{n}{verifyUser}\PY{p}{(}\PY{n}{u} \PY{n}{User}\PY{p}{)} \PY{p}{(}\PY{k+kt}{string}\PY{p}{,} \PY{k+kt}{error}\PY{p}{)} \PY{p}{\PYZob{}}
+    \PY{k}{if} \PY{o}{!}\PY{n}{u}\PY{p}{.}\PY{n}{IsEligible}\PY{p}{(}\PY{p}{)} \PY{p}{\PYZob{}}
+        \PY{n}{msg} \PY{p}{:}\PY{o}{=} \PY{l+s}{\PYZdq{}User is underage\PYZdq{}}\PY{p}{;}
+        \PY{k+kt}{error} \PY{n}{error\PYZus{}type} \PY{o}{=} \PY{k+kt}{error}\PY{p}{(}\PY{n}{msg}\PY{p}{)}\PY{p}{;} \PY{c+c1}{// Error is special type of casting.}
+        \PY{k}{return} \PY{l+s}{\PYZdq{}Access denied for \PYZdq{}} \PY{o}{+} \PY{n}{u}\PY{p}{.}\PY{n}{name}\PY{p}{,} \PY{n}{error\PYZus{}type}\PY{p}{;}
+    \PY{p}{\PYZcb{}}
+    \PY{k}{return} \PY{l+s}{\PYZdq{}Access granted to \PYZdq{}} \PY{o}{+} \PY{n}{u}\PY{p}{.}\PY{n}{name}\PY{p}{,} \PY{k+kc}{null}\PY{p}{;} \PY{c+c1}{// Null is a special data type.}
+\PY{p}{\PYZcb{}}
+
+\PY{c+c1}{// Variadic function example.}
+\PY{k}{func} \PY{n}{verifyAll}\PY{p}{(}\PY{n}{users} \PY{p}{.}\PY{p}{.}\PY{p}{.}\PY{n}{User}\PY{p}{)} \PY{p}{\PYZob{}}
+    \PY{k}{for} \PY{p}{(}\PY{n}{i} \PY{p}{:}\PY{o}{=} \PY{l+m}{0}\PY{p}{;} \PY{n}{i} \PY{o}{\PYZlt{}} \PY{n}{len}\PY{p}{(}\PY{n}{users}\PY{p}{)}\PY{p}{;} \PY{n}{i}\PY{o}{++}\PY{p}{)} \PY{p}{\PYZob{}}
+        \PY{n}{msg}\PY{p}{,} \PY{n}{err} \PY{p}{:}\PY{o}{=} \PY{n}{verifyUser}\PY{p}{(}\PY{n}{users}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{)}\PY{p}{;}
+        \PY{k}{if} \PY{n}{err} \PY{o}{!=} \PY{k+kc}{null} \PY{p}{\PYZob{}}
+            \PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}\PYZpc{}s (error: \PYZpc{}s)\PYZbs{}n\PYZdq{}}\PY{p}{,} \PY{n}{msg}\PY{p}{,} \PY{n}{err}\PY{p}{)}\PY{p}{;}
+            \PY{n}{exit}\PY{p}{(}\PY{l+m}{1}\PY{p}{)}\PY{p}{;} \PY{c+c1}{// Exit program with code 1.}
+        \PY{p}{\PYZcb{}}
+        \PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}\PYZpc{}s\PYZbs{}n\PYZdq{}}\PY{p}{,} \PY{n}{msg}\PY{p}{)}\PY{p}{;}
+    \PY{p}{\PYZcb{}}
+\PY{p}{\PYZcb{}}
+
+\PY{c+c1}{// An array of size 3 of User structs.}
+\PY{n}{mainUsers} \PY{p}{:}\PY{o}{=} \PY{p}{[}
+    \PY{n}{User}\PY{p}{\PYZob{}}\PY{l+s}{\PYZdq{}Alice\PYZdq{}}\PY{p}{,} \PY{l+m}{22}\PY{p}{\PYZcb{}}\PY{p}{,}
+    \PY{n}{User}\PY{p}{\PYZob{}}\PY{l+s}{\PYZdq{}Bob\PYZdq{}}\PY{p}{,} \PY{l+m}{17}\PY{p}{\PYZcb{}}\PY{p}{,}
+    \PY{n}{User}\PY{p}{\PYZob{}}\PY{l+s}{\PYZdq{}Carol\PYZdq{}}\PY{p}{,} \PY{l+m}{30}\PY{p}{\PYZcb{}}
+\PY{p}{]}\PY{p}{;}
+\PY{n}{verifyAll}\PY{p}{(}\PY{n}{mainUsers}\PY{p}{)}\PY{p}{;}
+
+\PY{c+c1}{// Will not reach here if exit is called.}
+\PY{n}{printf}\PY{p}{(}\PY{l+s}{\PYZdq{}All users passed verification.\PYZbs{}n\PYZdq{}}\PY{p}{)}\PY{p}{;}
+\end{Verbatim}
