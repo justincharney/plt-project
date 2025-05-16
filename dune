@@ -50,8 +50,3 @@
   (name plt)
   (modules plt)
   (libraries llvm ast sast scanner parser semant sast_printer irgen))
-
-(executable
- (name hello)
- (modules hello)
- (libraries ))
