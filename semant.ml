@@ -390,7 +390,6 @@ let local_string_of_compound_op = function
               check_expr env input
           in
           (match fst sexpr with
-          | TyPrim String
           | TyArray _ ->
               (TyPrim U32, SFunctionCall ("cap", [sexpr]))
           | _ -> raise (Semantic_error "cap() cannot be applied"))
