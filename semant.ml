@@ -55,8 +55,8 @@ let local_string_of_compound_op = function
           ("print_int", {params = []; returns = [TyPrim Ast.I32]});
           ("print_float", {params = []; returns = [TyPrim Ast.I32]});
           ("print_fancy", {params = [TyPrim Ast.String; TyPrim Ast.I32; TyPrim Ast.I32; TyPrim Ast.Bool; TyPrim Ast.Bool]; returns = [TyPrim Ast.I32]});
-          ("len", {params = [TyPrim Ast.String]; returns = [TyPrim Ast.U32]});
-          ("cap", {params = [TyPrim Ast.String]; returns = [TyPrim Ast.U32]});
+          ("len", {params = [TyPrim Ast.String]; returns = [TyPrim Ast.I32]});
+          ("cap", {params = [TyPrim Ast.String]; returns = [TyPrim Ast.I32]});
           ("assert", {params = [TyPrim Ast.Bool]; returns = []});
           ("exit", {params = [TyPrim Ast.I32]; returns = []})
         ]
@@ -383,7 +383,7 @@ let local_string_of_compound_op = function
           (match fst sexpr with
           | TyPrim String
           | TyArray _ ->
-              (TyPrim U32, SFunctionCall ("len", [sexpr]))
+              (TyPrim I32, SFunctionCall ("len", [sexpr]))
           | _ -> raise (Semantic_error "len() cannot be applied"))
 
       | FunctionCall ("cap", [input]) ->
@@ -392,7 +392,7 @@ let local_string_of_compound_op = function
           in
           (match fst sexpr with
           | TyArray _ ->
-              (TyPrim U32, SFunctionCall ("cap", [sexpr]))
+              (TyPrim I32, SFunctionCall ("cap", [sexpr]))
           | _ -> raise (Semantic_error "cap() cannot be applied"))
 
       | FunctionCall ("assert", [input]) ->
