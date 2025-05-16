@@ -385,6 +385,16 @@ let local_string_of_compound_op = function
               (TyPrim U32, SFunctionCall ("len", [sexpr]))
           | _ -> raise (Semantic_error "len() cannot be applied"))
 
+      | FunctionCall ("cap", [input]) ->
+          let sexpr =
+              check_expr env input
+          in
+          (match fst sexpr with
+          | TyPrim String
+          | TyArray _ ->
+              (TyPrim U32, SFunctionCall ("cap", [sexpr]))
+          | _ -> raise (Semantic_error "cap() cannot be applied"))
+
       | FunctionCall (fname, args) ->
           begin match find_value fname env with
           | VFunc fsig ->

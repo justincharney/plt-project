@@ -375,7 +375,13 @@ let translate (sprogram : sprogram) =
               L.build_extractvalue llvm_val 1 "len" builder
           | TyArray (_,length) ->
               L.const_int (L.i64_type context) length
-          | _ -> failwith ("len() failed"))
+          | _ -> failwith ("len() not supported"))
+
+    | SFunctionCall ("cap", [arg_se]) ->
+          (match fst arg_se with
+          | TyArray (_,capacity) ->
+              L.const_int (L.i64_type context) capacity
+          | _ -> failwith ("cap() not supported"))
 
     | SFunctionCall (fname, args_sast) ->
         let args_ll = List.map (build_expr builder local_vars current_func_llval) args_sast in
