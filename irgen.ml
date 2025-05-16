@@ -132,7 +132,8 @@ let translate (sprogram : sprogram) =
             L.set_linkage L.Linkage.Internal global_str_val;
             let str_ptr = L.const_in_bounds_gep global_str_val [| L.const_int (L.i32_type context) 0; L.const_int (L.i32_type context) 0 |] in
             let len = L.const_int (L.i64_type context) (String.length s) in
-            L.const_struct context [| str_ptr; len |]
+            (* Use const_named_struct with the pre-defined string_ll_type (%String) *)
+            L.const_named_struct string_ll_type [| str_ptr; len |]
         | SNull ->
             Printf.eprintf "        [DEBUG] SNull\n"; flush stderr;
             let ll_sexpr_ty = ltype_of_sast_ty sexpr_ty in
@@ -482,11 +483,11 @@ let translate (sprogram : sprogram) =
     | SFunctionCall ("len", [arg_se]) ->
           (match fst arg_se with
           | TyPrim A.String ->
-              let llvm_val = 
-                  build_expr builder local_vars current_func_llval arg_se 
-              in 
+              let llvm_val =
+                  build_expr builder local_vars current_func_llval arg_se
+              in
               let len64_bit =
-                  L.build_extractvalue llvm_val 1 "len64bits" builder 
+                  L.build_extractvalue llvm_val 1 "len64bits" builder
               in
               L.build_trunc len64_bit (L.i32_type context) "len32bits" builder
 
@@ -499,7 +500,7 @@ let translate (sprogram : sprogram) =
           | TyArray (_,capacity) ->
               L.const_int (L.i32_type context) capacity
           | _ -> failwith ("cap() not supported"))
-    
+
     | SFunctionCall ("assert", [arg_se]) ->
         let cond_result =
             build_expr builder local_vars current_func_llval arg_se
@@ -507,7 +508,7 @@ let translate (sprogram : sprogram) =
         let pass_result =
             L.append_block context "assert_passed" current_func_llval
         in
-        let fail_result = 
+        let fail_result =
             L.append_block context "assert_failed" current_func_llval
         in
         ignore (L.build_cond_br cond_result pass_result fail_result builder);
@@ -517,12 +518,12 @@ let translate (sprogram : sprogram) =
         L.position_at_end pass_result builder;
         L.const_null (L.pointer_type (L.i8_type context))
 
-    | SFunctionCall (fname, sast_args) when fname="print_fancy"-> 
+    | SFunctionCall (fname, sast_args) when fname="print_fancy"->
         (match sast_args with
-        [s_string;f_num;b_num;i_bool;u_bool] -> 
+        [s_string;f_num;b_num;i_bool;u_bool] ->
           let f_num_expr = build_expr builder local_vars current_func_llval f_num
-          and b_num_expr = build_expr builder local_vars current_func_llval b_num 
-          and s_expr = build_expr builder local_vars current_func_llval s_string in 
+          and b_num_expr = build_expr builder local_vars current_func_llval b_num
+          and s_expr = build_expr builder local_vars current_func_llval s_string in
           let format_string_expr = match (i_bool,u_bool) with
               ((_,SBoolLit b1),(_,SBoolLit b2)) when b1 && b2 -> StringMap.find "fancy_fmt_both" local_vars
             | ((_,SBoolLit b1),(_,SBoolLit b2)) when b1 && (not b2)-> StringMap.find "fancy_fmt_italic" local_vars
@@ -530,7 +531,7 @@ let translate (sprogram : sprogram) =
             | ((_,SBoolLit _),(_,SBoolLit _)) -> StringMap.find "fancy_fmt_none" local_vars
             | _ -> raise (Failure "invalid call to print_fancy")
           in (*ignore(L.build_call printf_func [|format_string_expr|] "printf_fancy" builder);*)
-          let actual_call = L.build_call printf_func (Array.of_list [format_string_expr;f_num_expr;b_num_expr;s_expr]) "printf_fancy" builder in 
+          let actual_call = L.build_call printf_func (Array.of_list [format_string_expr;f_num_expr;b_num_expr;s_expr]) "printf_fancy" builder in
           (*ignore(L.build_call printf_func [|(StringMap.find "clear_format_str" local_vars)|] "printf_fancy" builder);*)
           actual_call
         | _ -> raise (Failure "Invalid call to print_fancy"))
@@ -548,23 +549,37 @@ let translate (sprogram : sprogram) =
             with Not_found -> failwith ("IRGen: Unknown function referenced: " ^ fname)
         in
 
-        (* Handling for printf's first argument *)
+        (* Prepare arguments for calling C's printf *)
         let final_args_ll =
           if fname = "printf" then
-            match args_ll with
-            | format_string_struct_val :: rest_args ->
-              (* Extact the i8* from the P.A.T String struct {i8*, i64} *)
-              let format_string_ptr = L.build_extractvalue format_string_struct_val 0 "fmt_str_ptr" builder in
-              format_string_ptr :: rest_args
-            | [] -> failwith "printf called with no arguments"
+            match args_sast with
+            | (_, _) :: rest_sast_args ->
+              let format_ll_val = List.hd args_ll in (* LLVM value for the format string struct *)
+              let format_string_ptr = L.build_extractvalue format_ll_val 0 "fmt_str_ptr" builder in
+              let variadic_args_ll = List.mapi (fun i (arg_sast_ty, _) ->
+                let arg_ll_val = List.nth args_ll (i + 1) in (* Get corresponding LLVM value *)
+                match arg_sast_ty with
+                | TyPrim A.F32 -> L.build_fpext arg_ll_val (L.double_type context) "fpext_for_printf" builder
+                | TyPrim A.String -> L.build_extractvalue arg_ll_val 0 ("arg_str_ptr_" ^ string_of_int i) builder
+                | _ -> arg_ll_val
+              ) rest_sast_args in
+              format_string_ptr :: variadic_args_ll
+            | [] -> failwith "IRGen: printf called with no arguments"
           else if fname = "print_int" then
-            match args_ll with
-            | [] -> failwith "print_int called with no arguments"
-            | all_args -> (StringMap.find "int_format_str" local_vars) :: all_args
+            match args_sast with
+            | [(_, _)] ->
+              let int_val_ll = List.hd args_ll in
+              let fmt_str_ptr = StringMap.find "int_format_str" local_vars in
+              [fmt_str_ptr; int_val_ll]
+            | _ -> failwith "IRGen: print_int expects exactly one integer argument"
           else if fname = "print_float" then
-            match args_ll with
-            | [] -> failwith "print_float called with no arguments"
-            | all_args -> (StringMap.find "float_format_str" local_vars) :: all_args
+            match args_sast with
+            | [(_, _)] ->
+              let float_val_ll = List.hd args_ll in
+              let float_val_double = L.build_fpext float_val_ll (L.double_type context) "fpext_for_printf" builder in
+              let fmt_str_ptr = StringMap.find "float_format_str" local_vars in
+              [fmt_str_ptr; float_val_double]
+            | _ -> failwith "IRGen: print_float expects exactly one float argument"
           else args_ll
         in
         let call_instr = L.build_call callee_llval (Array.of_list final_args_ll)
@@ -800,15 +815,15 @@ let translate (sprogram : sprogram) =
     Printf.eprintf "  [DEBUG] build_function_body for %s: Function has %d params according to LLVM.\n" func_name (Array.length (L.params f_llval)); flush stderr;
     let builder = L.builder_at_end context (L.entry_block f_llval) in
     Printf.eprintf "  [DEBUG] build_function_body for %s: Builder created at entry block.\n" func_name; flush stderr;
-    let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder 
-    and float_format_str = L.build_global_stringptr "%lf\n" "fmt" builder 
-    and both_format_str = L.build_global_stringptr "\x1b[38;5;%d;48;5;%d;3;4m%s\x1b[0m" "fmt" builder 
-    and italic_format_str = L.build_global_stringptr "\x1b[38;5;%d;48;5;%d;3m%s\x1b[0m" "fmt" builder 
-    and underline_format_str = L.build_global_stringptr "\x1b[38;5;%d;48;5;%d;4m%s\x1b[0m" "fmt" builder 
+    let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder
+    and float_format_str = L.build_global_stringptr "%lf\n" "fmt" builder
+    and both_format_str = L.build_global_stringptr "\x1b[38;5;%d;48;5;%d;3;4m%s\x1b[0m" "fmt" builder
+    and italic_format_str = L.build_global_stringptr "\x1b[38;5;%d;48;5;%d;3m%s\x1b[0m" "fmt" builder
+    and underline_format_str = L.build_global_stringptr "\x1b[38;5;%d;48;5;%d;4m%s\x1b[0m" "fmt" builder
     and none_format_str = L.build_global_stringptr "\x1b[38;5;%d;48;5;%dm%s\x1b[0m" "fmt" builder in
     let tmp_map1 = (StringMap.add "fancy_fmt_both" both_format_str StringMap.empty) in
     let tmp_map2 = (StringMap.add "fancy_fmt_italic" italic_format_str tmp_map1) in
-    let tmp_map3 = (StringMap.add "fancy_fmt_under" underline_format_str tmp_map2) in 
+    let tmp_map3 = (StringMap.add "fancy_fmt_under" underline_format_str tmp_map2) in
     let tmp_map4 = (StringMap.add "fancy_fmt_none" none_format_str tmp_map3) in
     let local_vars_map : L.llvalue StringMap.t ref = ref (StringMap.add "float_format_str" float_format_str (StringMap.add "int_format_str" int_format_str tmp_map4)) in
 

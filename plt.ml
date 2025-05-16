@@ -32,9 +32,22 @@ let () =
     (* 3. Print the resulting SAST *)
     print_endline (string_of_sprogram sast);
 
-    (* 4. Print the IRgen *)
+    (* 4. Generate the LLVM IR and save to a .ll file *)
     let llvm_module = Irgen.translate sast in
-    print_endline (Llvm.string_of_llmodule llvm_module);
+    let base_output_path = Filename.remove_extension filename in
+    let ll_filename = base_output_path ^ ".ll" in
+    let s_filename = base_output_path ^ ".s" in
+    let exe_filename = base_output_path ^ "_exe" in
+
+    let ll_channel = open_out ll_filename in
+    output_string ll_channel(Llvm.string_of_llmodule llvm_module);
+    close_out ll_channel;
+
+    Printf.printf"LLVM IR successfully generated and saved to: %s\n" ll_filename;
+    Printf.printf"To compile and run: \n";
+    Printf.printf"    llc-14 %s -o %s\n" ll_filename s_filename;
+    Printf.printf"    clang-14 %s -o %s\n" s_filename exe_filename;
+    Printf.printf"    %s\n" exe_filename;
 
     close_in channel;
     exit 0 (* Indicate success *)
