@@ -191,10 +191,12 @@ let translate (sprogram : sprogram) =
                       Printf.eprintf "                [DEBUG] No default value for field %s. Using const_null.\n" sf.name; flush stderr;
                       L.const_null (ltype_of_sast_ty sf.field_type)
           ) ordered_sfields in
-          let result_struct = L.const_struct context (Array.of_list const_fields) in
+          (* Get the LLVM type for the NAMED struct e.g. %Point from "Point" *)
+          let named_ll_struct_type = ltype_of_sast_ty (TyStruct canonical_struct_name) in
+          let result_struct = L.const_named_struct named_ll_struct_type (Array.of_list const_fields) in
           Printf.eprintf "      [DEBUG] build_global_initializer: SStructLit for '%s' (canonical '%s') processed successfully.\n" struct_name_from_lit canonical_struct_name; flush stderr;
           result_struct
-        | _ -> L.const_null (ltype_of_sast_ty var_ty)
+        | _ -> Printf.eprintf "      [DEBUG] Unhandled SX node for global init: %s. Using const_null for var_ty %s.\n" (Sast.string_of_sexpr_node sx) (Sast.string_of_ty var_ty); flush stderr;  L.const_null (ltype_of_sast_ty var_ty)
         )
   in
   Printf.eprintf "IRGen: Processing global variables...\n"; flush stderr;
