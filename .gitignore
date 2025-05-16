@@ -34,3 +34,8 @@ highlighting/__pycache__/
 
 # MacOS stuff
 .DS_Store
+
+# Executables/IR
+*.ll
+*.s
+*_exe

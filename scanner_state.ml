@@ -11,6 +11,13 @@ let register_type_name (name : string) : unit =
 let is_type_name (name : string) : bool =
   Hashtbl.mem known_types name
 
+  (* --- State for ASI suppression within expression braces {} --- *)
+  let expr_brace_depth = ref 0
+
+  let enter_expr_brace () : unit = incr expr_brace_depth
+  let exit_expr_brace () : unit = decr expr_brace_depth
+  let get_expr_brace_level () : int = !expr_brace_depth
+
 (* Pre-populate with built-in primitive type names *)
 let () =
   List.iter register_type_name [

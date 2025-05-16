@@ -45,8 +45,8 @@ let () =
 
     Printf.printf"LLVM IR successfully generated and saved to: %s\n" ll_filename;
     Printf.printf"To compile and run: \n";
-    Printf.printf"    llc-14 %s -o %s\n" ll_filename s_filename;
-    Printf.printf"    clang-14 %s -o %s\n" s_filename exe_filename;
+    Printf.printf"    llc-14 -relocation-model=pic %s -o %s\n" ll_filename s_filename;
+    Printf.printf"    clang-14 -fPIE %s -o %s\n" s_filename exe_filename;
     Printf.printf"    %s\n" exe_filename;
 
     close_in channel;

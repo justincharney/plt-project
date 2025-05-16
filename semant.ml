@@ -330,7 +330,19 @@ let local_string_of_compound_op = function
         begin match u with
         | Neg | Bitnot -> ensure_numeric t1 (Printf.sprintf "Unary operator '%s'" (local_string_of_unop u)); (t1, SUnaop (u, se1))
         | Not -> ensure_bool t1 (Printf.sprintf "Unary operator '%s'" (local_string_of_unop u)); (TyPrim Bool, SUnaop (u, se1))
-        | Inc | Dec -> ensure_numeric t1 (Printf.sprintf "Unary operator '%s'" (local_string_of_unop u)); (t1, SUnaop (u, se1))
+        | Inc ->
+          ensure_numeric t1 (Printf.sprintf "Unary operator '++' requires numeric operand, got %s" (string_of_ty t1));
+          if not (is_lvalue (snd se1)) then
+            raise (Semantic_error "Operand of '++' must be an l-value");
+          (* Desugar ++lval to lval += 1. The value of this expression is t1 (the new value). *)
+          (* The IntLit 1 will be typed as default Int (I32). check_binop in CompoundAssign will handle compatibility. *)
+          (t1, SCompoundAssign(se1, PlusAssign, (TyPrim I32, SIntLit 1)))
+        | Dec ->
+          ensure_numeric t1 (Printf.sprintf "Unary operator '--' requires numeric operand, got %s" (string_of_ty t1));
+          if not (is_lvalue (snd se1)) then
+            raise (Semantic_error "Operand of '--' must be an l-value");
+          (* Desugar --lval to lval -= 1 *)
+          (t1, SCompoundAssign(se1, MinusAssign, (TyPrim I32, SIntLit 1)))
         end
 
       | SimpleAssign (lhs, rhs) ->
@@ -542,6 +554,7 @@ let local_string_of_compound_op = function
 
     | IfStmt (cond, then_blk, else_opt) ->
       let scond = check_expr env cond in
+      Printf.eprintf "[DEBUG SEMANT IfStmt] Condition checked. SAST type: %s, AST node: <...>\n" (string_of_ty (fst scond)); flush stderr;
       ensure_bool (fst scond) "if condition";
       let sthen = check_block env expected then_blk in
       let selse_opt =
